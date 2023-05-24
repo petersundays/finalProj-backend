@@ -39,7 +39,7 @@ public class RecordService {
 
         String ipAddress = request.getRemoteAddr();
         logger.info("User with session token {} is creating a record from IP address {}", token, ipAddress);
-
+        System.out.println("wer");
         // Check if the user's and project's ids are valid
         if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(projectId)) {
             logger.info("User with session token {} tried to apply to the project, but the ids are invalid", token);
