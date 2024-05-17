@@ -9,13 +9,13 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "sessionToken")
-public class SessionToken extends Token implements Serializable {
+public class SessionTokenEntity extends TokenEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Column(name = "lastAccess")
     private LocalDateTime lastAccess;
 
-    public SessionToken() {
+    public SessionTokenEntity() {
     }
 
     public LocalDateTime getLastAccess() {

@@ -34,10 +34,10 @@ public class NotificationEntity implements Serializable {
     @JoinColumn(name = "sender_id", referencedColumnName = "id")
     private UserEntity sender;
 
-    @Column (name="timestamp", nullable = false, unique = false, updatable = false)
+    @Column (name="timestamp", nullable = false, updatable = false)
     private Timestamp timestamp;
 
-    @Column (name="'read'", nullable = false, unique = false)
+    @Column (name="'read'", nullable = false)
     private boolean read;
 
     public NotificationEntity() {

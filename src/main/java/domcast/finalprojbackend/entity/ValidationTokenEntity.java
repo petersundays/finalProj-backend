@@ -9,14 +9,14 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "validationToken")
-public class ValidationToken extends Token implements Serializable {
+public class ValidationTokenEntity extends TokenEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Column(name = "creationTime")
     private LocalDateTime creationTime;
 
 
-    public ValidationToken() {
+    public ValidationTokenEntity() {
     }
 
     public LocalDateTime getCreationTime() {
