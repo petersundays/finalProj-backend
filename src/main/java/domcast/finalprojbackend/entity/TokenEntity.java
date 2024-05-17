@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import java.io.Serializable;
 
 @MappedSuperclass
-public abstract class Token implements Serializable {
+public abstract class TokenEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
@@ -19,7 +19,7 @@ public abstract class Token implements Serializable {
     @Column(name = "email")
     protected String email;
 
-    public Token() {
+    public TokenEntity() {
     }
 
     public String getToken() {
