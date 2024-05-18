@@ -3,6 +3,8 @@ package domcast.finalprojbackend.entity;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "lab")
@@ -17,6 +19,9 @@ public class LabEntity implements Serializable {
 
     @Column(name = "city", nullable = false, unique = true)
     private String city;
+
+    @OneToMany(mappedBy = "workplace")
+    private Set<UserEntity> users = new HashSet<>();
 
 
 }
