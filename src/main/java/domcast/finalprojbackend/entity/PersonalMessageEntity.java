@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import java.io.Serializable;
 
 @Entity
-@Table(name = "personalMessage")
 public class PersonalMessageEntity extends MessageEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 

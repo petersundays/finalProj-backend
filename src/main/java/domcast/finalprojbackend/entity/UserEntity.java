@@ -31,8 +31,9 @@ public class UserEntity implements Serializable {
     @Column(name = "nickname", unique = true)
     private String nickname;
 
-    @Column(name = "workplace", nullable = false)
-    private String workplace;
+    @ManyToOne
+    @JoinColumn(name = "workplace", referencedColumnName = "id")
+    private LabEntity workplace;
 
     @Column(name = "photo")
     private String photo;
@@ -75,6 +76,7 @@ public class UserEntity implements Serializable {
             inverseJoinColumns = @JoinColumn(name = "skill_id")
     )
     private Set<SkillEntity> skills = new HashSet<>();
+
 
     public UserEntity() {
     }
@@ -127,11 +129,11 @@ public class UserEntity implements Serializable {
         this.nickname = nickname;
     }
 
-    public String getWorkplace() {
+    public LabEntity getWorkplace() {
         return workplace;
     }
 
-    public void setWorkplace(String workplace) {
+    public void setWorkplace(LabEntity workplace) {
         this.workplace = workplace;
     }
 
@@ -214,5 +216,6 @@ public class UserEntity implements Serializable {
     public void setSkills(Set<SkillEntity> skills) {
         this.skills = skills;
     }
+
 }
 
