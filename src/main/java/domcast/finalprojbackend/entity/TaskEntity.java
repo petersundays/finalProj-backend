@@ -63,6 +63,10 @@ public class TaskEntity implements Serializable {
     )
     private Set<TaskEntity> dependencies = new HashSet<>();
 
+    @OneToMany(mappedBy = "task")
+    private Set<RecordEntity> records = new HashSet<>();
+
+
 
     public TaskEntity() {
     }
@@ -169,5 +173,13 @@ public class TaskEntity implements Serializable {
 
     public void setDependencies(Set<TaskEntity> dependencies) {
         this.dependencies = dependencies;
+    }
+
+    public Set<RecordEntity> getRecords() {
+        return records;
+    }
+
+    public void setRecords(Set<RecordEntity> records) {
+        this.records = records;
     }
 }
