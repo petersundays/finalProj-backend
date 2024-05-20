@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "record")
 
-public class Record implements Serializable {
+public class RecordEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
@@ -31,7 +31,11 @@ public class Record implements Serializable {
     @Column(name = "type", nullable = false)
     private int type;
 
-    public Record() {
+    @ManyToOne
+    @JoinColumn(name = "task_id", nullable = false)
+    private TaskEntity task;
+
+    public RecordEntity() {
     }
 
     public int getId() {
@@ -80,5 +84,13 @@ public class Record implements Serializable {
 
     public void setType(int type) {
         this.type = type;
+    }
+
+    public TaskEntity getTask() {
+        return task;
+    }
+
+    public void setTask(TaskEntity task) {
+        this.task = task;
     }
 }
