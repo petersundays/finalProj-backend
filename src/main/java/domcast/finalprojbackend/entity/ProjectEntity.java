@@ -66,6 +66,21 @@ public class ProjectEntity implements Serializable {
     @Column(name = "real_end_date")
     private LocalDateTime realEndDate;
 
+    @OneToMany(mappedBy = "project")
+    private Set<ProjectMessageEntity> groupMessages = new HashSet<>();
+
+    @ManyToMany
+    @JoinTable(
+            name = "project_component_resource",
+            joinColumns = @JoinColumn(name = "project_id"),
+            inverseJoinColumns = @JoinColumn(name = "component_resource_id")
+    )
+    private Set<ComponentResourceEntity> componentResources = new HashSet<>();
+
+    @OneToMany(mappedBy = "project_id")
+    private Set<TaskEntity> tasks = new HashSet<>();
+
+
     // FALTAM RECURSOS E PLANO EXECUÇÃO //
 
 
@@ -174,5 +189,29 @@ public class ProjectEntity implements Serializable {
 
     public void setRealEndDate(LocalDateTime realEndDate) {
         this.realEndDate = realEndDate;
+    }
+
+    public Set<ProjectMessageEntity> getGroupMessages() {
+        return groupMessages;
+    }
+
+    public void setGroupMessages(Set<ProjectMessageEntity> groupMessages) {
+        this.groupMessages = groupMessages;
+    }
+
+    public Set<ComponentResourceEntity> getComponentResources() {
+        return componentResources;
+    }
+
+    public void setComponentResources(Set<ComponentResourceEntity> componentResources) {
+        this.componentResources = componentResources;
+    }
+
+    public Set<TaskEntity> getTasks() {
+        return tasks;
+    }
+
+    public void setTasks(Set<TaskEntity> tasks) {
+        this.tasks = tasks;
     }
 }

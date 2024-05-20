@@ -19,7 +19,12 @@ public abstract class TokenEntity implements Serializable {
     @Column(name = "email")
     protected String email;
 
+    @Column(name = "active")
+    protected boolean active;
+
     public TokenEntity() {
+        // active is true by default
+        this.active = true;
     }
 
     public String getToken() {
@@ -36,5 +41,18 @@ public abstract class TokenEntity implements Serializable {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        // If the current value of active is false, do not change it
+        if (!this.active) {
+            return;
+        }
+
+        this.active = active;
     }
 }
