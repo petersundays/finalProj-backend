@@ -1,7 +1,8 @@
 package domcast.finalprojbackend.entity;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 
 import java.io.Serializable;
 
@@ -9,17 +10,19 @@ import java.io.Serializable;
 public class ProjectMessageEntity extends MessageEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    @Column(name = "projectID")
-    private int projectId;
+    @ManyToOne
+    @JoinColumn(name = "project_id", nullable = false)
+    private ProjectEntity project;
+
 
     public ProjectMessageEntity() {
     }
 
-    public int getProjectId() {
-        return projectId;
+    public ProjectEntity getProject() {
+        return project;
     }
 
-    public void setProjectID(int projectId) {
-        this.projectId = projectId;
+    public void setProject (ProjectEntity project) {
+        this.project = project;
     }
 }
