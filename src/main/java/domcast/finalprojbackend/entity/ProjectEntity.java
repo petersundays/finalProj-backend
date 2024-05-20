@@ -7,6 +7,28 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Entity class for the project table in the database.
+ * Contains all the attributes of the project table and their getters and setters.
+ * The attributes are the following:
+ * - id: the id of the project.
+ * - name: the name of the project.
+ * - lab: the lab that the project belongs to.
+ * - description: the description of the project.
+ * - keywords: the keywords of the project.
+ * - state: the state of the project.
+ * - maxMembers: the maximum number of members of the project.
+ * - skills: the skills of the project.
+ * - creationDate: the creation date of the project.
+ * - projectedStartDate: the projected start date of the project.
+ * - realStartDate: the real start date of the project.
+ * - deadline: the deadline of the project.
+ * - realEndDate: the real end date of the project.
+ * - groupMessages: the group messages of the project.
+ * - componentResources: the component resources of the project.
+ * - tasks: the tasks take part of the execution plan of the project.
+ * The class also contains the necessary annotations to work with the database.
+ */
 @Entity
 @Table(name = "project")
 
@@ -14,21 +36,26 @@ public class ProjectEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    // Unique identifier for the project
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false, unique = true, updatable = false)
     private int id;
 
+    // Name of the project
     @Column(name = "name", nullable = false)
     private String name;
 
+    // Lab that the project belongs to
     @ManyToOne
     @JoinColumn(name = "lab", referencedColumnName = "id")
     private LabEntity lab;
 
+    // Description of the project
     @Column(name = "description_motivation", nullable = false, columnDefinition = "TEXT")
     private String description;
 
+    // Keywords of the project
     @ManyToMany
     @JoinTable(
             name = "keywords",
@@ -37,12 +64,15 @@ public class ProjectEntity implements Serializable {
     )
     private Set<InterestEntity> keywords = new HashSet<>();
 
+    // State of the project
     @Column(name = "state", nullable = false)
     private int state;
 
+    // Maximum number of members of the project
     @Column(name = "max_members", nullable = false)
     private int maxMembers;
 
+    // Skills required for the project
     @ManyToMany
     @JoinTable(
             name = "project_skills",
@@ -51,24 +81,31 @@ public class ProjectEntity implements Serializable {
     )
     private Set<SkillEntity> skills = new HashSet<>();
 
+    // Creation date of the project
     @Column(name = "creation_date", nullable = false)
     private LocalDateTime creationDate;
 
+    // Projected start date of the project
     @Column(name = "projected_start_date", nullable = false)
     private LocalDateTime projectedStartDate;
 
+    // Real start date of the project
     @Column(name = "real_start_date")
     private LocalDateTime realStartDate;
 
+    // Deadline of the project
     @Column(name = "deadline", nullable = false)
     private LocalDateTime deadline;
 
+    // Real end date of the project
     @Column(name = "real_end_date")
     private LocalDateTime realEndDate;
 
+    // Group messages of the project
     @OneToMany(mappedBy = "project")
     private Set<ProjectMessageEntity> groupMessages = new HashSet<>();
 
+    // Component resources of the project
     @ManyToMany
     @JoinTable(
             name = "project_component_resource",
@@ -77,15 +114,15 @@ public class ProjectEntity implements Serializable {
     )
     private Set<ComponentResourceEntity> componentResources = new HashSet<>();
 
+    // Tasks take part of the execution plan of the project
     @OneToMany(mappedBy = "project_id")
     private Set<TaskEntity> tasks = new HashSet<>();
 
-
-    // FALTAM RECURSOS E PLANO EXECUÇÃO //
-
-
+    // Default constructor
     public ProjectEntity() {
     }
+
+    // Getters and setters
 
     public int getId() {
         return id;

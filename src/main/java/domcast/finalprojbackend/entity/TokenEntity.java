@@ -4,28 +4,48 @@ import jakarta.persistence.*;
 
 import java.io.Serializable;
 
+/**
+ * Abstract class for the token table in the database.
+ * This class is extended by the SessionTokenEntity and the ValidationTokenEntity classes.
+ * Contains all the attributes of the token table and their getters and setters.
+ * The attributes are the following:
+ * - id: the id of the token.
+ * - token: the token.
+ * - email: the email of the user.
+ * - active: the status of the token.
+ * The class also contains the necessary annotations to work with the database.
+ */
+
 @MappedSuperclass
 public abstract class TokenEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
+    // Unique identifier for the token
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false, unique = true, updatable = false)
     protected int id;
 
+    // The generated token for the user
     @Column(name = "token")
     protected String token;
 
-    @Column(name = "email")
-    protected String email;
+    // The user associated with the token
+    @OneToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private UserEntity user;
 
+    // The status of the token
     @Column(name = "active")
     protected boolean active;
 
+    // Default constructor
     public TokenEntity() {
         // active is true by default
         this.active = true;
     }
+
+    // Getters and setters
 
     public String getToken() {
         return token;
@@ -35,13 +55,6 @@ public abstract class TokenEntity implements Serializable {
         this.token = token;
     }
 
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
 
     public boolean isActive() {
         return active;
