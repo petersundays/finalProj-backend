@@ -38,8 +38,8 @@ public class SkillEntity implements Serializable {
     private int type;
 
     // Users that have the skill
-    @ManyToMany(mappedBy = "skills")
-    private Set<UserEntity> users = new HashSet<>();
+    @OneToMany(mappedBy = "skill", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<M2MUserSkill> userSkills = new HashSet<>();
 
     // Default constructor
     public SkillEntity() {
@@ -71,12 +71,12 @@ public class SkillEntity implements Serializable {
         this.type = type;
     }
 
-    public Set<UserEntity> getUsers() {
-        return users;
+    public Set<M2MUserSkill> getUserSkills() {
+        return userSkills;
     }
 
-    public void setUsers(Set<UserEntity> users) {
-        this.users = users;
+    public void setUserSkills(Set<M2MUserSkill> userSkills) {
+        this.userSkills = userSkills;
     }
 }
 

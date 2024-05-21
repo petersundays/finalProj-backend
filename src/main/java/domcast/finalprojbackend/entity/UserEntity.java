@@ -103,13 +103,8 @@ public class UserEntity implements Serializable {
     private Set<M2MInterestUser> interests = new HashSet<>();
 
     // The skills are a set of skills of the user
-    @ManyToMany(cascade = CascadeType.ALL)
-    @JoinTable(
-            name = "user_skill",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "skill_id")
-    )
-    private Set<SkillEntity> skills = new HashSet<>();
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<M2MUserSkill> userSkills = new HashSet<>();
 
     // The projects in which the user is involved
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -241,12 +236,12 @@ public class UserEntity implements Serializable {
         this.interests = interests;
     }
 
-    public Set<SkillEntity> getSkills() {
-        return skills;
+    public Set<M2MUserSkill> getUserSkills() {
+        return userSkills;
     }
 
-    public void setSkills(Set<SkillEntity> skills) {
-        this.skills = skills;
+    public void setUserSkills(Set<M2MUserSkill> userSkills) {
+        this.userSkills = userSkills;
     }
 
     public Set<M2MProjectUser> getProjectUsers() {
