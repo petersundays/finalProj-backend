@@ -1,5 +1,6 @@
 package domcast.finalprojbackend.entity;
 
+import domcast.finalprojbackend.enums.LabEnum;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
@@ -28,12 +29,13 @@ public class LabEntity implements Serializable {
     private int id;
 
     // City of the lab
+    @Enumerated(EnumType.STRING)
     @Column(name = "city", nullable = false, unique = true)
-    private String city;
+    private LabEnum city;
 
     // Users that work in the lab
     // mappedBy = "workplace" is used to specify the inverse side of the relationship
-    @OneToMany(mappedBy = "workplace")
+    @OneToMany(mappedBy = "workplace", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<UserEntity> users = new HashSet<>();
 
     // Default constructor
@@ -50,11 +52,11 @@ public class LabEntity implements Serializable {
         this.id = id;
     }
 
-    public String getCity() {
+    public LabEnum getCity() {
         return city;
     }
 
-    public void setCity(String city) {
+    public void setCity(LabEnum city) {
         this.city = city;
     }
 

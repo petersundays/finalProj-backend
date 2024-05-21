@@ -3,6 +3,7 @@ package domcast.finalprojbackend.entity;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 /**
  * Abstract class for the token table in the database.
@@ -17,7 +18,7 @@ import java.io.Serializable;
  */
 
 @MappedSuperclass
-public abstract class TokenEntity implements Serializable {
+public class TokenEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     // Unique identifier for the token
@@ -34,6 +35,10 @@ public abstract class TokenEntity implements Serializable {
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
+
+    // Creation time of the validation token
+    @Column(name = "creationTime")
+    private LocalDateTime creationTime;
 
     // The status of the token
     @Column(name = "active")

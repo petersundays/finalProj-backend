@@ -1,5 +1,6 @@
 package domcast.finalprojbackend.entity;
 
+import domcast.finalprojbackend.enums.ComponentResourceEnum;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
@@ -37,8 +38,9 @@ public class ComponentResourceEntity implements Serializable {
     private int id;
 
     // Type of the object (component or resource)
+    @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
-    private String type;
+    private ComponentResourceEnum type;
 
     // Name of the component or resource
     @Column(name = "name", nullable = false)
@@ -72,10 +74,9 @@ public class ComponentResourceEntity implements Serializable {
     @Column(name = "observations", nullable = false)
     private String observations;
 
-    // Projects that use the component resource
-    @ManyToMany(mappedBy = "componentResources")
-    private Set<ProjectEntity> projects = new HashSet<>();
-
+    // Projects that use the component or resource
+    @OneToMany(mappedBy = "componentResource", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<M2MComponentProject> projects;
 
     // Default constructor
     public ComponentResourceEntity() {
@@ -91,11 +92,11 @@ public class ComponentResourceEntity implements Serializable {
         this.id = id;
     }
 
-    public String getType() {
+    public ComponentResourceEnum getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(ComponentResourceEnum type) {
         this.type = type;
     }
 
@@ -163,11 +164,11 @@ public class ComponentResourceEntity implements Serializable {
         this.observations = observations;
     }
 
-    public Set<ProjectEntity> getProjects() {
+    public Set<M2MComponentProject> getProjects() {
         return projects;
     }
 
-    public void setProjects(Set<ProjectEntity> projects) {
+    public void setProjects(Set<M2MComponentProject> projects) {
         this.projects = projects;
     }
 }
