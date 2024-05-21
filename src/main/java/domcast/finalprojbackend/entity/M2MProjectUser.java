@@ -21,7 +21,7 @@ import java.io.Serializable;
 @Entity
 @Table(name = "project_user")
 
-public class ProjectUserEntity implements Serializable {
+public class M2MProjectUser implements Serializable {
     private static final long serialVersionUID = 1L;
 
     // Unique identifier for the project user
@@ -48,8 +48,12 @@ public class ProjectUserEntity implements Serializable {
     @Column(name = "approved", nullable = false)
     private int approved;
 
+    // Defines wether the user is a member of the project or not
+    @Column(name = "active", nullable = false)
+    private boolean active = true;
+
     // Default constructor
-    public ProjectUserEntity() {
+    public M2MProjectUser() {
     }
 
     // Getters and setters
@@ -92,5 +96,13 @@ public class ProjectUserEntity implements Serializable {
 
     public void setApproved(int approved) {
         this.approved = approved;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 }

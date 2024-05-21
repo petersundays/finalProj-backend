@@ -1,5 +1,6 @@
 package domcast.finalprojbackend.entity;
 
+import domcast.finalprojbackend.enums.ProjectStateEnum;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
@@ -56,21 +57,21 @@ public class ProjectEntity implements Serializable {
     private String description;
 
     // Keywords of the project
-    @ManyToMany
-    @JoinTable(
-            name = "keywords",
-            joinColumns = @JoinColumn(name = "project_id"),
-            inverseJoinColumns = @JoinColumn(name = "interest_id")
-    )
-    private Set<InterestEntity> keywords = new HashSet<>();
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<M2MKeyword> keywords = new HashSet<>();
 
     // State of the project
+    @Enumerated(EnumType.ORDINAL)
     @Column(name = "state", nullable = false)
-    private int state;
+    private ProjectStateEnum state;
 
     // Maximum number of members of the project
     @Column(name = "max_members", nullable = false)
     private int maxMembers;
+
+    // Users associated with the project
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<M2MProjectUser> projectUsers = new HashSet<>();
 
     // Skills required for the project
     @ManyToMany
@@ -102,20 +103,15 @@ public class ProjectEntity implements Serializable {
     private LocalDateTime realEndDate;
 
     // Group messages of the project
-    @OneToMany(mappedBy = "project")
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<ProjectMessageEntity> groupMessages = new HashSet<>();
 
-    // Component resources of the project
-    @ManyToMany
-    @JoinTable(
-            name = "project_component_resource",
-            joinColumns = @JoinColumn(name = "project_id"),
-            inverseJoinColumns = @JoinColumn(name = "component_resource_id")
-    )
-    private Set<ComponentResourceEntity> componentResources = new HashSet<>();
+    // Components and resources used in the project
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<M2MComponentProject> componentResources = new HashSet<>();
 
     // Tasks take part of the execution plan of the project
-    @OneToMany(mappedBy = "project_id")
+    @OneToMany(mappedBy = "project_id", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<TaskEntity> tasks = new HashSet<>();
 
     // Default constructor
@@ -156,19 +152,19 @@ public class ProjectEntity implements Serializable {
         this.description = description;
     }
 
-    public Set<InterestEntity> getKeywords() {
+    public Set<M2MKeyword> getKeywords() {
         return keywords;
     }
 
-    public void setKeywords(Set<InterestEntity> keywords) {
+    public void setKeywords(Set<M2MKeyword> keywords) {
         this.keywords = keywords;
     }
 
-    public int getState() {
+    public ProjectStateEnum getState() {
         return state;
     }
 
-    public void setState(int state) {
+    public void setState(ProjectStateEnum state) {
         this.state = state;
     }
 
@@ -178,6 +174,14 @@ public class ProjectEntity implements Serializable {
 
     public void setMaxMembers(int maxMembers) {
         this.maxMembers = maxMembers;
+    }
+
+    public Set<M2MProjectUser> getProjectUsers() {
+        return projectUsers;
+    }
+
+    public void setProjectUsers(Set<M2MProjectUser> projectUsers) {
+        this.projectUsers = projectUsers;
     }
 
     public Set<SkillEntity> getSkills() {
@@ -236,19 +240,19 @@ public class ProjectEntity implements Serializable {
         this.groupMessages = groupMessages;
     }
 
-    public Set<ComponentResourceEntity> getComponentResources() {
-        return componentResources;
-    }
-
-    public void setComponentResources(Set<ComponentResourceEntity> componentResources) {
-        this.componentResources = componentResources;
-    }
-
     public Set<TaskEntity> getTasks() {
         return tasks;
     }
 
     public void setTasks(Set<TaskEntity> tasks) {
         this.tasks = tasks;
+    }
+
+    public Set<M2MComponentProject> getComponentResources() {
+        return componentResources;
+    }
+
+    public void setComponentResources(Set<M2MComponentProject> componentResources) {
+        this.componentResources = componentResources;
     }
 }

@@ -1,5 +1,6 @@
 package domcast.finalprojbackend.entity;
 
+import domcast.finalprojbackend.enums.InterestEnum;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
@@ -34,12 +35,17 @@ public class InterestEntity implements Serializable {
     private String name;
 
     // Type of the interest
+    @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
-    private int type;
+    private InterestEnum type;
 
     // Users that have the interest
-    @ManyToMany(mappedBy = "interests")
-    private Set<UserEntity> users = new HashSet<>();
+    @OneToMany(mappedBy = "interest",cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<M2MInterestUser> userInterests = new HashSet<>();
+
+    // Projects that have the interest
+    @OneToMany(mappedBy = "interest",cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<M2MKeyword> projects = new HashSet<>();
 
     // Default constructor
     public InterestEntity() {
@@ -63,19 +69,27 @@ public class InterestEntity implements Serializable {
         this.name = name;
     }
 
-    public int getType() {
+    public InterestEnum getType() {
         return type;
     }
 
-    public void setType(int type) {
+    public void setType(InterestEnum type) {
         this.type = type;
     }
 
-    public Set<UserEntity> getUsers() {
-        return users;
+    public Set<M2MInterestUser> getUserInterests() {
+        return userInterests;
     }
 
-    public void setUsers(Set<UserEntity> users) {
-        this.users = users;
+    public void setUserInterests(Set<M2MInterestUser> userInterests) {
+        this.userInterests = userInterests;
+    }
+
+    public Set<M2MKeyword> getProjects() {
+        return projects;
+    }
+
+    public void setProjects(Set<M2MKeyword> projects) {
+        this.projects = projects;
     }
 }

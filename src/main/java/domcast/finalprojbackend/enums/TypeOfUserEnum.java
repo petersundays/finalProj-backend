@@ -4,7 +4,7 @@ package domcast.finalprojbackend.enums;
  * Enum class that represents the type of user in the system.
  */
 
-public enum TypeOfUser {
+public enum TypeOfUserEnum {
 
     // The values are the permissions that the user has.
     // The higher the value, the more permissions the user has.
@@ -16,10 +16,12 @@ public enum TypeOfUser {
     // The value of the type of user.
     private final int value;
 
-    TypeOfUser(int value) {
+    // Constructor of the enum class.
+    TypeOfUserEnum(int value) {
         this.value = value;
     }
 
+    // Getter of the value of the type of user.
     public int getValue() {
         return value;
     }

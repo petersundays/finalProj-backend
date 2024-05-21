@@ -1,6 +1,6 @@
 package domcast.finalprojbackend.entity;
 
-import domcast.finalprojbackend.enums.TypeOfUser;
+import domcast.finalprojbackend.enums.TypeOfUserEnum;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import java.util.HashSet;
@@ -78,7 +78,7 @@ public class UserEntity implements Serializable {
     // The type is an enum
     @Enumerated(EnumType.ORDINAL)
     @Column(name = "type", nullable = false)
-    private TypeOfUser type;
+    private TypeOfUserEnum type;
 
     // The workplace is a foreign key to the lab table
     @ManyToOne
@@ -87,13 +87,8 @@ public class UserEntity implements Serializable {
 
     // The session token is a foreign key to the session_token table
     // It uses CascadeType.ALL to cascade all the operations as the session token is a child of TokenEntity
-    @OneToOne(cascade = CascadeType.ALL, mappedBy = "user")
-    private SessionTokenEntity sessionToken;
-
-    // The validation token is a foreign key to the validation_token table
-    // It uses CascadeType.ALL to cascade all the operations as the validation token is a child of TokenEntity
-    @OneToOne(cascade = CascadeType.ALL, mappedBy = "user")
-    private ValidationTokenEntity validationToken;
+    @OneToMany(mappedBy = "sessionUser", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<SessionTokenEntity> sessionTokens = new HashSet<>();
 
     // The sent messages are a set of messages sent by the user
     @OneToMany(mappedBy = "sender")
@@ -104,13 +99,8 @@ public class UserEntity implements Serializable {
     private Set<PersonalMessageEntity> receivedMessages = new HashSet<>();
 
     // The interests are a set of interests of the user
-    @ManyToMany(cascade = CascadeType.ALL)
-    @JoinTable(
-            name = "user_interest",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "interest_id")
-    )
-    private Set<InterestEntity> interests = new HashSet<>();
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<M2MInterestUser> interests = new HashSet<>();
 
     // The skills are a set of skills of the user
     @ManyToMany(cascade = CascadeType.ALL)
@@ -121,6 +111,9 @@ public class UserEntity implements Serializable {
     )
     private Set<SkillEntity> skills = new HashSet<>();
 
+    // The projects in which the user is involved
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<M2MProjectUser> projectUsers = new HashSet<>();
 
     // Default constructor
     public UserEntity() {
@@ -208,28 +201,20 @@ public class UserEntity implements Serializable {
         this.visible = visible;
     }
 
-    public TypeOfUser getType() {
+    public TypeOfUserEnum getType() {
         return type;
     }
 
-    public void setType(TypeOfUser type) {
+    public void setType(TypeOfUserEnum type) {
         this.type = type;
     }
 
-    public SessionTokenEntity getSessionToken() {
-        return sessionToken;
+    public Set<SessionTokenEntity> getSessionTokens() {
+        return sessionTokens;
     }
 
-    public void setSessionToken(SessionTokenEntity sessionToken) {
-        this.sessionToken = sessionToken;
-    }
-
-    public ValidationTokenEntity getValidationToken() {
-        return validationToken;
-    }
-
-    public void setValidationToken(ValidationTokenEntity validationToken) {
-        this.validationToken = validationToken;
+    public void setSessionTokens(Set<SessionTokenEntity> sessionTokens) {
+        this.sessionTokens = sessionTokens;
     }
 
     public Set<MessageEntity> getSentMessages() {
@@ -248,11 +233,11 @@ public class UserEntity implements Serializable {
         this.receivedMessages = receivedMessages;
     }
 
-    public Set<InterestEntity> getInterests() {
+    public Set<M2MInterestUser> getInterests() {
         return interests;
     }
 
-    public void setInterests(Set<InterestEntity> interests) {
+    public void setInterests(Set<M2MInterestUser> interests) {
         this.interests = interests;
     }
 
@@ -264,5 +249,12 @@ public class UserEntity implements Serializable {
         this.skills = skills;
     }
 
+    public Set<M2MProjectUser> getProjectUsers() {
+        return projectUsers;
+    }
+
+    public void setProjectUsers(Set<M2MProjectUser> projectUsers) {
+        this.projectUsers = projectUsers;
+    }
 }
 
