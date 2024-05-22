@@ -1,6 +1,7 @@
 package domcast.finalprojbackend.entity;
 
 
+import domcast.finalprojbackend.enums.ProjectUserEnum;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
@@ -42,7 +43,7 @@ public class M2MProjectUser implements Serializable {
 
     // Role of the user in the project
     @Column(name = "role", nullable = false)
-    private int role;
+    private ProjectUserEnum role;
 
     // Approval status of the user in the project
     @Column(name = "approved", nullable = false)
@@ -82,11 +83,11 @@ public class M2MProjectUser implements Serializable {
         this.user = user;
     }
 
-    public int getRole() {
+    public ProjectUserEnum getRole() {
         return role;
     }
 
-    public void setRole(int role) {
+    public void setRole(ProjectUserEnum role) {
         this.role = role;
     }
 

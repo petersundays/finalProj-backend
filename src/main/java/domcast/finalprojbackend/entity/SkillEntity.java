@@ -1,5 +1,6 @@
 package domcast.finalprojbackend.entity;
 
+import domcast.finalprojbackend.enums.SkillTypeEnum;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
@@ -35,11 +36,15 @@ public class SkillEntity implements Serializable {
 
     // Type of the skill
     @Column(name = "type", nullable = false)
-    private int type;
+    private SkillTypeEnum type;
 
     // Users that have the skill
-    @ManyToMany(mappedBy = "skills")
-    private Set<UserEntity> users = new HashSet<>();
+    @OneToMany(mappedBy = "skill", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<M2MUserSkill> userSkills = new HashSet<>();
+
+    // Projects that require the skill
+    @OneToMany(mappedBy = "skill", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<M2MProjectSkill> projectSkills = new HashSet<>();
 
     // Default constructor
     public SkillEntity() {
@@ -63,20 +68,28 @@ public class SkillEntity implements Serializable {
         this.name = name;
     }
 
-    public int getType() {
+    public SkillTypeEnum getType() {
         return type;
     }
 
-    public void setType(int type) {
+    public void setType(SkillTypeEnum type) {
         this.type = type;
     }
 
-    public Set<UserEntity> getUsers() {
-        return users;
+    public Set<M2MUserSkill> getUserSkills() {
+        return userSkills;
     }
 
-    public void setUsers(Set<UserEntity> users) {
-        this.users = users;
+    public void setUserSkills(Set<M2MUserSkill> userSkills) {
+        this.userSkills = userSkills;
+    }
+
+    public Set<M2MProjectSkill> getProjectSkills() {
+        return projectSkills;
+    }
+
+    public void setProjectSkills(Set<M2MProjectSkill> projectSkills) {
+        this.projectSkills = projectSkills;
     }
 }
 
