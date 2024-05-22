@@ -18,7 +18,7 @@ import java.io.Serializable;
 @Entity
 @Table(name = "user_interest")
 
-public class M2MInterestUser implements Serializable {
+public class M2MUserInterest implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -43,7 +43,7 @@ public class M2MInterestUser implements Serializable {
     private boolean active = true;
 
     // Empty constructor
-    public M2MInterestUser() {
+    public M2MUserInterest() {
     }
 
     // Getters and setters

@@ -41,7 +41,7 @@ public class InterestEntity implements Serializable {
 
     // Users that have the interest
     @OneToMany(mappedBy = "interest",cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Set<M2MInterestUser> userInterests = new HashSet<>();
+    private Set<M2MUserInterest> userInterests = new HashSet<>();
 
     // Projects that have the interest
     @OneToMany(mappedBy = "interest",cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -77,11 +77,11 @@ public class InterestEntity implements Serializable {
         this.type = type;
     }
 
-    public Set<M2MInterestUser> getUserInterests() {
+    public Set<M2MUserInterest> getUserInterests() {
         return userInterests;
     }
 
-    public void setUserInterests(Set<M2MInterestUser> userInterests) {
+    public void setUserInterests(Set<M2MUserInterest> userInterests) {
         this.userInterests = userInterests;
     }
 

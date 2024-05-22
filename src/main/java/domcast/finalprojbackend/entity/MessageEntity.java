@@ -50,10 +50,6 @@ public abstract class MessageEntity implements Serializable {
     @Column (name="'read'", nullable = false)
     private boolean read;
 
-    // Notification associated with the message
-    @OneToOne(mappedBy = "message")
-    private NotificationEntity notification;
-
     // Default constructor
     public MessageEntity() {
     }
@@ -107,13 +103,4 @@ public abstract class MessageEntity implements Serializable {
     public void setRead(boolean read) {
         this.read = read;
     }
-
-    public NotificationEntity getNotification() {
-        return notification;
-    }
-
-    public void setNotification(NotificationEntity notification) {
-            this.notification = notification;
-        }
-
 }

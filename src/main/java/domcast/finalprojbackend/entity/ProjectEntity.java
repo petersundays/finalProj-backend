@@ -74,13 +74,8 @@ public class ProjectEntity implements Serializable {
     private Set<M2MProjectUser> projectUsers = new HashSet<>();
 
     // Skills required for the project
-    @ManyToMany
-    @JoinTable(
-            name = "project_skills",
-            joinColumns = @JoinColumn(name = "project_id"),
-            inverseJoinColumns = @JoinColumn(name = "skill_id")
-    )
-    private Set<SkillEntity> skills = new HashSet<>();
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<M2MProjectSkill> skills = new HashSet<>();
 
     // Creation date of the project
     @Column(name = "creation_date", nullable = false)
@@ -184,11 +179,11 @@ public class ProjectEntity implements Serializable {
         this.projectUsers = projectUsers;
     }
 
-    public Set<SkillEntity> getSkills() {
+    public Set<M2MProjectSkill> getSkills() {
         return skills;
     }
 
-    public void setSkills(Set<SkillEntity> skills) {
+    public void setSkills(Set<M2MProjectSkill> skills) {
         this.skills = skills;
     }
 

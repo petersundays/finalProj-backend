@@ -52,11 +52,11 @@ public class UserEntity implements Serializable {
     private String password;
 
     // First name of the user
-    @Column(name = "first_name", nullable = false)
+    @Column(name = "first_name")
     private String firstName;
 
     // Last name of the user
-    @Column(name = "last_name", nullable = false)
+    @Column(name = "last_name")
     private String lastName;
 
     // Nickname of the user
@@ -78,7 +78,7 @@ public class UserEntity implements Serializable {
     // The type is an enum
     @Enumerated(EnumType.ORDINAL)
     @Column(name = "type", nullable = false)
-    private TypeOfUserEnum type;
+    private TypeOfUserEnum type = TypeOfUserEnum.NOT_CONFIRMED;
 
     // The workplace is a foreign key to the lab table
     @ManyToOne
@@ -100,7 +100,7 @@ public class UserEntity implements Serializable {
 
     // The interests are a set of interests of the user
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Set<M2MInterestUser> interests = new HashSet<>();
+    private Set<M2MUserInterest> interests = new HashSet<>();
 
     // The skills are a set of skills of the user
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -109,6 +109,21 @@ public class UserEntity implements Serializable {
     // The projects in which the user is involved
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<M2MProjectUser> projectUsers = new HashSet<>();
+
+    // Validation method to check if the user is confirmed
+    // If the user is confirmed, the first name, last name, and workplace must not be null
+    // If the user is not confirmed, the first name, last name, and workplace can be null
+    // The method is called before the user is persisted or updated
+    // This is needed so a user can be registered only with an email and password and then complete the profile later
+    @PrePersist
+    @PreUpdate
+    public void validate() {
+        if (type != TypeOfUserEnum.NOT_CONFIRMED) {
+            if (firstName == null || lastName == null || workplace == null) {
+                throw new IllegalArgumentException("First name, last name, and workplace must not be null for confirmed users");
+            }
+        }
+    }
 
     // Default constructor
     public UserEntity() {
@@ -228,11 +243,11 @@ public class UserEntity implements Serializable {
         this.receivedMessages = receivedMessages;
     }
 
-    public Set<M2MInterestUser> getInterests() {
+    public Set<M2MUserInterest> getInterests() {
         return interests;
     }
 
-    public void setInterests(Set<M2MInterestUser> interests) {
+    public void setInterests(Set<M2MUserInterest> interests) {
         this.interests = interests;
     }
 
