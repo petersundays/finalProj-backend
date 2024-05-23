@@ -82,7 +82,7 @@ public class UserBean implements Serializable {
 
         // Checks if the email and password are valid
         if (!emailAndPassword.isInputValid(firstRegistration)) {
-            logger.error("Email or password is null, empty or blank");
+            logger.error("Email or password are invalid");
             return false;
         }
 

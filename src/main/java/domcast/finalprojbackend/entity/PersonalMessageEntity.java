@@ -15,6 +15,8 @@ import java.io.Serializable;
  * - message: the message of the personal message.
  * - timestamp: the timestamp of the personal message.
  * The class also contains the necessary annotations to work with the database.
+ *  @author José Castro
+ *  @author Pedro Domingos
  */
 
 @Entity

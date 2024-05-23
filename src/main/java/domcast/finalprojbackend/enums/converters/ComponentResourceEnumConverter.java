@@ -11,6 +11,8 @@ import domcast.finalprojbackend.enums.ComponentResourceEnum;
  * The class implements the AttributeConverter interface.
  * The class contains the convertToDatabaseColumn and convertToEntityAttribute methods.
  * The convertToDatabaseColumn method converts the ComponentResourceEnum to an Integer.
+ * @author José Castro
+ * @author Pedro Domingos
  */
 
 // The @Converter annotation is used to specify that this class is a converter.

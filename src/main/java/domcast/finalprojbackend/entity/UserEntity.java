@@ -29,6 +29,8 @@ import java.util.Set;
  * - interests: the interests of the user.
  * - skills: the skills of the user.
  * The class also contains the necessary annotations to work with the database.
+ * @author José Castro
+ * @author Pedro Domingos
  */
 
 @Entity

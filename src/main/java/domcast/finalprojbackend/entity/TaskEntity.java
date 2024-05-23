@@ -26,6 +26,8 @@ import java.util.Set;
  * - dependencies: the dependencies of the task.
  * - records: the records of the task.
  * The class also contains the necessary annotations to work with the database.
+ * @author José Castro
+ * @author Pedro Domingos
  */
 
 @Entity

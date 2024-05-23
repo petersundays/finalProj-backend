@@ -9,6 +9,8 @@ import jakarta.persistence.Converter;
  * Contains methods to convert between RecordTopicEnum and Integer.
  * The class is used to convert the RecordTopicEnum to Integer when storing it in the database.
  * The class is used to convert the Integer to RecordTopicEnum when retrieving it from the database.
+ * @author José Castro
+ * @author Pedro Domingos
  */
 
 // The annotation is used to specify that the class is a converter.

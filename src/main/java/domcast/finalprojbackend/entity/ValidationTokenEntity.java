@@ -15,6 +15,8 @@ import java.time.LocalDateTime;
  * - email: the email of the user.
  * - active: the status of the token.
  * The class also contains the necessary annotations to work with the database.
+ * @author José Castro
+ * @author Pedro Domingos
  */
 
 @MappedSuperclass

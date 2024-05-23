@@ -16,6 +16,8 @@ import java.io.Serializable;
  * - message: the message of the project message.
  * - timestamp: the timestamp of the project message.
  * The class also contains the necessary annotations to work with the database.
+ *  @author José Castro
+ *  @author Pedro Domingos
  */
 
 @Entity

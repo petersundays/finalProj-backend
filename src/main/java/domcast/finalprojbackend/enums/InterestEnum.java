@@ -3,6 +3,8 @@ package domcast.finalprojbackend.enums;
 /**
  * Enum that represents the subjects of interest of the user.
  * The subjects of interest are the themes, causes and knowledge areas.
+ * @author José Castro
+ * @author Pedro Domingos
  */
 
 public enum InterestEnum {

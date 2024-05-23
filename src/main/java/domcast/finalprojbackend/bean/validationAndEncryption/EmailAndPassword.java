@@ -1,13 +1,15 @@
 package domcast.finalprojbackend.bean.validationAndEncryption;
 
-import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.dto.UserDto.FirstRegistration;
+import jakarta.ejb.Stateless;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mindrot.jbcrypt.BCrypt;
 
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Stateless
 public class EmailAndPassword {
 
     private static final Logger logger = LogManager.getLogger(EmailAndPassword.class);
@@ -18,8 +20,8 @@ public class EmailAndPassword {
 
     /**
      * Checks if the email is valid
-     * @param email
-     * @return
+     * @param email the email to be checked
+     * @return boolean value indicating if the email is valid
      */
     public boolean isEmailValid(String email) {
         logger.info("Checking if email is valid");
@@ -36,7 +38,25 @@ public class EmailAndPassword {
 
         return firstRegistration.getEmail() != null && !firstRegistration.getEmail().isBlank() &&
                 firstRegistration.getPassword() != null && !firstRegistration.getPassword().isBlank() &&
-                isEmailValid(firstRegistration.getEmail());
+                isEmailValid(firstRegistration.getEmail()) && isPasswordValid(firstRegistration.getPassword());
+    }
+
+    /**
+     * Checks if the password is valid
+     * @param password the password to be checked
+     * @return boolean value indicating if the password is valid
+     */
+    public boolean isPasswordValid(String password) {
+        logger.info("Checking if password is valid");
+
+        // Regex for a strong password
+        // Minimum twelve characters, at least one uppercase letter, one lowercase letter, one number and one special character
+        String regex = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{12,}$";
+
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(password);
+
+        return password.length() >= 12 && matcher.matches();
     }
 
     /**

@@ -4,7 +4,6 @@ import domcast.finalprojbackend.enums.ComponentResourceEnum;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -23,6 +22,8 @@ import java.util.Set;
  * - observations: the observations of the component resource.
  * - projects: the projects that use the component resource.
  * The class also contains the necessary annotations to work with the database.
+ * @author José Castro
+ * @author Pedro Domingos
  */
 
 @Entity

@@ -10,6 +10,8 @@ package domcast.finalprojbackend.enums;
  * The getter of the id of the type of object.
  * The getter of the value of the type of object.
  * The method that returns the type of object by its id.
+ * @author José Castro
+ * @author Pedro Domingos
  */
 
 public enum ComponentResourceEnum {

@@ -3,6 +3,15 @@ package domcast.finalprojbackend.enums;
 /**
  * Enum class for the project state.
  * Contains the possible states of a project.
+ * The values are the possible states of a project.
+ * The id of the state of the project.
+ * The value of the state of the project.
+ * The constructor of the enum class.
+ * The getter of the id of the state of the project.
+ * The getter of the value of the state of the project.
+ * The method that returns the state of the project by its id.
+ * @author José Castro
+ * @author Pedro Domingos
  */
 
 public enum ProjectStateEnum {

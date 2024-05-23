@@ -9,6 +9,8 @@ package domcast.finalprojbackend.enums;
  * - TOMAR
  * - VISEU
  * - VILA_REAL
+ * @author José Castro
+ * @author Pedro Domingos
  */
 
 public enum LabEnum {
