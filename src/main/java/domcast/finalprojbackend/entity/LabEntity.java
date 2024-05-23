@@ -29,7 +29,6 @@ public class LabEntity implements Serializable {
     private int id;
 
     // City of the lab
-    @Enumerated(EnumType.STRING)
     @Column(name = "city", nullable = false, unique = true)
     private LabEnum city;
 
