@@ -7,23 +7,41 @@ package domcast.finalprojbackend.enums;
 
 public enum ProjectStateEnum {
     // The values are the possible states of a project.
-    PLANNING (100),
-    READY (200),
-    APPROVED (300),
-    IN_PROGRESS (400),
-    CANCLED (500),
-    FINISHED (600);
+    PLANNING (1, 100),
+    READY (2, 200),
+    APPROVED (3, 300),
+    IN_PROGRESS (4, 400),
+    CANCLED (5, 500),
+    FINISHED (6, 600);
 
+    // The id of the state of the project.
+    private final int id;
     // The value of the state of the project.
     private final int value;
 
     // Constructor of the enum class.
-    ProjectStateEnum(int value) {
+    ProjectStateEnum(int id, int value) {
+        this.id = id;
         this.value = value;
+    }
+
+    // Getter of the id of the state of the project.
+    public int getId() {
+        return id;
     }
 
     // Getter of the value of the state of the project.
     public int getValue() {
         return value;
+    }
+
+    // Method that returns the state of the project by its id.
+    public static ProjectStateEnum fromId(int id) {
+        for (ProjectStateEnum state : ProjectStateEnum.values()) {
+            if (state.getId() == id) {
+                return state;
+            }
+        }
+        throw new IllegalArgumentException("Invalid ProjectStateEnum id: " + id);
     }
 }
