@@ -37,6 +37,10 @@ public class LabEntity implements Serializable {
     @OneToMany(mappedBy = "workplace", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<UserEntity> users = new HashSet<>();
 
+    // Projects that use lab
+    @OneToMany(mappedBy = "lab", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<ProjectEntity> projects = new HashSet<>();
+
     // Default constructor
     public LabEntity() {
     }
@@ -67,4 +71,11 @@ public class LabEntity implements Serializable {
         this.users = users;
     }
 
+    public Set<ProjectEntity> getProjects() {
+        return projects;
+    }
+
+    public void setProjects(Set<ProjectEntity> projects) {
+        this.projects = projects;
+    }
 }

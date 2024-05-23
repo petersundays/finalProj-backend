@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "sessionToken")
-public class SessionTokenEntity extends TokenEntity implements Serializable {
+public class SessionValidationTokenEntity extends ValidationTokenEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     // Login timestamp
@@ -50,7 +50,7 @@ public class SessionTokenEntity extends TokenEntity implements Serializable {
     private boolean active = true;
 
     // Default constructor
-    public SessionTokenEntity() {
+    public SessionValidationTokenEntity() {
     }
 
     // Getters and setters

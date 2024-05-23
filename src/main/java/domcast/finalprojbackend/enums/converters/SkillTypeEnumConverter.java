@@ -1,4 +1,4 @@
-package domcast.finalprojbackend.enums.converter;
+package domcast.finalprojbackend.enums.converters;
 
 import domcast.finalprojbackend.enums.SkillTypeEnum;
 import jakarta.persistence.AttributeConverter;

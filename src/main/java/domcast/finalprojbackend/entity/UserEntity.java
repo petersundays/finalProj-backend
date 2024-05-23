@@ -88,7 +88,7 @@ public class UserEntity implements Serializable {
     // The session token is a foreign key to the session_token table
     // It uses CascadeType.ALL to cascade all the operations as the session token is a child of TokenEntity
     @OneToMany(mappedBy = "sessionUser", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Set<SessionTokenEntity> sessionTokens = new HashSet<>();
+    private Set<SessionValidationTokenEntity> sessionTokens = new HashSet<>();
 
     // The sent messages are a set of messages sent by the user
     @OneToMany(mappedBy = "sender")
@@ -219,11 +219,11 @@ public class UserEntity implements Serializable {
         this.type = type;
     }
 
-    public Set<SessionTokenEntity> getSessionTokens() {
+    public Set<SessionValidationTokenEntity> getSessionTokens() {
         return sessionTokens;
     }
 
-    public void setSessionTokens(Set<SessionTokenEntity> sessionTokens) {
+    public void setSessionTokens(Set<SessionValidationTokenEntity> sessionTokens) {
         this.sessionTokens = sessionTokens;
     }
 

@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
  */
 
 @MappedSuperclass
-public class TokenEntity implements Serializable {
+public class ValidationTokenEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     // Unique identifier for the token
@@ -45,7 +45,7 @@ public class TokenEntity implements Serializable {
     protected boolean active;
 
     // Default constructor
-    public TokenEntity() {
+    public ValidationTokenEntity() {
         // active is true by default
         this.active = true;
     }
