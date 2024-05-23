@@ -29,6 +29,8 @@ import java.util.Set;
  * - componentResources: the component resources of the project.
  * - tasks: the tasks take part of the execution plan of the project.
  * The class also contains the necessary annotations to work with the database.
+ * @author José Castro
+ * @author Pedro Domingos
  */
 @Entity
 @Table(name = "project")

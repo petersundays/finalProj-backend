@@ -13,6 +13,8 @@ import java.time.LocalDateTime;
  * The attributes are the following:
  * - lastAccess: the last access of the session token.
  * The class also contains the necessary annotations to work with the database.
+ *  * @author José Castro
+ *  * @author Pedro Domingos
  */
 
 @Entity

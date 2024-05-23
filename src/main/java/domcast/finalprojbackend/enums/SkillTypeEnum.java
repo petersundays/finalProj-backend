@@ -3,6 +3,15 @@ package domcast.finalprojbackend.enums;
 /**
  * Enum class that represents the type of skill in the system.
  * Each skill type has an associated id and value.
+ * The values are the types of skills that the user can have or a project can require.
+ * The id of the type of skill.
+ * The value of the type of skill.
+ * The constructor of the enum class.
+ * The getter of the id of the type of skill.
+ * The getter of the value of the type of skill.
+ * The method that returns the type of skill by its id.
+ * @author José Castro
+ * @author Pedro Domingos
  */
 
 public enum SkillTypeEnum {

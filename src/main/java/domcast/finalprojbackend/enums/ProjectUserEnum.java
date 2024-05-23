@@ -3,6 +3,15 @@ package domcast.finalprojbackend.enums;
 /**
  * Enum class for the project_user table in the database.
  * Contains all the possible values for the role attribute of the project_user table.
+ * The values are the possible roles of a user in a project.
+ * The id of the role.
+ * The value of the role.
+ * The constructor of the enum class.
+ * The getter of the id of the role.
+ * The getter of the value of the role.
+ * The method that returns the role by its id.
+ * @author José Castro
+ * @author Pedro Domingos
  */
 
 public enum ProjectUserEnum {

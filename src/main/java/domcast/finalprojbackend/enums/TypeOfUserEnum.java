@@ -3,6 +3,15 @@ package domcast.finalprojbackend.enums;
 /**
  * Enum class that represents the type of user in the system.
  * Each user type has an associated id and value.
+ * The values are the types of users that can exist in the system.
+ * The id of the type of user.
+ * The value of the type of user.
+ * The constructor of the enum class.
+ * The getter of the id of the type of user.
+ * The getter of the value of the type of user.
+ * The method that returns the type of user by its id.
+ * @author José Castro
+ * @author Pedro Domingos
  */
 
 public enum TypeOfUserEnum {

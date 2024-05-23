@@ -3,6 +3,15 @@ package domcast.finalprojbackend.enums;
 /**
  * Enum class for the record_topic table in the database.
  * Contains all the possible values for the topic attribute of the record_topic table.
+ * The values are the possible topics of a record.
+ * The id of the topic.
+ * The value of the topic.
+ * The constructor of the enum class.
+ * The getter of the id of the topic.
+ * The getter of the value of the topic.
+ * The method that returns the topic by its id.
+ * @author José Castro
+ * @author Pedro Domingos
  */
 
 public enum RecordTopicEnum {

@@ -13,6 +13,8 @@ import java.io.Serializable;
  * - project: the project of the relationship.
  * - skill: the skill of the relationship.
  * The class also contains the necessary annotations to work with the database.
+ * @author José Castro
+ * @author Pedro Domingos
  */
 
 @Entity

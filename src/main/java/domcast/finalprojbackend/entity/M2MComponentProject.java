@@ -15,6 +15,8 @@ import java.io.Serializable;
  * - quantity: the quantity of the component or resource used by the project.
  * - active: the status of the project-component relationship.
  * The class also contains the necessary annotations to work with the database.
+ * @author José Castro
+ * @author Pedro Domingos
  */
 
 @Entity

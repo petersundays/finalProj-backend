@@ -17,6 +17,8 @@ import java.io.Serializable;
  * - role: the role of the project user.
  * - approved: the approval status of the project user.
  * The class also contains the necessary annotations to work with the database.
+ * @author José Castro
+ * @author Pedro Domingos
  */
 
 @Entity

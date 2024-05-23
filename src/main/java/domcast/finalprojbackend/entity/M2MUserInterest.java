@@ -13,6 +13,8 @@ import java.io.Serializable;
  * - user: the user that has the interest.
  * - interest: the interest of the user.
  * The class also contains the necessary annotations to work with the database.
+ * @author José Castro
+ * @author Pedro Domingos
  */
 
 @Entity

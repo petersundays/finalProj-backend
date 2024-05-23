@@ -16,6 +16,8 @@ import java.util.Set;
  * - type: the type of the interest.
  * - users: the users that have the interest.
  * The class also contains the necessary annotations to work with the database.
+ *  @author José Castro
+ *  @author Pedro Domingos
  */
 
 @Entity

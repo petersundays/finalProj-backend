@@ -14,6 +14,8 @@ import java.io.Serializable;
  * - interest: the interest used by the project as a keyword.
  * - active: the status of the project-keyword relationship
  * The class also contains the necessary annotations to work with the database.
+ * @author José Castro
+ * @author Pedro Domingos
  */
 
 @Entity

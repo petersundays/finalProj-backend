@@ -15,6 +15,8 @@ import java.util.Set;
  * - city: the city of the lab.
  * - users: the users that work in the lab.
  * The class also contains the necessary annotations to work with the database.
+ *  @author José Castro
+ *  @author Pedro Domingos
  */
 @Entity
 @Table(name = "lab")

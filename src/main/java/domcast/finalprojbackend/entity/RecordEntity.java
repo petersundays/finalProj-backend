@@ -17,6 +17,8 @@ import java.time.LocalDateTime;
  * - type: the type of the record.
  * - task: the task of the record.
  * The class also contains the necessary annotations to work with the database.
+ * @author José Castro
+ * @author Pedro Domingos
  */
 
 @Entity
