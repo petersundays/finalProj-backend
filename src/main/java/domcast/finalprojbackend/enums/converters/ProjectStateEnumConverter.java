@@ -1,4 +1,4 @@
-package domcast.finalprojbackend.enums.converter;
+package domcast.finalprojbackend.enums.converters;
 
 import domcast.finalprojbackend.enums.ProjectStateEnum;
 import jakarta.persistence.AttributeConverter;
