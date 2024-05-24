@@ -233,12 +233,20 @@ public class UserEntity implements Serializable {
         this.sessionTokens = sessionTokens;
     }
 
+    public void addSessionToken(SessionTokenEntity sessionToken) {
+        this.sessionTokens.add(sessionToken);
+    }
+
     public Set<ValidationTokenEntity> getValidationTokens() {
         return validationTokens;
     }
 
     public void setValidationTokens(Set<ValidationTokenEntity> validationTokens) {
         this.validationTokens = validationTokens;
+    }
+
+    public void addValidationToken(ValidationTokenEntity validationToken) {
+        this.validationTokens.add(validationToken);
     }
 
     public Set<MessageEntity> getSentMessages() {

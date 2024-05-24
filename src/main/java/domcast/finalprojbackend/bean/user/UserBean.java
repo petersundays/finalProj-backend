@@ -1,18 +1,16 @@
 package domcast.finalprojbackend.bean.user;
 
-import domcast.finalprojbackend.bean.creation.TokenBean;
-import domcast.finalprojbackend.bean.validationAndEncryption.ValidatorAndHasher;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.UserDto.FirstRegistration;
 import domcast.finalprojbackend.entity.UserEntity;
 import domcast.finalprojbackend.entity.ValidationTokenEntity;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
-import jakarta.persistence.PersistenceException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 
 /**
  * Bean responsible for the user operations
@@ -97,44 +95,39 @@ public class UserBean implements Serializable {
 
         logger.info("Email and password are valid");
 
-        try {
-            logger.info("Checking if email is already registered");
-            // Encrypts the password using BCrypt
-            String hashedPassword;
-            try {
-                logger.info("Hashing password");
-                hashedPassword = validatorAndHasher.hashPassword(firstRegistration.getPassword());
-            } catch (Exception e) {
-                logger.error("Error while hashing password: {}", e.getMessage());
-                return false;
-            }
+        String hashedPassword = validatorAndHasher.hashPassword(firstRegistration.getPassword());
 
-            logger.info("Password hashed");
-
-            // Defines the encrypted password
-            firstRegistration.setPassword(hashedPassword);
-
-            // Converts the firstRegistration to a user entity
-            UserEntity userEntity = convertFirstRegistrationToUserEntity(firstRegistration);
-
-            // Generates a validation token
-            ValidationTokenEntity validationToken = tokenBean.generateValidationToken(userEntity, 48 * 60);
-            //userEntity.setValidationToken(validationToken);
-
-            // Persists the user entity
-            userDao.persist(userEntity);
-
-            logger.info("Email registered: {}", firstRegistration.getEmail());
-            return true;
-
-        } catch (PersistenceException e) {
-            logger.error("Error while persisting user: {}", e.getMessage());
-            return false;
-        } catch (Exception e) {
-            logger.error("Unexpected error: {}", e.getMessage());
+        if (hashedPassword == null) {
+            logger.error("Error while hashing password");
             return false;
         }
 
+        logger.info("Password hashed");
+
+        // Defines the encrypted password
+        firstRegistration.setPassword(hashedPassword);
+
+        // Converts the firstRegistration to a user entity
+        UserEntity userEntity = convertFirstRegistrationToUserEntity(firstRegistration);
+
+        // Generates a validation token
+        ValidationTokenEntity validationToken = tokenBean.generateValidationToken(userEntity, 48 * 60);
+        if (validationToken == null) {
+            logger.error("Error while generating validation token");
+            return false;
+        }
+
+        // Adds the validation token to the user entity
+        userEntity.addValidationToken(validationToken);
+
+        // Persists the user entity
+        if (!userDao.persist(userEntity)) {
+            logger.error("Error while persisting user");
+            return false;
+        }
+
+        logger.info("Email registered: {}", firstRegistration.getEmail());
+        return true;
     }
 
 
@@ -225,6 +218,33 @@ public class UserBean implements Serializable {
         return false;
     }*/
 
+
+    public boolean delete(String username) {
+        logger.info("Deleting user: {}", username);
+
+        UserEntity u = userDao.findUserByUsername(username);
+
+        if (u != null) {
+            logger.info("User found: {}", username);
+            ArrayList<TaskEntity> tasks = taskDao.findTasksByUser(u);
+            UserEntity notAssigned = userDao.findUserByUsername("NOTASSIGNED");
+
+            notAssigned.addNewTasks(tasks);
+
+            for (TaskEntity t : tasks) {
+                t.setOwner(notAssigned);
+                taskDao.merge(t);
+                logger.info("Task {} assigned to NOTASSIGNED", t.getId());
+            }
+            userDao.remove(u);
+            logger.info("User deleted: {}", username);
+
+            return true;
+        } else {
+            logger.error("User not found: {}", username);
+        }
+        return false;
+    }
 
     public UserEntity convertFirstRegistrationToUserEntity(FirstRegistration firstRegistration) {
         UserEntity userEntity = new UserEntity();

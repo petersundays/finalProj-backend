@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 
 
 @Entity
-@Table(name = "validationToken")
+@Table(name = "tokens")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "token_type")
 public class ValidationTokenEntity implements Serializable {
