@@ -18,26 +18,12 @@ import java.time.LocalDateTime;
  */
 
 @Entity
-@Table(name = "sessionToken")
-public class SessionValidationTokenEntity extends ValidationTokenEntity implements Serializable {
+public class SessionTokenEntity extends ValidationTokenEntity implements Serializable {
     private static final long serialVersionUID = 1L;
-
-    // Login timestamp
-    @Column(name = "login_time")
-    private LocalDateTime loginTime;
 
     // Logout timestamp
     @Column(name = "logout_time")
     private LocalDateTime logoutTime;
-
-    // This field will not be persisted
-    @Transient
-    private UserEntity user;
-
-    // User associated with the session token
-    @ManyToOne
-    @JoinColumn(name = "user_id", referencedColumnName = "id", insertable = false, updatable = false) // This field is not insertable or updatable because it is a transient field, but it is still accessible for queries
-    private UserEntity sessionUser;
 
     // IP from which the session was created
     @Column(name = "ip_address")
@@ -47,23 +33,11 @@ public class SessionValidationTokenEntity extends ValidationTokenEntity implemen
     @Column(name = "lastAccess")
     private LocalDateTime lastAccess;
 
-    // Active state of the session token
-    @Column(name = "active", nullable = false)
-    private boolean active = true;
-
     // Default constructor
-    public SessionValidationTokenEntity() {
+    public SessionTokenEntity() {
     }
 
     // Getters and setters
-
-    public LocalDateTime getLoginTime() {
-        return loginTime;
-    }
-
-    public void setLoginTime(LocalDateTime loginTime) {
-        this.loginTime = loginTime;
-    }
 
     public LocalDateTime getLogoutTime() {
         return logoutTime;
@@ -71,14 +45,6 @@ public class SessionValidationTokenEntity extends ValidationTokenEntity implemen
 
     public void setLogoutTime(LocalDateTime logoutTime) {
         this.logoutTime = logoutTime;
-    }
-
-    public UserEntity getSessionUser() {
-        return sessionUser;
-    }
-
-    public void setSessionUser(UserEntity sessionUser) {
-        this.sessionUser = sessionUser;
     }
 
     public String getIpAddress() {
@@ -95,13 +61,5 @@ public class SessionValidationTokenEntity extends ValidationTokenEntity implemen
 
     public void setLastAccess(LocalDateTime lastAccess) {
         this.lastAccess = lastAccess;
-    }
-
-    public boolean isActive() {
-        return active;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
     }
 }

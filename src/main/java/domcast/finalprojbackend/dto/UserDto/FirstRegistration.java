@@ -1,5 +1,6 @@
 package domcast.finalprojbackend.dto.UserDto;
 
+import domcast.finalprojbackend.enums.TypeOfUserEnum;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 
@@ -9,6 +10,8 @@ public class FirstRegistration {
     private String email;
     @XmlElement
     private String password;
+    @XmlElement
+    private final TypeOfUserEnum typeOfUser = TypeOfUserEnum.NOT_CONFIRMED;
 
     public FirstRegistration() {
     }
@@ -27,5 +30,9 @@ public class FirstRegistration {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public TypeOfUserEnum getTypeOfUser() {
+        return typeOfUser;
     }
 }

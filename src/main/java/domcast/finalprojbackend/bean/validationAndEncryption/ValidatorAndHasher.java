@@ -10,9 +10,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Stateless
-public class EmailAndPassword {
+public class ValidatorAndHasher {
 
-    private static final Logger logger = LogManager.getLogger(EmailAndPassword.class);
+    private static final Logger logger = LogManager.getLogger(ValidatorAndHasher.class);
     private static final String EMAIL_PATTERN =
             "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
 
