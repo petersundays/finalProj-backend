@@ -4,8 +4,11 @@ import jakarta.ejb.TransactionAttribute;
 import jakarta.ejb.TransactionAttributeType;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.PersistenceException;
 import jakarta.persistence.criteria.CriteriaDelete;
 import jakarta.persistence.criteria.CriteriaQuery;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
 import java.util.List;
@@ -32,6 +35,8 @@ import java.util.List;
 public abstract class AbstractDao<T extends Serializable> implements Serializable {
 	// The serial version UID
 	private static final long serialVersionUID = 1L;
+	private static final Logger logger = LogManager.getLogger(AbstractDao.class);
+
 
 	// The class of the entity
 	private final Class<T> clazz;
@@ -65,10 +70,19 @@ public abstract class AbstractDao<T extends Serializable> implements Serializabl
 	 * @param entity the entity to be persisted.
 	 */
 	// Persist an entity
-	public void persist(final T entity) 
-	{
-		em.persist(entity);
+	public boolean persist(final T entity) {
+		try {
+			em.persist(entity);
+			return true;
+		} catch (PersistenceException e) {
+			logger.error("Error while persisting entity: {}", e.getMessage());
+			return false;
+		} catch (Exception e) {
+			logger.error("Unexpected error: {}", e.getMessage());
+			return false;
+		}
 	}
+
 
 	/**
 	 * Method that merges an entity in the database.

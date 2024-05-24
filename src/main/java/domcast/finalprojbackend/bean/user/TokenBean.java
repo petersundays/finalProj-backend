@@ -1,18 +1,13 @@
-package domcast.finalprojbackend.bean.creation;
+package domcast.finalprojbackend.bean.user;
 
-import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.entity.UserEntity;
 import domcast.finalprojbackend.entity.ValidationTokenEntity;
-import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
 import java.security.SecureRandom;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 
 @Stateless

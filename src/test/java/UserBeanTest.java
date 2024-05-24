@@ -1,6 +1,6 @@
 
 import domcast.finalprojbackend.bean.user.UserBean;
-import domcast.finalprojbackend.bean.validationAndEncryption.ValidatorAndHasher;
+import domcast.finalprojbackend.bean.user.ValidatorAndHasher;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.UserDto.FirstRegistration;
 import domcast.finalprojbackend.entity.UserEntity;

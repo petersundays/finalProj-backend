@@ -1,4 +1,4 @@
-package domcast.finalprojbackend.bean.validationAndEncryption;
+package domcast.finalprojbackend.bean.user;
 
 import domcast.finalprojbackend.dto.UserDto.FirstRegistration;
 import jakarta.ejb.Stateless;
@@ -66,8 +66,11 @@ public class ValidatorAndHasher {
      */
     public String hashPassword (String password) {
         logger.info("Hashing password");
-
-        // Encrypts the password using BCrypt
-        return BCrypt.hashpw(password, BCrypt.gensalt());
+        try {
+            return BCrypt.hashpw(password, BCrypt.gensalt());
+        } catch (Exception e) {
+            logger.error("Error while hashing password: {}", e.getMessage());
+            return null;
+        }
     }
 }
