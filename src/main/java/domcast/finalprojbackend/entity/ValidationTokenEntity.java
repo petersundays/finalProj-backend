@@ -19,7 +19,11 @@ import java.time.LocalDateTime;
  * @author Pedro Domingos
  */
 
-@MappedSuperclass
+
+@Entity
+@Table(name = "validationToken")
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "token_type")
 public class ValidationTokenEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -34,13 +38,16 @@ public class ValidationTokenEntity implements Serializable {
     protected String token;
 
     // The user associated with the token
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
-    // Creation time of the validation token
+    // Represents the creation time of the token if it's a validation token or the login time if it's a session token
     @Column(name = "creationTime")
-    private LocalDateTime creationTime;
+    private LocalDateTime creationTime = LocalDateTime.now();
+
+    @Column(name = "expirationTime")
+    private LocalDateTime expirationTime;
 
     // The status of the token
     @Column(name = "active")
@@ -54,6 +61,10 @@ public class ValidationTokenEntity implements Serializable {
 
     // Getters and setters
 
+    public int getId() {
+        return id;
+    }
+
     public String getToken() {
         return token;
     }
@@ -62,6 +73,25 @@ public class ValidationTokenEntity implements Serializable {
         this.token = token;
     }
 
+    public UserEntity getUser() {
+        return user;
+    }
+
+    public void setUser(UserEntity user) {
+        this.user = user;
+    }
+
+    public LocalDateTime getCreationTime() {
+        return creationTime;
+    }
+
+    public LocalDateTime getExpirationTime() {
+        return expirationTime;
+    }
+
+    public void setExpirationTime(LocalDateTime expirationTime) {
+        this.expirationTime = expirationTime;
+    }
 
     public boolean isActive() {
         return active;

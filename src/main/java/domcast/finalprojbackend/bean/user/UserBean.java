@@ -1,17 +1,24 @@
 package domcast.finalprojbackend.bean.user;
 
-import domcast.finalprojbackend.bean.validationAndEncryption.EmailAndPassword;
+import domcast.finalprojbackend.bean.creation.TokenBean;
+import domcast.finalprojbackend.bean.validationAndEncryption.ValidatorAndHasher;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.UserDto.FirstRegistration;
 import domcast.finalprojbackend.entity.UserEntity;
+import domcast.finalprojbackend.entity.ValidationTokenEntity;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.PersistenceException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.mindrot.jbcrypt.BCrypt;
 
 import java.io.Serializable;
+
+/**
+ * Bean responsible for the user operations
+ * @author José Castro
+ * @author Pedro Domingos
+ */
 
 @Stateless
 public class UserBean implements Serializable {
@@ -22,7 +29,9 @@ public class UserBean implements Serializable {
     @EJB
     private UserDao userDao;
     @EJB
-    private EmailAndPassword emailAndPassword;
+    private ValidatorAndHasher validatorAndHasher;
+    @EJB
+    private TokenBean tokenBean;
 
 
     // Default constructor
@@ -81,7 +90,7 @@ public class UserBean implements Serializable {
         logger.info("Registering email: {}", firstRegistration.getEmail());
 
         // Checks if the email and password are valid
-        if (!emailAndPassword.isInputValid(firstRegistration)) {
+        if (!validatorAndHasher.isInputValid(firstRegistration)) {
             logger.error("Email or password are invalid");
             return false;
         }
@@ -89,20 +98,28 @@ public class UserBean implements Serializable {
         logger.info("Email and password are valid");
 
         try {
+            logger.info("Checking if email is already registered");
             // Encrypts the password using BCrypt
             String hashedPassword;
             try {
-                hashedPassword = emailAndPassword.hashPassword(firstRegistration.getPassword());
+                logger.info("Hashing password");
+                hashedPassword = validatorAndHasher.hashPassword(firstRegistration.getPassword());
             } catch (Exception e) {
                 logger.error("Error while hashing password: {}", e.getMessage());
                 return false;
             }
+
+            logger.info("Password hashed");
 
             // Defines the encrypted password
             firstRegistration.setPassword(hashedPassword);
 
             // Converts the firstRegistration to a user entity
             UserEntity userEntity = convertFirstRegistrationToUserEntity(firstRegistration);
+
+            // Generates a validation token
+            ValidationTokenEntity validationToken = tokenBean.generateValidationToken(userEntity, 48 * 60);
+            //userEntity.setValidationToken(validationToken);
 
             // Persists the user entity
             userDao.persist(userEntity);
