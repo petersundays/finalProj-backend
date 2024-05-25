@@ -30,6 +30,8 @@ public class UserBean implements Serializable {
     private ValidatorAndHasher validatorAndHasher;
     @EJB
     private TokenBean tokenBean;
+    @EJB
+    private EmailBean emailBean;
 
 
     // Default constructor
@@ -127,6 +129,14 @@ public class UserBean implements Serializable {
         }
 
         logger.info("Email registered: {}", firstRegistration.getEmail());
+
+        // Sends the confirmation email
+        if (!emailBean.sendConfirmationEmail(firstRegistration.getEmail(), validationToken.getToken())) {
+            logger.error("Confirmation email not sent to: {}", firstRegistration.getEmail());
+            return false;
+        }
+
+        logger.info("Confirmation email sent to: {}", firstRegistration.getEmail());
         return true;
     }
 
@@ -219,31 +229,23 @@ public class UserBean implements Serializable {
     }*/
 
 
-    public boolean delete(String username) {
-        logger.info("Deleting user: {}", username);
+    public boolean delete(String email) {
+        logger.info("Deleting user with email: {}", email);
 
-        UserEntity u = userDao.findUserByUsername(username);
+        UserEntity user = userDao.findUserByEmail(email);
 
-        if (u != null) {
-            logger.info("User found: {}", username);
-            ArrayList<TaskEntity> tasks = taskDao.findTasksByUser(u);
-            UserEntity notAssigned = userDao.findUserByUsername("NOTASSIGNED");
-
-            notAssigned.addNewTasks(tasks);
-
-            for (TaskEntity t : tasks) {
-                t.setOwner(notAssigned);
-                taskDao.merge(t);
-                logger.info("Task {} assigned to NOTASSIGNED", t.getId());
-            }
-            userDao.remove(u);
-            logger.info("User deleted: {}", username);
-
-            return true;
-        } else {
-            logger.error("User not found: {}", username);
+        if (user == null) {
+            logger.error("User not found: {}", email);
+            return false;
         }
-        return false;
+
+        if (!userDao.remove(user)) {
+            logger.error("Error while deleting user: {}", email);
+            return false;
+        } else {
+            logger.info("User deleted: {}", email);
+            return true;
+        }
     }
 
     public UserEntity convertFirstRegistrationToUserEntity(FirstRegistration firstRegistration) {

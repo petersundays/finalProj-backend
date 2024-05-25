@@ -23,9 +23,9 @@ public class EmailBean {
 
     private static final Logger logger = LogManager.getLogger(EmailBean.class);
     private final String username = "domcast46@gmail.com";
-    private final String password = System.getenv("SMTP_PASSWORD");
+    private final String password = System.getenv("SMTP_DOMCAST");
     private final String host = "smtp.gmail.com";
-    private final int port = 587;
+    private final int port = 587 ;
 
     /**
      * Default constructor for the EmailBean class
@@ -78,11 +78,11 @@ public class EmailBean {
     }
 
     /**
-     * Sends a confirmation email to the user with the validation token for account confirmation
-     * @param user the user to send the email to
-     * @param validationToken the validation token for account confirmation
-     * @return true if the email was sent successfully, false otherwise
-     */
+        * Sends a confirmation email to the user with the validation token for account confirmation
+        * @param email the email address of the user
+        * @param validationToken the validation token for account confirmation
+        * @return true if the email was sent successfully, false otherwise
+        */
     public boolean sendConfirmationEmail(String email, String validationToken) {
         logger.info("Sending confirmation email to: {}", email);
 
@@ -99,7 +99,7 @@ public class EmailBean {
             sent = true;
             logger.info("Confirmation email sent to: {}", email);
         } else {
-            userBean.delete(user.getUsername());
+            userBean.delete(email);
             logger.error("Confirmation email not sent to: {}", email);
         }
         return sent;

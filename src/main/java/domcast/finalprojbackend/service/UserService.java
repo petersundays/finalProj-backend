@@ -4,17 +4,12 @@ import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.dto.UserDto.FirstRegistration;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.io.Serializable;
 
 @Path("/user")
 public class UserService {
@@ -33,5 +28,16 @@ public class UserService {
         logger.info("User with IP address {} is trying to register", ipAddress);
 
         Response response;
+
+        if (userBean.registerEmail(user)) {
+            response = Response.status(201).entity("User registered successfully").build();
+            logger.info("User with IP address {} registered the email {} successfully", ipAddress, user.getEmail());
+        } else {
+            response = Response.status(400).entity("Error registering user with email " + user.getEmail()).build();
+            logger.info("User with IP address {} tried to register the email {} unsuccessfully", ipAddress, user.getEmail());
+        }
+
+        return response;
+    }
 
 }
