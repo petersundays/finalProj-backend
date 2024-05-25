@@ -99,9 +99,26 @@ public abstract class AbstractDao<T extends Serializable> implements Serializabl
 	 * @param entity the entity to be removed.
 	 */
 	// Remove an entity
-	public void remove(final T entity) 
-	{
-		em.remove(em.contains(entity) ? entity : em.merge(entity));
+	public boolean remove(final T entity) {
+		try {
+			T mergedEntity = em.contains(entity) ? entity : em.merge(entity);
+			em.remove(mergedEntity);
+			em.flush(); // Ensure changes are applied immediately
+
+			// Check if the entity still exists in the EntityManager
+			if (em.contains(mergedEntity)) {
+				logger.error("Failed to remove entity");
+				return false;
+			} else {
+				return true;
+			}
+		} catch (PersistenceException e) {
+			logger.error("Error while removing entity: {}", e.getMessage());
+			return false;
+		} catch (Exception e) {
+			logger.error("Unexpected error: {}", e.getMessage());
+			return false;
+		}
 	}
 
 	/**

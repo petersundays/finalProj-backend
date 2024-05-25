@@ -36,6 +36,8 @@ import java.util.Set;
 @Entity
 @Table(name = "user")
 
+@NamedQuery(name = "User.findUserByEmail", query = "SELECT u FROM UserEntity u WHERE u.email = :email")
+
 public class UserEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -75,7 +77,7 @@ public class UserEntity implements Serializable {
 
     // Visibility of the user
     @Column(name = "visible", nullable = false)
-    private boolean visible;
+    private boolean visible = true;
 
     // The type is an enum
     @Enumerated(EnumType.ORDINAL)
