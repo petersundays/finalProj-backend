@@ -1,6 +1,7 @@
 package domcast.finalprojbackend.entity;
 
 import domcast.finalprojbackend.enums.ProjectStateEnum;
+import domcast.finalprojbackend.enums.converters.ProjectStateEnumConverter;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
@@ -63,7 +64,7 @@ public class ProjectEntity implements Serializable {
     private Set<M2MKeyword> keywords = new HashSet<>();
 
     // State of the project
-    @Enumerated(EnumType.ORDINAL)
+    @Convert(converter = ProjectStateEnumConverter.class)
     @Column(name = "state", nullable = false)
     private ProjectStateEnum state;
 

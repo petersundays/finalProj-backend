@@ -54,4 +54,14 @@ public enum LabEnum {
                 }
                 throw new IllegalArgumentException("Invalid LabEnum id: " + id);
         }
+
+        // Method that returns the lab of the project by its value.
+        public static LabEnum fromValue(String value) {
+                for (LabEnum lab : LabEnum.values()) {
+                        if (lab.getValue().equalsIgnoreCase(value)) {
+                                return lab;
+                        }
+                }
+                throw new IllegalArgumentException("Invalid LabEnum value: " + value);
+        }
 }

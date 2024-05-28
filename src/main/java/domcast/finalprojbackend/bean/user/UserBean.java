@@ -1,16 +1,23 @@
 package domcast.finalprojbackend.bean.user;
 
+import domcast.finalprojbackend.dao.InterestDao;
+import domcast.finalprojbackend.dao.LabDao;
+import domcast.finalprojbackend.dao.SkillDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.UserDto.FirstRegistration;
-import domcast.finalprojbackend.entity.UserEntity;
-import domcast.finalprojbackend.entity.ValidationTokenEntity;
+import domcast.finalprojbackend.dto.UserDto.FullRegistration;
+import domcast.finalprojbackend.entity.*;
+import domcast.finalprojbackend.enums.TypeOfUserEnum;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
+import jakarta.persistence.NoResultException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Bean responsible for the user operations
@@ -32,7 +39,12 @@ public class UserBean implements Serializable {
     private TokenBean tokenBean;
     @EJB
     private EmailBean emailBean;
-
+    @EJB
+    private LabDao labDao;
+    @EJB
+    private InterestDao interestDao;
+    @EJB
+    private SkillDao skillDao;
 
     // Default constructor
     public UserBean() {}
@@ -140,95 +152,103 @@ public class UserBean implements Serializable {
         return true;
     }
 
+    /**
+     * Completes the registration of a user
+     * @param user the user to be registered
+     * @return boolean value indicating if the registration was completed
+     */
+    public boolean fullRegistration(FullRegistration user) {
 
-   /* public boolean register(User user) {
-
-        if (user != null) {
-            logger.info("Registering user: {}", user.getUsername());
-
-            if (user.getUsername().equalsIgnoreCase("notAssigned")) {
-                user.setUsername(user.getUsername().toUpperCase());
-                user.setTypeOfUser(User.NOTASSIGNED);
-                user.setVisible(false);
-                user.setConfirmed(true);
-
-                //Encripta a password usando BCrypt
-                String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
-
-                //Define a password encriptada
-                user.setPassword(hashedPassword);
-
-                //Persist o user
-                userDao.persist(convertUserDtotoUserEntity(user));
-
-                logger.info("User registered: {}", user.getUsername());
-
-                return true;
-            } else {
-                if (user.getUsername().equals("admin")){
-                    user.setTypeOfUser(300);
-                    user.setVisible(true);
-                    user.setConfirmed(true);
-
-                } else {
-                    if (user.getTypeOfUser() != 100 && user.getTypeOfUser() != 200 && user.getTypeOfUser() != 300) {
-                        user.setInitialTypeOfUser();
-
-                    } else {
-                        if (user.getTypeOfUser() == 100) {
-                            user.setTypeOfUser(User.DEVELOPER);
-                        } else if (user.getTypeOfUser() == 200) {
-                            user.setTypeOfUser(User.SCRUMMASTER);
-                        } else if (user.getTypeOfUser() == 300) {
-                            user.setTypeOfUser(User.PRODUCTOWNER);
-                        }
-                    }
-
-                    user.setVisible(true);
-                    user.setConfirmed(false);
-                }
-
-                logger.info("User type set to: {}", user.getTypeOfUser());
-
-                if (user.getPassword() == null || user.getPassword().isEmpty() || user.getPassword().isBlank()) {
-                    user.setPassword("");
-                    logger.info("User {} has no password defined", user.getUsername());
-
-                } else {
-
-                    //Encripta a password usando BCrypt
-                    String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
-
-                    //Define a password encriptada
-                    user.setPassword(hashedPassword);
-                    logger.info("Password defined for user: {}", user.getUsername());
-                }
-
-                UserEntity userEntity = convertUserDtotoUserEntity(user);
-                if (userEntity.getUsername().equalsIgnoreCase("admin")) {
-                    userDao.persist(userEntity);
-                    logger.info("Admin user registered: {}", user.getUsername());
-
-                } else {
-                    userEntity.setValidationToken(generateValidationToken(48 * 60));
-
-                    if (emailBean.sendConfirmationEmail(user, userEntity.getValidationToken())) {
-                        userDao.persist(userEntity);
-                        logger.info("Confirmation email sent and user registered: {}", user.getUsername());
-                        return true;
-                    } else {
-                        logger.error("Confirmation email not sent and user not registered: {}", user.getUsername());
-                    }
-                }
-            }
-        } else {
+        // Checks if the user is null or if the validation token is null
+        if (user == null || user.getValidationToken() == null) {
+            logger.error("User is null");
             return false;
         }
-        logger.error("User not registered: {}", user.getUsername());
-        return false;
-    }*/
+
+        logger.info("Completing registration for user with validation token: {}", user.getValidationToken());
+
+        // Checks if the mandatory data is valid
+        if (!validatorAndHasher.isMandatoryDataValid(user)) {
+            logger.error("Mandatory data is invalid");
+            return false;
+        }
+
+        logger.info("Mandatory data is valid");
+
+        // Finds the user by the validation token
+        UserEntity userEntity = userDao.findUserByValidationToken(user.getValidationToken());
+
+        // Checks if the user is null
+        if (userEntity == null) {
+            logger.error("User not found with validation token: {}", user.getValidationToken());
+            return false;
+        }
+
+        logger.info("User found with validation token: {}", user.getValidationToken());
+
+        // Finds the lab by the city
+        LabEntity labEntity = labDao.findLabByCity(user.getWorkplace());
+
+        // Checks if the lab is null
+        if (labEntity == null) {
+            logger.error("Lab not found with city: {}", user.getWorkplace());
+            return false;
+        }
+
+        logger.info("Lab found with city: {}", user.getWorkplace());
+
+        // Sets the user's attributes
+        userEntity.setFirstName(user.getFirstName());
+        userEntity.setLastName(user.getLastName());
+        userEntity.setWorkplace(labEntity);
+
+        // Checks if the user has a biography
+        if (user.getBiography() != null) {
+            userEntity.setBiography(user.getBiography());
+        }
+
+        // Checks if the user has a photo
+        if (user.getPhoto() != null) {
+            userEntity.setPhoto(user.getPhoto());
+        }
+
+        // Checks if the user has a nickname
+        if (user.getNickname() != null) {
+            userEntity.setNickname(user.getNickname());
+        }
+
+        // Checks if the user has a phone
+        if (user.getInterests() != null && !user.getInterests().isEmpty()) {
+            addInterestToUser(userEntity, user.getInterests());
+        }
+
+        // Checks if the user has a phone
+        if (user.getSkills() != null && !user.getSkills().isEmpty()) {
+            addSkillToUser(userEntity, user.getSkills());
+        }
+
+        // Sets the user as confirmed
+        userEntity.setType(TypeOfUserEnum.STANDARD);
+
+        // Merges the user entity
+        // If the merge fails, returns false
+        if (!userDao.merge(userEntity)) {
+            logger.error("Error while completing registration for user with validation token: {}", user.getValidationToken());
+            return false;
+        }
+
+        logger.info("Registration completed for user with validation token: {}", user.getValidationToken());
+        return true;
+    }
 
 
+    /**
+     * Deletes a user from the database
+     * @param email the email of the user to be deleted
+     * @return boolean value indicating if the user was deleted
+     */
+
+    // This method is used to delete a user from the database in case the confirmation email is not sent
     public boolean delete(String email) {
         logger.info("Deleting user with email: {}", email);
 
@@ -257,6 +277,87 @@ public class UserBean implements Serializable {
         return userEntity;
     }
 
+    public void addInterestToUser(UserEntity user, ArrayList<String> interestsList) {
+        if (user == null || interestsList == null) {
+            logger.error("User and interests list must not be null");
+            throw new IllegalArgumentException("User and interests list must not be null");
+        }
+
+        if (interestsList.isEmpty()) {
+            logger.info("No interests to add to user");
+            return;
+        }
+
+        logger.info("Adding interests to user");
+
+        try {
+            Set<InterestEntity> interests = interestDao.findInterestsByListOfNames(interestsList);
+
+            if (interests.isEmpty()) {
+                logger.info("No matching interests found in database");
+                return;
+            }
+
+            for (InterestEntity interest : interests) {
+                M2MUserInterest userInterest = new M2MUserInterest();
+                userInterest.setUser(user);
+                userInterest.setInterest(interest);
+                user.addInterest(userInterest);
+            }
+
+            userDao.merge(user);
+
+            logger.info("Interests added to user");
+
+        } catch (NoResultException e) {
+            logger.error("Error while finding interests: {}", e.getMessage());
+        } catch (Exception e) {
+            logger.error("Error while adding interests to user: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    public void addSkillToUser(UserEntity user, ArrayList<String> skillsList) {
+        if (user == null || skillsList == null) {
+            logger.error("User and skills list must not be null");
+            throw new IllegalArgumentException("User and skills list must not be null");
+        }
+
+        if (skillsList.isEmpty()) {
+            logger.info("No skills to add to user");
+            return;
+        }
+
+        logger.info("Adding skills to user");
+
+        try {
+            Set<SkillEntity> skills = skillDao.findSkillsByListOfNames(skillsList);
+
+            if (skills.isEmpty()) {
+                logger.info("No matching skills found in database");
+                return;
+            }
+
+            for (SkillEntity skill : skills) {
+                M2MUserSkill userSkill = new M2MUserSkill();
+                userSkill.setUser(user);
+                userSkill.setSkill(skill);
+                user.addUserSkill(userSkill);
+            }
+
+            userDao.merge(user);
+
+            logger.info("Skills added to user");
+
+        } catch (NoResultException e) {
+            logger.error("Error while finding skills: {}", e.getMessage());
+        } catch (Exception e) {
+            logger.error("Error while adding skills to user: {}", e.getMessage());
+            throw e;
+        }
+
+    }
 
 
-}
+
+    }

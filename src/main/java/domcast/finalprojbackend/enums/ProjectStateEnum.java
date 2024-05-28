@@ -53,4 +53,14 @@ public enum ProjectStateEnum {
         }
         throw new IllegalArgumentException("Invalid ProjectStateEnum id: " + id);
     }
+
+    // Method that returns the state of the project by its value.
+    public static ProjectStateEnum fromValue(int value) {
+        for (ProjectStateEnum state : ProjectStateEnum.values()) {
+            if (state.getValue() == value) {
+                return state;
+            }
+        }
+        throw new IllegalArgumentException("Invalid ProjectStateEnum value: " + value);
+    }
 }

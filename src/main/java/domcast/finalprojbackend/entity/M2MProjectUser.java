@@ -2,6 +2,7 @@ package domcast.finalprojbackend.entity;
 
 
 import domcast.finalprojbackend.enums.ProjectUserEnum;
+import domcast.finalprojbackend.enums.converters.ProjectUserEnumConverter;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
@@ -44,6 +45,7 @@ public class M2MProjectUser implements Serializable {
     private UserEntity user;
 
     // Role of the user in the project
+    @Convert(converter = ProjectUserEnumConverter.class)
     @Column(name = "role", nullable = false)
     private ProjectUserEnum role;
 

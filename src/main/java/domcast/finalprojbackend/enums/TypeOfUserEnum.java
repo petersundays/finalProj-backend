@@ -51,4 +51,14 @@ public enum TypeOfUserEnum {
         }
         throw new IllegalArgumentException("Invalid TypeOfUserEnum id: " + id);
     }
+
+    // Method that returns the type of user by its value.
+    public static TypeOfUserEnum fromValue(int value) {
+        for (TypeOfUserEnum userType : TypeOfUserEnum.values()) {
+            if (userType.getValue() == value) {
+                return userType;
+            }
+        }
+        throw new IllegalArgumentException("Invalid TypeOfUserEnum value: " + value);
+    }
 }

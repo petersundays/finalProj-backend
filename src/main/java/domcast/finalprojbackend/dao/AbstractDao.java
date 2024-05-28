@@ -89,9 +89,17 @@ public abstract class AbstractDao<T extends Serializable> implements Serializabl
 	 * @param entity the entity to be merged.
 	 */
 	// Merge an entity
-	public void merge(final T entity) 
-	{
-		em.merge(entity);
+	public boolean merge(final T entity) {
+		try {
+			em.merge(entity);
+			return true;
+		} catch (PersistenceException e) {
+			logger.error("Error while merging entity: {}", e.getMessage());
+			return false;
+		} catch (Exception e) {
+			logger.error("Unexpected error: {}", e.getMessage());
+			return false;
+		}
 	}
 
 	/**

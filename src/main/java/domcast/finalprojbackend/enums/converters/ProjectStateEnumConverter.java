@@ -24,15 +24,15 @@ public class ProjectStateEnumConverter implements AttributeConverter<ProjectStat
         if (state == null) {
             return null;
         }
-        return state.getId();
+        return state.getValue();
     }
 
     // Method to convert from Integer to ProjectStateEnum.
     @Override
-    public ProjectStateEnum convertToEntityAttribute(Integer id) {
-        if (id == null) {
+    public ProjectStateEnum convertToEntityAttribute(Integer stateValue) {
+        if (stateValue == null) {
             return null;
         }
-        return ProjectStateEnum.fromId(id);
+        return ProjectStateEnum.fromValue(stateValue);
     }
 }

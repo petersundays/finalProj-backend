@@ -1,6 +1,7 @@
 package domcast.finalprojbackend.bean.user;
 
 import domcast.finalprojbackend.dto.UserDto.FirstRegistration;
+import domcast.finalprojbackend.dto.UserDto.FullRegistration;
 import jakarta.ejb.Stateless;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -39,6 +40,17 @@ public class ValidatorAndHasher {
         return firstRegistration.getEmail() != null && !firstRegistration.getEmail().isBlank() &&
                 firstRegistration.getPassword() != null && !firstRegistration.getPassword().isBlank() &&
                 isEmailValid(firstRegistration.getEmail()) && isPasswordValid(firstRegistration.getPassword());
+    }
+
+    public boolean isMandatoryDataValid(FullRegistration fullRegistration) {
+
+        logger.info("Checking if mandatory data is valid");
+
+        System.out.println("************* " + fullRegistration.getFirstName() + " " + fullRegistration.getLastName() + " " + fullRegistration.getWorkplace() + " *************");
+
+        return fullRegistration.getFirstName() != null && !fullRegistration.getFirstName().isBlank() &&
+                fullRegistration.getLastName() != null && !fullRegistration.getLastName().isBlank() &&
+                fullRegistration.getWorkplace() != null && !fullRegistration.getWorkplace().isBlank();
     }
 
     /**
