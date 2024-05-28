@@ -1,8 +1,143 @@
-2024-05-23 23:07:11.675 [main] INFO - Registering email: test@test.com
-2024-05-23 23:07:11.681 [main] INFO - Email and password are valid
-2024-05-23 23:07:11.688 [main] INFO - Email registered: test@test.com
-2024-05-23 23:11:31.521 [main] INFO - Registering email: test@test.com
-2024-05-23 23:11:31.528 [main] INFO - Email and password are valid
-2024-05-23 23:11:31.532 [main] INFO - Email registered: test@test.com
-2024-05-23 23:11:31.552 [main] INFO - Registering email: invalid@test.com
-2024-05-23 23:11:31.553 [main] ERROR - Email or password are invalid
+2024-05-28 00:15:16.393 [main] INFO - Test: Preparing input
+2024-05-28 00:15:16.412 [main] INFO - Test: Mocking dependencies
+2024-05-28 00:15:16.456 [main] INFO - Test: Calling fullRegistration
+2024-05-28 00:15:16.463 [main] INFO - Completing registration for user with validation token: validToken
+2024-05-28 00:15:16.467 [main] ERROR - Mandatory data is invalid
+2024-05-28 00:15:16.467 [main] INFO - Test: Asserting result
+2024-05-28 00:15:16.501 [main] INFO - Completing registration for user with validation token: validToken
+2024-05-28 00:15:16.507 [main] INFO - Mandatory data is valid
+2024-05-28 00:15:16.508 [main] INFO - User found with validation token: validToken
+2024-05-28 00:15:16.508 [main] INFO - Lab found with city: CityLab
+2024-05-28 00:15:16.510 [main] ERROR - Error while completing registration for user with validation token: validToken
+2024-05-28 00:15:16.523 [main] INFO - Registering email: test@test.com
+2024-05-28 00:15:16.523 [main] INFO - Email and password are valid
+2024-05-28 00:15:16.523 [main] INFO - Password hashed
+2024-05-28 00:15:16.524 [main] INFO - Email registered: test@test.com
+2024-05-28 00:15:16.524 [main] ERROR - Confirmation email not sent to: test@test.com
+2024-05-28 00:15:16.530 [main] INFO - Registering email: invalid@test.com
+2024-05-28 00:15:16.531 [main] ERROR - Email or password are invalid
+2024-05-28 00:16:09.725 [main] INFO - Test: Preparing input
+2024-05-28 00:16:09.738 [main] INFO - Test: Mocking dependencies
+2024-05-28 00:16:09.788 [main] INFO - Test: Calling fullRegistration
+2024-05-28 00:16:09.798 [main] INFO - Completing registration for user with validation token: validToken
+2024-05-28 00:16:09.802 [main] ERROR - Mandatory data is invalid
+2024-05-28 00:16:09.802 [main] INFO - Test: Asserting result
+2024-05-28 00:16:09.839 [main] INFO - Completing registration for user with validation token: validToken
+2024-05-28 00:16:09.844 [main] INFO - Mandatory data is valid
+2024-05-28 00:16:09.845 [main] INFO - User found with validation token: validToken
+2024-05-28 00:16:09.845 [main] INFO - Lab found with city: CityLab
+2024-05-28 00:16:09.846 [main] ERROR - Error while completing registration for user with validation token: validToken
+2024-05-28 00:16:09.855 [main] INFO - Registering email: invalid@test.com
+2024-05-28 00:16:09.855 [main] ERROR - Email or password are invalid
+2024-05-28 00:16:45.520 [main] INFO - Test: Preparing input
+2024-05-28 00:16:45.531 [main] INFO - Test: Mocking dependencies
+2024-05-28 00:16:45.575 [main] INFO - Test: Calling fullRegistration
+2024-05-28 00:16:45.582 [main] INFO - Completing registration for user with validation token: validToken
+2024-05-28 00:16:45.584 [main] ERROR - Mandatory data is invalid
+2024-05-28 00:16:45.585 [main] INFO - Test: Asserting result
+2024-05-28 00:16:45.623 [main] INFO - Completing registration for user with validation token: validToken
+2024-05-28 00:16:45.629 [main] INFO - Mandatory data is valid
+2024-05-28 00:16:45.629 [main] INFO - User found with validation token: validToken
+2024-05-28 00:16:45.630 [main] INFO - Lab found with city: CityLab
+2024-05-28 00:16:45.630 [main] ERROR - Error while completing registration for user with validation token: validToken
+2024-05-28 00:16:45.638 [main] INFO - Registering email: invalid@test.com
+2024-05-28 00:16:45.638 [main] ERROR - Email or password are invalid
+2024-05-28 00:17:24.225 [main] INFO - Test: Preparing input
+2024-05-28 00:17:24.234 [main] INFO - Test: Mocking dependencies
+2024-05-28 00:17:24.277 [main] INFO - Test: Calling fullRegistration
+2024-05-28 00:17:24.286 [main] INFO - Completing registration for user with validation token: validToken
+2024-05-28 00:17:24.289 [main] ERROR - Mandatory data is invalid
+2024-05-28 00:17:24.289 [main] INFO - Test: Asserting result
+2024-05-28 00:17:24.323 [main] INFO - Completing registration for user with validation token: validToken
+2024-05-28 00:17:24.330 [main] INFO - Mandatory data is valid
+2024-05-28 00:17:24.330 [main] INFO - User found with validation token: validToken
+2024-05-28 00:17:24.331 [main] INFO - Lab found with city: CityLab
+2024-05-28 00:17:24.331 [main] ERROR - Error while completing registration for user with validation token: validToken
+2024-05-28 00:17:24.339 [main] INFO - Registering email: invalid@test.com
+2024-05-28 00:17:24.339 [main] ERROR - Email or password are invalid
+2024-05-28 00:21:47.550 [main] INFO - Completing registration for user with validation token: validToken
+2024-05-28 00:21:47.569 [main] INFO - Mandatory data is valid
+2024-05-28 00:21:47.570 [main] INFO - User found with validation token: validToken
+2024-05-28 00:21:47.570 [main] INFO - Lab found with city: CityLab
+2024-05-28 00:21:47.571 [main] ERROR - Error while completing registration for user with validation token: validToken
+2024-05-28 00:21:47.607 [main] INFO - Registering email: test@test.com
+2024-05-28 00:21:47.608 [main] INFO - Email and password are valid
+2024-05-28 00:21:47.608 [main] INFO - Password hashed
+2024-05-28 00:21:47.609 [main] INFO - Email registered: test@test.com
+2024-05-28 00:21:47.609 [main] ERROR - Confirmation email not sent to: test@test.com
+2024-05-28 00:21:47.630 [main] INFO - Registering email: invalid@test.com
+2024-05-28 00:21:47.630 [main] ERROR - Email or password are invalid
+2024-05-28 00:22:41.223 [main] INFO - Completing registration for user with validation token: validToken
+2024-05-28 00:22:41.235 [main] INFO - Mandatory data is valid
+2024-05-28 00:22:41.235 [main] INFO - User found with validation token: validToken
+2024-05-28 00:22:41.235 [main] INFO - Lab found with city: CityLab
+2024-05-28 00:22:41.236 [main] ERROR - Error while completing registration for user with validation token: validToken
+2024-05-28 00:22:41.263 [main] INFO - Registering email: test@test.com
+2024-05-28 00:22:41.264 [main] INFO - Email and password are valid
+2024-05-28 00:22:41.264 [main] INFO - Password hashed
+2024-05-28 00:22:41.264 [main] INFO - Email registered: test@test.com
+2024-05-28 00:22:41.265 [main] ERROR - Confirmation email not sent to: test@test.com
+2024-05-28 00:22:41.281 [main] INFO - Registering email: invalid@test.com
+2024-05-28 00:22:41.281 [main] ERROR - Email or password are invalid
+2024-05-28 00:23:11.821 [main] INFO - Completing registration for user with validation token: validToken
+2024-05-28 00:23:11.838 [main] INFO - Mandatory data is valid
+2024-05-28 00:23:11.838 [main] INFO - User found with validation token: validToken
+2024-05-28 00:23:11.839 [main] INFO - Lab found with city: CityLab
+2024-05-28 00:23:11.839 [main] ERROR - Error while completing registration for user with validation token: validToken
+2024-05-28 00:23:11.865 [main] INFO - Registering email: invalid@test.com
+2024-05-28 00:23:11.865 [main] ERROR - Email or password are invalid
+2024-05-28 00:34:11.546 [main] INFO - Test: Preparing input
+2024-05-28 00:34:11.559 [main] INFO - Test: Mocking dependencies
+2024-05-28 00:34:11.604 [main] INFO - Test: Calling fullRegistration
+2024-05-28 00:34:11.609 [main] INFO - Completing registration for user with validation token: validToken
+2024-05-28 00:34:11.612 [main] ERROR - Mandatory data is invalid
+2024-05-28 00:34:11.612 [main] INFO - Test: Asserting result
+2024-05-28 00:34:11.650 [main] INFO - Completing registration for user with validation token: validToken
+2024-05-28 00:34:11.659 [main] INFO - Mandatory data is valid
+2024-05-28 00:34:11.660 [main] INFO - User found with validation token: validToken
+2024-05-28 00:34:11.660 [main] INFO - Lab found with city: CityLab
+2024-05-28 00:34:11.660 [main] ERROR - Error while completing registration for user with validation token: validToken
+2024-05-28 00:34:11.668 [main] INFO - Registering email: invalid@test.com
+2024-05-28 00:34:11.669 [main] ERROR - Email or password are invalid
+2024-05-28 00:34:56.007 [main] INFO - Test: Preparing input
+2024-05-28 00:34:56.021 [main] INFO - Test: Mocking dependencies
+2024-05-28 00:34:56.063 [main] INFO - Test: Calling fullRegistration
+2024-05-28 00:34:56.071 [main] INFO - Completing registration for user with validation token: validToken
+2024-05-28 00:34:56.074 [main] ERROR - Mandatory data is invalid
+2024-05-28 00:34:56.074 [main] INFO - Test: Asserting result
+2024-05-28 00:34:56.114 [main] INFO - Completing registration for user with validation token: validToken
+2024-05-28 00:34:56.118 [main] INFO - Mandatory data is valid
+2024-05-28 00:34:56.118 [main] INFO - User found with validation token: validToken
+2024-05-28 00:34:56.119 [main] INFO - Lab found with city: CityLab
+2024-05-28 00:34:56.119 [main] ERROR - Error while completing registration for user with validation token: validToken
+2024-05-28 00:34:56.127 [main] INFO - Registering email: invalid@test.com
+2024-05-28 00:34:56.128 [main] ERROR - Email or password are invalid
+2024-05-28 00:40:27.550 [main] INFO - Completing registration for user with validation token: validToken
+2024-05-28 00:40:27.562 [main] INFO - Mandatory data is valid
+2024-05-28 00:40:27.563 [main] INFO - User found with validation token: validToken
+2024-05-28 00:40:27.563 [main] INFO - Lab found with city: Lisboa
+2024-05-28 00:40:27.563 [main] INFO - Registration completed for user with validation token: validToken
+2024-05-28 00:40:27.589 [main] INFO - Completing registration for user with validation token: validToken
+2024-05-28 00:40:27.590 [main] INFO - Mandatory data is valid
+2024-05-28 00:40:27.590 [main] INFO - User found with validation token: validToken
+2024-05-28 00:40:27.590 [main] INFO - Lab found with city: CityLab
+2024-05-28 00:40:27.590 [main] ERROR - Error while completing registration for user with validation token: validToken
+2024-05-28 00:40:27.598 [main] INFO - Registering email: invalid@test.com
+2024-05-28 00:40:27.599 [main] ERROR - Email or password are invalid
+2024-05-28 00:40:48.574 [main] INFO - Completing registration for user with validation token: validToken
+2024-05-28 00:40:48.589 [main] INFO - Mandatory data is valid
+2024-05-28 00:40:48.590 [main] INFO - User found with validation token: validToken
+2024-05-28 00:40:48.590 [main] INFO - Lab found with city: Lisboa
+2024-05-28 00:40:48.590 [main] INFO - Registration completed for user with validation token: validToken
+2024-05-28 00:40:48.623 [main] INFO - Completing registration for user with validation token: validToken
+2024-05-28 00:40:48.624 [main] INFO - Mandatory data is valid
+2024-05-28 00:40:48.624 [main] INFO - User found with validation token: validToken
+2024-05-28 00:40:48.625 [main] INFO - Lab found with city: CityLab
+2024-05-28 00:40:48.625 [main] ERROR - Error while completing registration for user with validation token: validToken
+2024-05-28 00:40:48.641 [main] INFO - Registering email: test@test.com
+2024-05-28 00:40:48.641 [main] INFO - Email and password are valid
+2024-05-28 00:40:48.642 [main] INFO - Password hashed
+2024-05-28 00:40:48.642 [main] INFO - Email registered: test@test.com
+2024-05-28 00:40:48.643 [main] ERROR - Confirmation email not sent to: test@test.com
+2024-05-28 00:40:48.660 [main] INFO - Registering email: invalid@test.com
+2024-05-28 00:40:48.660 [main] ERROR - Email or password are invalid

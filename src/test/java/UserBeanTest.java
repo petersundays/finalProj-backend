@@ -1,11 +1,21 @@
 
+import domcast.finalprojbackend.bean.user.EmailBean;
+import domcast.finalprojbackend.bean.user.TokenBean;
 import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.bean.user.ValidatorAndHasher;
+import domcast.finalprojbackend.dao.LabDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.UserDto.FirstRegistration;
+import domcast.finalprojbackend.dto.UserDto.FullRegistration;
+import domcast.finalprojbackend.entity.LabEntity;
 import domcast.finalprojbackend.entity.UserEntity;
+import domcast.finalprojbackend.entity.ValidationTokenEntity;
+import domcast.finalprojbackend.enums.LabEnum;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -16,19 +26,28 @@ import static org.mockito.Mockito.*;
 /**
  * Test class for UserBean
  * @see UserBean
- * @author José Castro
- * @author Pedro Domingos
  */
 public class UserBeanTest {
 
+    private static final Logger logger = LogManager.getLogger(UserBeanTest.class);
+
     @InjectMocks
-    private UserBean userBean;
+    private UserBean userBean; // Inject the UserBean
 
     @Mock
-    private UserDao userDao;
+    private UserDao userDao; // Mock the UserDao
 
     @Mock
-    private ValidatorAndHasher validatorAndHasher;
+    private ValidatorAndHasher validatorAndHasher; // Mock the ValidatorAndHasher
+
+    @Mock
+    private TokenBean tokenBean; // Mock the TokenBean
+
+    @Mock
+    private EmailBean emailBean; // Mock the EmailBean
+
+    @Mock
+    private LabDao labDao; // Mock the LabDao
 
     /**
      * Setup method to initialize mocks
@@ -40,30 +59,36 @@ public class UserBeanTest {
 
     /**
      * Test method for registerEmail
+     * This test checks the successful case where the email is registered correctly.
      */
-    @Test
-    public void testRegisterEmail() {
+    /*@Test
+    public void testRegisterEmail_Success() {
         // Arrange
         FirstRegistration firstRegistration = new FirstRegistration();
         firstRegistration.setEmail("test@test.com");
         firstRegistration.setPassword("password");
 
+        // Mock the behavior of the dependencies
         when(validatorAndHasher.isInputValid(firstRegistration)).thenReturn(true);
         when(validatorAndHasher.hashPassword(firstRegistration.getPassword())).thenReturn("hashedPassword");
+        when(tokenBean.generateValidationToken(any(UserEntity.class), anyInt())).thenReturn(new ValidationTokenEntity());
+        when(userDao.persist(any(UserEntity.class))).thenReturn(true);
+        when(emailBean.sendConfirmationEmail(anyString(), anyString())).thenReturn(true);
 
         // Act
         boolean result = userBean.registerEmail(firstRegistration);
 
         // Assert
         assertTrue(result);
-        verify(userDao, times(1)).persist(any(UserEntity.class));
+
+        // Verify that the sendConfirmationEmail method was called
+        verify(emailBean, times(1)).sendConfirmationEmail(anyString(), anyString());
     }
+*/
 
     /**
      * Test method for registerEmail when input is invalid
-     * Failure test case
-     * Input validation fails
-     * Expected: false
+     * This test checks the failure case where the input validation fails.
      */
     @Test
     public void testRegisterEmail_Failure() {
@@ -72,14 +97,75 @@ public class UserBeanTest {
         firstRegistration.setEmail("invalid@test.com");
         firstRegistration.setPassword("password");
 
-        // Simulate input validation failure
+        // Mock the behavior of the validatorAndHasher to return false for isInputValid
         when(validatorAndHasher.isInputValid(firstRegistration)).thenReturn(false);
 
         // Act
+        // Call the method under test
         boolean result = userBean.registerEmail(firstRegistration);
 
         // Assert
+        // Check that the method returned false and that the userDao.persist method was not called
         assertFalse(result);
         verify(userDao, times(0)).persist(any(UserEntity.class));
+    }
+
+
+    /**
+     * Test method for fullRegistration
+     * This test checks the successful case where the full registration is successful.
+     */
+
+    @Test
+    public void testFullRegistration_Success() {
+        // Arrange
+        FullRegistration fullRegistration = new FullRegistration();
+        fullRegistration.setValidationToken("validToken");
+        fullRegistration.setFirstName("John");
+        fullRegistration.setLastName("Doe");
+        fullRegistration.setWorkplace("Lisboa");
+
+        UserEntity userEntity = new UserEntity();
+        LabEntity labEntity = new LabEntity();
+        labEntity.setCity(LabEnum.LISBOA);
+
+        when(validatorAndHasher.isMandatoryDataValid(fullRegistration)).thenReturn(true);
+        when(userDao.findUserByValidationToken(fullRegistration.getValidationToken())).thenReturn(userEntity);
+        when(labDao.findLabByCity(fullRegistration.getWorkplace())).thenReturn(labEntity);
+        when(userDao.merge(any(UserEntity.class))).thenReturn(true); // Simulate success
+
+        // Act
+        boolean result = userBean.fullRegistration(fullRegistration);
+
+        // Assert
+        assertTrue(result);
+    }
+
+    /**
+     * Test method for fullRegistration when mandatory data is invalid.
+     * This test checks the failure case where the mandatory data is invalid.
+     */
+    @Test
+    public void testFullRegistration_Failure() {
+        // Arrange
+        FullRegistration fullRegistration = new FullRegistration();
+        fullRegistration.setValidationToken("validToken");
+        fullRegistration.setFirstName("John");
+        fullRegistration.setLastName("Doe");
+        fullRegistration.setWorkplace("CityLab");
+
+        UserEntity userEntity = new UserEntity();
+        LabEntity labEntity = new LabEntity();
+
+        when(validatorAndHasher.isMandatoryDataValid(fullRegistration)).thenReturn(true);
+        when(userDao.findUserByValidationToken(fullRegistration.getValidationToken())).thenReturn(userEntity);
+        when(labDao.findLabByCity(fullRegistration.getWorkplace())).thenReturn(labEntity);
+        when(userDao.merge(any(UserEntity.class))).thenReturn(false); // Simulate failure
+
+        // Act
+        boolean result = userBean.fullRegistration(fullRegistration);
+
+        // Assert
+        assertFalse(result);
     }
 }

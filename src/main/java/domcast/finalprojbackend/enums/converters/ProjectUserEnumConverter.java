@@ -24,15 +24,15 @@ public class ProjectUserEnumConverter implements AttributeConverter<ProjectUserE
         if (role == null) {
             return null;
         }
-        return role.getId();
+        return role.getValue();
     }
 
     // Method to convert from Integer to ProjectUserEnum.
     @Override
-    public ProjectUserEnum convertToEntityAttribute(Integer id) {
-        if (id == null) {
+    public ProjectUserEnum convertToEntityAttribute(Integer userRole) {
+        if (userRole == null) {
             return null;
         }
-        return ProjectUserEnum.fromId(id);
+        return ProjectUserEnum.fromValue(userRole);
     }
 }

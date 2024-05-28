@@ -23,6 +23,9 @@ import java.util.Set;
 @Entity
 @Table(name = "skill")
 
+@NamedQuery(name = "Skill.findSkillByName", query = "SELECT s FROM SkillEntity s WHERE s.name = :name")
+@NamedQuery(name = "Skill.findSkillsByListOfNames", query = "SELECT s FROM SkillEntity s WHERE s.name IN :names")
+
 public class SkillEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -84,6 +87,10 @@ public class SkillEntity implements Serializable {
 
     public void setUserSkills(Set<M2MUserSkill> userSkills) {
         this.userSkills = userSkills;
+    }
+
+    public void addUserSkill(M2MUserSkill userSkill) {
+        this.userSkills.add(userSkill);
     }
 
     public Set<M2MProjectSkill> getProjectSkills() {

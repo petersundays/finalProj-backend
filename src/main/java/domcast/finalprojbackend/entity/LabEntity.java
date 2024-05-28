@@ -13,13 +13,15 @@ import java.util.Set;
  * The attributes are the following:
  * - id: the id of the lab.
  * - city: the city of the lab.
- * - users: the users that work in the lab.
+ * - Users: the users that work in the lab.
  * The class also contains the necessary annotations to work with the database.
  *  @author José Castro
  *  @author Pedro Domingos
  */
 @Entity
 @Table(name = "lab")
+
+@NamedQuery(name = "Lab.findLabByCity", query = "SELECT l FROM LabEntity l WHERE l.city = :city")
 
 public class LabEntity implements Serializable {
     private static final long serialVersionUID = 1L;

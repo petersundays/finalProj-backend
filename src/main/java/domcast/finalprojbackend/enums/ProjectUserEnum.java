@@ -51,4 +51,14 @@ public enum ProjectUserEnum {
         }
         throw new IllegalArgumentException("Invalid ProjectUserEnum id: " + id);
     }
+
+    // Method that returns the role by its value
+    public static ProjectUserEnum fromValue(int value) {
+        for (ProjectUserEnum role : ProjectUserEnum.values()) {
+            if (role.getValue() == value) {
+                return role;
+            }
+        }
+        throw new IllegalArgumentException("Invalid ProjectUserEnum value: " + value);
+    }
 }

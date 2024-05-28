@@ -1,6 +1,7 @@
 package domcast.finalprojbackend.entity;
 
 import domcast.finalprojbackend.enums.TypeOfUserEnum;
+import domcast.finalprojbackend.enums.converters.TypeOfUserEnumConverter;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import java.util.HashSet;
@@ -37,6 +38,7 @@ import java.util.Set;
 @Table(name = "user")
 
 @NamedQuery(name = "User.findUserByEmail", query = "SELECT u FROM UserEntity u WHERE u.email = :email")
+@NamedQuery(name = "User.findUserByValidationToken", query = "SELECT u FROM UserEntity u JOIN u.validationTokens vt WHERE vt.token = :token")
 
 public class UserEntity implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -80,7 +82,7 @@ public class UserEntity implements Serializable {
     private boolean visible = true;
 
     // The type is an enum
-    @Enumerated(EnumType.ORDINAL)
+    @Convert(converter = TypeOfUserEnumConverter.class)
     @Column(name = "type", nullable = false)
     private TypeOfUserEnum type = TypeOfUserEnum.NOT_CONFIRMED;
 
@@ -275,6 +277,10 @@ public class UserEntity implements Serializable {
         this.interests = interests;
     }
 
+    public void addInterest(M2MUserInterest interest) {
+        this.interests.add(interest);
+    }
+
     public Set<M2MUserSkill> getUserSkills() {
         return userSkills;
     }
@@ -283,12 +289,20 @@ public class UserEntity implements Serializable {
         this.userSkills = userSkills;
     }
 
+    public void addUserSkill(M2MUserSkill userSkill) {
+        this.userSkills.add(userSkill);
+    }
+
     public Set<M2MProjectUser> getProjectUsers() {
         return projectUsers;
     }
 
     public void setProjectUsers(Set<M2MProjectUser> projectUsers) {
         this.projectUsers = projectUsers;
+    }
+
+    public void addProjectUser(M2MProjectUser projectUser) {
+        this.projectUsers.add(projectUser);
     }
 }
 

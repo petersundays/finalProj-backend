@@ -7,16 +7,34 @@ import jakarta.persistence.NoResultException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+/**
+ * UserDao is a Data Access Object (DAO) class for UserEntity.
+ * It provides methods to interact with the database and perform operations on UserEntity.
+ * @see UserEntity
+ * @see UserBean
+ * @see AbstractDao
+ * @author José Castro
+ * @author Pedro Domingos
+ */
 @Stateless
 public class UserDao extends AbstractDao<UserEntity> {
 
     private static final long serialVersionUID = 1L;
     private static final Logger logger = LogManager.getLogger(UserBean.class);
 
+    /**
+     * Default constructor for UserDao.
+     */
     public UserDao() {
         super(UserEntity.class);
     }
 
+    /**
+     * Finds a user by their email.
+     *
+     * @param email the email of the user
+     * @return the UserEntity object if found, null otherwise
+     */
     public UserEntity findUserByEmail(String email) {
         logger.info("Finding user by email {}", email);
         try {
@@ -29,4 +47,21 @@ public class UserDao extends AbstractDao<UserEntity> {
         }
     }
 
+    /**
+     * Finds a user by their validation token.
+     *
+     * @param token the validation token of the user
+     * @return the UserEntity object if found, null otherwise
+     */
+    public UserEntity findUserByValidationToken(String token) {
+        logger.info("Finding user by validation token {}", token);
+        try {
+            return (UserEntity) em.createNamedQuery("User.findUserByValidationToken").setParameter("token", token)
+                    .getSingleResult();
+
+        } catch (NoResultException e) {
+            logger.error("User with validation token {} not found", token);
+            return null;
+        }
+    }
 }

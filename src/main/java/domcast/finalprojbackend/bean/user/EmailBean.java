@@ -99,7 +99,11 @@ public class EmailBean {
             sent = true;
             logger.info("Confirmation email sent to: {}", email);
         } else {
-            userBean.delete(email);
+            try {
+                userBean.delete(email);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
             logger.error("Confirmation email not sent to: {}", email);
         }
         return sent;
