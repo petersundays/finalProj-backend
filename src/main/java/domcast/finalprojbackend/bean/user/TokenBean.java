@@ -1,5 +1,6 @@
 package domcast.finalprojbackend.bean.user;
 
+import domcast.finalprojbackend.entity.SessionTokenEntity;
 import domcast.finalprojbackend.entity.UserEntity;
 import domcast.finalprojbackend.entity.ValidationTokenEntity;
 import jakarta.ejb.Stateless;
@@ -50,4 +51,34 @@ public class TokenBean implements Serializable {
         return validationTokenEntity;
     }
 
+    /**
+     * Generates a session token for the user
+     * @param user the user for which the token is generated
+     * @param ipAddress the IP address from which the session was created
+     * @return the generated session token
+     */
+    public SessionTokenEntity generateSessionToken(UserEntity user, String ipAddress) {
+        logger.info("Generating session token");
+
+        SessionTokenEntity sessionTokenEntity = new SessionTokenEntity();
+        try {
+            // Generate a random token
+            SecureRandom secureRandom = new SecureRandom(); //threadsafe instance of SecureRandom class for generating random numbers
+            Base64.Encoder base64Encoder = Base64.getUrlEncoder(); //threadsafe instance of Base64.Encoder class for encoding byte data
+            byte[] randomBytes = new byte[24];
+            secureRandom.nextBytes(randomBytes);
+            String token = base64Encoder.encodeToString(randomBytes);
+
+            // Set the session token entity properties
+            sessionTokenEntity.setToken(token);
+            sessionTokenEntity.setUser(user);
+            sessionTokenEntity.setIpAddress(ipAddress);
+
+            logger.info("Session token generated");
+        } catch (NullPointerException e) {
+            logger.error("An error occurred while generating the session token", e);
+        }
+
+        return sessionTokenEntity;
+    }
 }
