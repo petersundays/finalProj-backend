@@ -34,7 +34,7 @@ public class ValidationTokenEntity implements Serializable {
     protected int id;
 
     // The generated token for the user
-    @Column(name = "token")
+    @Column(name = "token", nullable = false, unique = true, updatable = false)
     protected String token;
 
     // The user associated with the token
@@ -43,7 +43,7 @@ public class ValidationTokenEntity implements Serializable {
     private UserEntity user;
 
     // Represents the creation time of the token if it's a validation token or the login time if it's a session token
-    @Column(name = "creationTime")
+    @Column(name = "creationTime", nullable = false, updatable = false)
     private LocalDateTime creationTime = LocalDateTime.now();
 
     @Column(name = "expirationTime")
@@ -51,12 +51,10 @@ public class ValidationTokenEntity implements Serializable {
 
     // The status of the token
     @Column(name = "active")
-    protected boolean active;
+    protected boolean active = true;
 
     // Default constructor
     public ValidationTokenEntity() {
-        // active is true by default
-        this.active = true;
     }
 
     // Getters and setters

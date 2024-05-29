@@ -1,6 +1,7 @@
 package domcast.finalprojbackend.bean.user.startup;
 
 
+import domcast.finalprojbackend.bean.user.ValidatorAndHasher;
 import domcast.finalprojbackend.dao.LabDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.entity.LabEntity;
@@ -18,13 +19,16 @@ import jakarta.persistence.PersistenceContext;
 public class UserAndLabCreator {
 
     @PersistenceContext
-    EntityManager em;
+    private EntityManager em;
 
     @Inject
-    UserDao userDao;
+    private UserDao userDao;
 
     @Inject
-    LabDao labDao;
+    private LabDao labDao;
+
+    @Inject
+    private ValidatorAndHasher validatorAndHasher;
 
     @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
     public void createDefaultLabs() {
@@ -41,10 +45,11 @@ public class UserAndLabCreator {
     @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
     public void createDefaultUser() {
         UserEntity user = userDao.findUserByEmail("defaultUserEmail");
+        String password = validatorAndHasher.hashPassword("admin");
         if (user == null) {
             user = new UserEntity();
             user.setEmail("admin@mail.com");
-            user.setPassword("admin");
+            user.setPassword(password);
             user.setFirstName("admin");
             user.setLastName("admin");
             user.setType(TypeOfUserEnum.ADMIN);

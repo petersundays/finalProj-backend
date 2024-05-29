@@ -26,12 +26,12 @@ public class SessionTokenEntity extends ValidationTokenEntity implements Seriali
     private LocalDateTime logoutTime;
 
     // IP from which the session was created
-    @Column(name = "ip_address")
+    @Column(name = "ip_address", nullable = false)
     private String ipAddress;
 
     // Last access of the user with this session token
-    @Column(name = "lastAccess")
-    private LocalDateTime lastAccess;
+    @Column(name = "lastAccess", nullable = false)
+    private LocalDateTime lastAccess = LocalDateTime.now();
 
     // Default constructor
     public SessionTokenEntity() {

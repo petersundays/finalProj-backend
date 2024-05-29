@@ -6,6 +6,8 @@ import domcast.finalprojbackend.dao.SkillDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.UserDto.FirstRegistration;
 import domcast.finalprojbackend.dto.UserDto.FullRegistration;
+import domcast.finalprojbackend.dto.UserDto.LoggedUser;
+import domcast.finalprojbackend.dto.UserDto.Login;
 import domcast.finalprojbackend.entity.*;
 import domcast.finalprojbackend.enums.TypeOfUserEnum;
 import jakarta.ejb.EJB;
@@ -13,6 +15,7 @@ import jakarta.ejb.Stateless;
 import jakarta.persistence.NoResultException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -48,50 +51,6 @@ public class UserBean implements Serializable {
 
     // Default constructor
     public UserBean() {}
-
-    /*public void createDefaultUsersIfNotExistent() {
-        logger.info("Creating default users if not existent");
-
-        UserEntity userEntity = userDao.findUserByUsername("admin");
-        if (userEntity == null) {
-            logger.info("Creating admin user");
-
-            User admin = new User();
-            admin.setUsername("admin");
-            admin.setPassword("admin");
-            admin.setEmail("admin@admin.com");
-            admin.setFirstName("admin");
-            admin.setLastName("admin");
-            admin.setPhone("123456789");
-            admin.setPhotoURL("https://www.pngitem.com/pimgs/m/146-1468479_my-profile-icon-blank-profile-picture-circle-hd.png");
-            admin.setVisible(false);
-            admin.setConfirmed(true);
-
-            register(admin);
-            logger.info("Admin user created");
-        }
-
-        UserEntity userEntity2 = userDao.findUserByUsername("NOTASSIGNED");
-        if (userEntity2 == null) {
-            logger.info("Creating NOTASSIGNED user");
-
-            User deletedUser = new User();
-            deletedUser.setUsername("NOTASSIGNED");
-            deletedUser.setPassword("123");
-            deletedUser.setEmail("deleted@user.com");
-            deletedUser.setFirstName("Deleted");
-            deletedUser.setLastName("User");
-            deletedUser.setPhone("123456788");
-            deletedUser.setPhotoURL("https://www.pngitem.com/pimgs/m/146-1468479_my-profile-icon-blank-profile-picture-circle-hd.png");
-            deletedUser.setTypeOfUser(400);
-            deletedUser.setVisible(false);
-            deletedUser.setConfirmed(true);
-
-            register(deletedUser);
-            logger.info("NOTASSIGNED user created");
-
-        }
-    }*/
 
     /**
      * Registers an email in the database, when does the first registration
@@ -241,6 +200,77 @@ public class UserBean implements Serializable {
         return true;
     }
 
+    /**
+     * Logs in a user
+     * @param login the email and password to be logged in
+     * @param ipAddress the IP address of the user
+     * @return the logged user
+     */
+    public LoggedUser login (Login login, String ipAddress) {
+        logger.info("Logging in user with email: {}", login.getEmail());
+
+        // Checks if the login is null
+        if (!validatorAndHasher.isLoginValid(login)) {
+            logger.error("Login is invalid");
+            throw new IllegalArgumentException("Login is invalid");
+        }
+
+        logger.info("User input is valid");
+        logger.info("Checking if login is valid");
+
+        // Check if the login is valid, if not, throws an exception
+        UserEntity user = userDao.findUserByEmail(login.getEmail());
+
+        if (user == null || user.getType() == TypeOfUserEnum.NOT_CONFIRMED) {
+            logger.error("User not found or not confirmed: {}", login.getEmail());
+            throw new IllegalArgumentException("User not found or not confirmed");
+        }
+
+        logger.info("User found: {}", login.getEmail());
+
+        // Check if the password is valid, if not, throws an exception
+        if (!BCrypt.checkpw(login.getPassword(), user.getPassword())) {
+            logger.error("Invalid password for user: {}", login.getEmail());
+            throw new IllegalArgumentException("Invalid password");
+        }
+
+        logger.info("Login attempt: Email and password are valid");
+
+        // Generate a session token for user
+        SessionTokenEntity sessionToken = tokenBean.generateSessionToken(user, ipAddress);
+
+        // Checks if the session token is null, if so, throws an exception
+        if (sessionToken == null) {
+            logger.error("Error while generating session token");
+            throw new IllegalArgumentException("Error while generating session token");
+        }
+
+        // Adds the session token to the user
+        user.addSessionToken(sessionToken);
+
+        logger.info("Session token generated");
+
+        // Merges the user
+        if (!userDao.merge(user)) {
+            logger.error("Error while logging in user: {}", login.getEmail());
+            throw new IllegalArgumentException("Error while logging in user");
+        }
+
+        logger.info("User logged in: {}", login.getEmail());
+
+        // Converts the user entity to a logged user
+        LoggedUser loggedUser = convertUserEntityToLoggedUser(user, sessionToken.getToken());
+
+        // Checks if the logged user is null, if so, throws an exception
+        if (loggedUser == null) {
+            logger.error("Error while converting user to logged user");
+            throw new IllegalArgumentException("Error while converting user to logged user");
+        }
+
+        // Returns the logged user
+        return loggedUser;
+    }
+
 
     /**
      * Deletes a user from the database
@@ -275,6 +305,48 @@ public class UserBean implements Serializable {
         userEntity.setPassword(firstRegistration.getPassword());
 
         return userEntity;
+    }
+
+    /**
+     * Converts a UserEntity object to a LoggedUser object.
+     * This method is used when a user logs in and we need to return a LoggedUser object with the user's details.
+     *
+     * @param user The UserEntity object that represents the user who is logging in.
+     * @param sessionToken The session token generated for the user's current session.
+     * @return A LoggedUser object that contains the user's details and session token.
+     */
+    public LoggedUser convertUserEntityToLoggedUser(UserEntity user, String sessionToken) {
+        // Create a new LoggedUser object
+        LoggedUser loggedUser = new LoggedUser();
+
+        // Create lists to store the user's interests and skills
+        ArrayList<String> interests = new ArrayList<>();
+        ArrayList<String> skills = new ArrayList<>();
+
+        // Add each of the user's interests to the interests list
+        for(M2MUserInterest userInterest : user.getInterests()) {
+            interests.add(userInterest.getInterest().getName());
+        }
+
+        // Add each of the user's skills to the skills list
+        for(M2MUserSkill userSkill : user.getUserSkills()) {
+            skills.add(userSkill.getSkill().getName());
+        }
+
+        // Set the LoggedUser's attributes using the UserEntity's attributes
+        loggedUser.setEmail(user.getEmail());
+        loggedUser.setFirstName(user.getFirstName());
+        loggedUser.setLastName(user.getLastName());
+        loggedUser.setWorkplace(user.getWorkplace().getCity().getValue());
+        loggedUser.setBiography(user.getBiography());
+        loggedUser.setPhoto(user.getPhoto());
+        loggedUser.setNickname(user.getNickname());
+        loggedUser.setSessionToken(sessionToken);
+        loggedUser.setInterests(interests);
+        loggedUser.setSkills(skills);
+
+        // Return the LoggedUser object
+        return loggedUser;
     }
 
     public void addInterestToUser(UserEntity user, ArrayList<String> interestsList) {

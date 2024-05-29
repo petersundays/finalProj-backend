@@ -3,6 +3,8 @@ package domcast.finalprojbackend.service;
 import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.dto.UserDto.FirstRegistration;
 import domcast.finalprojbackend.dto.UserDto.FullRegistration;
+import domcast.finalprojbackend.dto.UserDto.LoggedUser;
+import domcast.finalprojbackend.dto.UserDto.Login;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.*;
@@ -62,4 +64,26 @@ public class UserService {
         return response;
     }
 
+    @POST
+    @Path("/login")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response login(Login userToLogin, @Context HttpServletRequest request) {
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with IP address {} is trying to login", ipAddress);
+
+        Response response;
+        LoggedUser loggedUser;
+
+        try {
+            loggedUser = userBean.login(userToLogin, ipAddress);
+            response = Response.status(200).entity(loggedUser).build();
+            logger.info("User with IP address {} logged in successfully with email {}", ipAddress, userToLogin.getEmail());
+        } catch (Exception e) {
+            response = Response.status(400).entity("Error logging in").build();
+            logger.info("User with IP address {} tried to login unsuccessfully with email {}", ipAddress, userToLogin.getEmail());
+        }
+
+        return response;
+    }
 }

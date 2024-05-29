@@ -1,6 +1,7 @@
 package domcast.finalprojbackend.dao;
 
 import domcast.finalprojbackend.bean.user.UserBean;
+import domcast.finalprojbackend.dto.UserDto.Login;
 import domcast.finalprojbackend.entity.UserEntity;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.NoResultException;
