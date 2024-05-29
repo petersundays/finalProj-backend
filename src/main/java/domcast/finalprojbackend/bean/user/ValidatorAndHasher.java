@@ -96,4 +96,9 @@ public class ValidatorAndHasher {
             return null;
         }
     }
+
+    public boolean checkPassword(String plainPassword, String hashedPassword) {
+        return BCrypt.checkpw(plainPassword, hashedPassword);
+    }
+
 }

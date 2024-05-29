@@ -7,15 +7,17 @@ import domcast.finalprojbackend.dao.LabDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.UserDto.FirstRegistration;
 import domcast.finalprojbackend.dto.UserDto.FullRegistration;
+import domcast.finalprojbackend.dto.UserDto.LoggedUser;
+import domcast.finalprojbackend.dto.UserDto.Login;
 import domcast.finalprojbackend.entity.LabEntity;
+import domcast.finalprojbackend.entity.SessionTokenEntity;
 import domcast.finalprojbackend.entity.UserEntity;
-import domcast.finalprojbackend.entity.ValidationTokenEntity;
 import domcast.finalprojbackend.enums.LabEnum;
+import domcast.finalprojbackend.enums.TypeOfUserEnum;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -132,6 +134,7 @@ public class UserBeanTest {
         when(validatorAndHasher.isMandatoryDataValid(fullRegistration)).thenReturn(true);
         when(userDao.findUserByValidationToken(fullRegistration.getValidationToken())).thenReturn(userEntity);
         when(labDao.findLabByCity(fullRegistration.getWorkplace())).thenReturn(labEntity);
+        when(tokenBean.setTokenInactive(fullRegistration.getValidationToken())).thenReturn(true); // Mock the inactivation of the token
         when(userDao.merge(any(UserEntity.class))).thenReturn(true); // Simulate success
 
         // Act
@@ -164,6 +167,97 @@ public class UserBeanTest {
 
         // Act
         boolean result = userBean.fullRegistration(fullRegistration);
+
+        // Assert
+        assertFalse(result);
+    }
+
+
+    /**
+     * Test method for login
+     * This test checks the successful case where the login is successful.
+     */
+    @Test
+    public void testLogin_Success() {
+        // Arrange
+        Login login = new Login();
+        login.setEmail("test@test.com");
+        login.setPassword("password");
+        String ipAddress = "192.168.0.1";
+
+        UserEntity userEntity = new UserEntity();
+        userEntity.setPassword("hashedPassword");
+        userEntity.setType(TypeOfUserEnum.STANDARD);
+
+        // Create a LabEntity and set it as the workplace of the UserEntity
+        LabEntity labEntity = new LabEntity();
+        labEntity.setCity(LabEnum.LISBOA); // Or any other value from the LabEnum
+        userEntity.setWorkplace(labEntity);
+
+        SessionTokenEntity sessionTokenEntity = new SessionTokenEntity();
+
+        when(validatorAndHasher.isLoginValid(login)).thenReturn(true);
+        when(userDao.findUserByEmail(login.getEmail())).thenReturn(userEntity);
+        when(validatorAndHasher.checkPassword(login.getPassword(), userEntity.getPassword())).thenReturn(true);
+        when(tokenBean.generateSessionToken(userEntity, ipAddress)).thenReturn(sessionTokenEntity);
+        when(userDao.merge(userEntity)).thenReturn(true);
+
+        // Act
+        LoggedUser result = userBean.login(login, ipAddress);
+
+        // Assert
+        assertNotNull(result);
+    }
+
+    /**
+     * Test method for login
+     * This test checks the failure case where the login is unsuccessful.
+     */
+    @Test
+    public void testLogin_Failure() {
+        // Arrange
+        Login login = new Login();
+        login.setEmail("test@test.com");
+        login.setPassword("password");
+        String ipAddress = "192.168.0.1";
+
+        when(validatorAndHasher.isLoginValid(login)).thenReturn(false);
+
+        // Act and Assert
+        assertThrows(IllegalArgumentException.class, () -> userBean.login(login, ipAddress));
+    }
+
+    /**
+     * Test method for logout
+     * This test checks the successful case where the logout is successful.
+     */
+    @Test
+    public void testLogout_Success() {
+        // Arrange
+        String sessionToken = "validToken";
+
+        when(tokenBean.setTokenInactive(sessionToken)).thenReturn(true);
+
+        // Act
+        boolean result = userBean.logout(sessionToken);
+
+        // Assert
+        assertTrue(result);
+    }
+
+    /**
+     * Test method for logout
+     * This test checks the failure case where the logout is unsuccessful.
+     */
+    @Test
+    public void testLogout_Failure() {
+        // Arrange
+        String sessionToken = "invalidToken";
+
+        when(tokenBean.setTokenInactive(sessionToken)).thenReturn(false);
+
+        // Act
+        boolean result = userBean.logout(sessionToken);
 
         // Assert
         assertFalse(result);

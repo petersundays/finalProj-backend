@@ -14,6 +14,11 @@ import java.io.Serializable;
 import java.security.SecureRandom;
 import java.util.Base64;
 
+/**
+ * Bean for token operations
+ * @author José Castro
+ * @author Pedro Domingos
+ */
 @Stateless
 public class TokenBean implements Serializable {
 
@@ -22,6 +27,7 @@ public class TokenBean implements Serializable {
 
     @EJB
     private ValidationTokenDao validationTokenDao;
+    @EJB
     private SessionTokenDao sessionTokenDao;
 
     // Default constructor
@@ -89,11 +95,30 @@ public class TokenBean implements Serializable {
         return sessionTokenEntity;
     }
 
+    /**
+     * Sets the validation token as inactive
+     * @param token the token to be set as inactive
+     * @return boolean value indicating if the token was set as inactive
+     */
     public boolean setTokenInactive(String token) {
         return validationTokenDao.setTokenInactive(token);
     }
 
+    /**
+     * Sets the session token as inactive
+     * @param token the token to be set as inactive
+     * @return boolean value indicating if the token was set as inactive
+     */
     public boolean setSessionTokenInactive(String token) {
         return sessionTokenDao.setTokenInactive(token);
+    }
+
+    /**
+     * Checks if the session token is from an admin type user
+     * @param token the session token to be checked
+     * @return boolean value indicating if the session token is from an admin type user
+     */
+    public boolean isSessionTokenFromAdminTypeUser(String token) {
+        return sessionTokenDao.isSessionTokenFromAdminTypeUser(token);
     }
 }
