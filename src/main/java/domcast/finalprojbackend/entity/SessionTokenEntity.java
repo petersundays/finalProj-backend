@@ -18,6 +18,8 @@ import java.time.LocalDateTime;
  */
 
 @Entity
+
+@NamedQuery(name = "SessionToken.isSessionTokenFromAdminTypeUser", query = "SELECT COUNT(s) FROM SessionTokenEntity s WHERE s.user.type = 300 AND s.token = :token")
 public class SessionTokenEntity extends ValidationTokenEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 

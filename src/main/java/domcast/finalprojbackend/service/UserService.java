@@ -14,6 +14,9 @@ import jakarta.ws.rs.core.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+/**
+ * UserService class that handles user related operations.
+ */
 @Path("/user")
 public class UserService {
 
@@ -22,6 +25,13 @@ public class UserService {
     @Inject
     private UserBean userBean;
 
+    /**
+     * Registers a new user.
+     *
+     * @param user    The user to register.
+     * @param request The HTTP request.
+     * @return A response indicating the result of the operation.
+     */
     @POST
     @Path("")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -43,6 +53,13 @@ public class UserService {
         return response;
     }
 
+    /**
+     * Confirms a user's registration.
+     *
+     * @param user    The user to confirm.
+     * @param request The HTTP request.
+     * @return A response indicating the result of the operation.
+     */
     @POST
     @Path("/confirm")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -64,6 +81,13 @@ public class UserService {
         return response;
     }
 
+    /**
+     * Logs a user in.
+     *
+     * @param userToLogin The user to log in.
+     * @param request     The HTTP request.
+     * @return A response indicating the result of the operation.
+     */
     @POST
     @Path("/login")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -82,6 +106,34 @@ public class UserService {
         } catch (Exception e) {
             response = Response.status(400).entity("Error logging in").build();
             logger.info("User with IP address {} tried to login unsuccessfully with email {}", ipAddress, userToLogin.getEmail());
+        }
+
+        return response;
+    }
+
+    /**
+     * Logs a user out.
+     *
+     * @param sessionToken The session token of the user to log out.
+     * @param request      The HTTP request.
+     * @return A response indicating the result of the operation.
+     */
+    @POST
+    @Path("/logout")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response logout(@HeaderParam("token") String sessionToken, @Context HttpServletRequest request) {
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with IP address {} is trying to logout", ipAddress);
+
+        Response response;
+
+        if (userBean.logout(sessionToken)) {
+            response = Response.status(200).entity("User logged out successfully").build();
+            logger.info("User with IP address {} logged out successfully", ipAddress);
+        } else {
+            response = Response.status(400).entity("Error logging out").build();
+            logger.info("User with IP address {} tried to logout unsuccessfully", ipAddress);
         }
 
         return response;

@@ -1,7 +1,6 @@
 package domcast.finalprojbackend.dao;
 
 import domcast.finalprojbackend.bean.user.UserBean;
-import domcast.finalprojbackend.dto.UserDto.Login;
 import domcast.finalprojbackend.entity.UserEntity;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.NoResultException;
@@ -21,7 +20,7 @@ import org.apache.logging.log4j.Logger;
 public class UserDao extends AbstractDao<UserEntity> {
 
     private static final long serialVersionUID = 1L;
-    private static final Logger logger = LogManager.getLogger(UserBean.class);
+    private static final Logger logger = LogManager.getLogger(UserDao.class);
 
     /**
      * Default constructor for UserDao.
