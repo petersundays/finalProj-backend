@@ -15,6 +15,10 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
+/**
+ * Stateless EJB Bean responsible for creating default labs and a default user.
+ * This is typically used at application startup to ensure necessary data is present in the database.
+ */
 @Stateless
 public class UserAndLabCreator {
 
@@ -30,6 +34,10 @@ public class UserAndLabCreator {
     @Inject
     private ValidatorAndHasher validatorAndHasher;
 
+    /**
+     * Creates default labs in the database.
+     * This method is transactional and requires a new transaction.
+     */
     @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
     public void createDefaultLabs() {
         for (LabEnum city : LabEnum.values()) {
@@ -42,6 +50,10 @@ public class UserAndLabCreator {
         }
     }
 
+    /**
+     * Creates a default user in the database.
+     * This method is transactional and requires a new transaction.
+     */
     @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
     public void createDefaultUser() {
         UserEntity user = userDao.findUserByEmail("defaultUserEmail");

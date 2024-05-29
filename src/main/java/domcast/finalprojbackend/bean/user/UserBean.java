@@ -19,7 +19,6 @@ import org.mindrot.jbcrypt.BCrypt;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -186,6 +185,12 @@ public class UserBean implements Serializable {
             addSkillToUser(userEntity, user.getSkills());
         }
 
+        // Tries to set the validation token as inactive
+        if (!tokenBean.setTokenInactive(user.getValidationToken())) {
+            logger.error("Error while inactivating validation token: {}", user.getValidationToken());
+            return false;
+        }
+
         // Sets the user as confirmed
         userEntity.setType(TypeOfUserEnum.STANDARD);
 
@@ -271,6 +276,27 @@ public class UserBean implements Serializable {
         return loggedUser;
     }
 
+
+    public boolean logout (String sessionToken){
+        logger.info("Logging out user with session token: {}", sessionToken);
+
+        // Checks if the session token is null
+        if (sessionToken == null) {
+            logger.error("Session token is null");
+            return false;
+        }
+
+        logger.info("Session token is not null");
+
+        // Tries to inactivate the session token
+        if (!tokenBean.setTokenInactive(sessionToken)) {
+            logger.error("Error while inactivating session token: {}", sessionToken);
+            return false;
+        }
+
+        logger.info("Session token inactivated: {}", sessionToken);
+        return true;
+    }
 
     /**
      * Deletes a user from the database

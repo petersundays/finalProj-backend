@@ -1,8 +1,11 @@
 package domcast.finalprojbackend.bean.user;
 
+import domcast.finalprojbackend.dao.SessionTokenDao;
+import domcast.finalprojbackend.dao.ValidationTokenDao;
 import domcast.finalprojbackend.entity.SessionTokenEntity;
 import domcast.finalprojbackend.entity.UserEntity;
 import domcast.finalprojbackend.entity.ValidationTokenEntity;
+import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -16,6 +19,10 @@ public class TokenBean implements Serializable {
 
     private static final long serialVersionUID = 1L;
     private static final Logger logger = LogManager.getLogger(UserBean.class);
+
+    @EJB
+    private ValidationTokenDao validationTokenDao;
+    private SessionTokenDao sessionTokenDao;
 
     // Default constructor
     public TokenBean() {
@@ -80,5 +87,13 @@ public class TokenBean implements Serializable {
         }
 
         return sessionTokenEntity;
+    }
+
+    public boolean setTokenInactive(String token) {
+        return validationTokenDao.setTokenInactive(token);
+    }
+
+    public boolean setSessionTokenInactive(String token) {
+        return sessionTokenDao.setTokenInactive(token);
     }
 }
