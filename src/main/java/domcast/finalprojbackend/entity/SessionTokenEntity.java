@@ -30,16 +30,26 @@ public class SessionTokenEntity extends ValidationTokenEntity implements Seriali
     @Column(name = "logout_time")
     private LocalDateTime logoutTime;
 
-    // IP from which the session was created
-    @Column(name = "ip_address", nullable = false)
-    private String ipAddress;
-
     // Last access of the user with this session token
-    @Column(name = "lastAccess", nullable = false)
+    @Column(name = "lastAccess")
     private LocalDateTime lastAccess = LocalDateTime.now();
 
     // Default constructor
     public SessionTokenEntity() {
+    }
+
+    /**
+     * Method to validate the session token entity.
+     * It checks if the last access is not null.
+     * If it is null, it throws an IllegalArgumentException.
+     * This is necessary because the last access must not be null for a session token entity, but it can be null for a validation token entity.
+     */
+    @PrePersist
+    @PreUpdate
+    public void validate() {
+        if (lastAccess == null) {
+            throw new IllegalArgumentException("lastAccess must not be null for SessionTokenEntity");
+        }
     }
 
     // Getters and setters
@@ -50,14 +60,6 @@ public class SessionTokenEntity extends ValidationTokenEntity implements Seriali
 
     public void setLogoutTime(LocalDateTime logoutTime) {
         this.logoutTime = logoutTime;
-    }
-
-    public String getIpAddress() {
-        return ipAddress;
-    }
-
-    public void setIpAddress(String ipAddress) {
-        this.ipAddress = ipAddress;
     }
 
     public LocalDateTime getLastAccess() {

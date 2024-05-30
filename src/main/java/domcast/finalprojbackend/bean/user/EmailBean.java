@@ -12,7 +12,7 @@ import java.util.Properties;
 /**
  * Bean for sending emails
  * Uses Gmail SMTP server
- * @authod José Castro
+ * @author José Castro
  * @author Pedro Domingos
  */
 @Stateless
@@ -117,6 +117,10 @@ public class EmailBean {
      * @return true if the email was sent successfully, false otherwise
      */
     public boolean sendPasswordResetEmail(String email, String firstName, String validationToken) {
+        if (email == null || email.isEmpty() || firstName == null || firstName.isEmpty() || validationToken == null || validationToken.isEmpty()) {
+            throw new IllegalArgumentException("Email, firstName, and validationToken must not be null or empty");
+        }
+
         logger.info("Sending password reset email to: {}", email);
         boolean sent = false;
 
@@ -126,11 +130,15 @@ public class EmailBean {
                 + "Please click on the link below to reset your password.\n\n"
                 + "Reset Link: " + resetLink;
 
-        if (sendEmail(email, subject, body)) {
-            sent = true;
-            logger.info("Password reset email sent to: {}", email);
-        } else {
-            logger.error("Password reset email not sent to: {}", email);
+        try {
+            if (sendEmail(email, subject, body)) {
+                sent = true;
+                logger.info("Password reset email sent to: {}", email);
+            } else {
+                logger.error("Password reset email not sent to: {}", email);
+            }
+        } catch (Exception e) {
+            logger.error("Error sending password reset email to: {}", email);
         }
 
         return sent;

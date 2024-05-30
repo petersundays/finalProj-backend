@@ -27,6 +27,17 @@ public class ValidatorAndHasher {
      */
     public boolean isEmailValid(String email) {
         logger.info("Checking if email is valid");
+
+        if (email == null) {
+            logger.error("Email cannot be null");
+            throw new IllegalArgumentException("Email cannot be null");
+        }
+
+        if (email.isBlank()) {
+            logger.error("Email cannot be blank");
+            throw new IllegalArgumentException("Email cannot be blank");
+        }
+
         return pattern.matcher(email).matches();
     }
 
@@ -38,9 +49,12 @@ public class ValidatorAndHasher {
     public boolean isInputValid(FirstRegistration firstRegistration) {
         logger.info("Checking if input is valid");
 
-        return firstRegistration.getEmail() != null && !firstRegistration.getEmail().isBlank() &&
-                firstRegistration.getPassword() != null && !firstRegistration.getPassword().isBlank() &&
-                isEmailValid(firstRegistration.getEmail()) && isPasswordValid(firstRegistration.getPassword());
+        if (firstRegistration == null) {
+            logger.error("FirstRegistration object cannot be null");
+            throw new IllegalArgumentException("FirstRegistration object cannot be null");
+        }
+
+        return isEmailValid(firstRegistration.getEmail()) && isPasswordValid(firstRegistration.getPassword());
     }
 
     public boolean isMandatoryDataValid(FullRegistration fullRegistration) {
@@ -65,21 +79,40 @@ public class ValidatorAndHasher {
     }
 
     /**
-     * Checks if the password is valid
+     * Checks if the password is valid, according to the following rules:
+     * - At least 12 characters long
+     * - At least one uppercase letter
+     * - At least one lowercase letter
+     * - At least one number
+     * - At least one special character
+     * @throws IllegalArgumentException if the password is not valid, null or blank
      * @param password the password to be checked
      * @return boolean value indicating if the password is valid
      */
-    public boolean isPasswordValid(String password) {
+    public boolean isPasswordValid(String password) throws IllegalArgumentException {
         logger.info("Checking if password is valid");
 
-        // Regex for a strong password
-        // Minimum twelve characters, at least one uppercase letter, one lowercase letter, one number and one special character
-        String regex = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{12,}$";
+        if (password == null) {
+            throw new IllegalArgumentException("Password cannot be null");
+        }
 
+        if (password.isBlank()) {
+            throw new IllegalArgumentException("Password cannot be blank");
+        }
+
+        if (password.length() < 12) {
+            throw new IllegalArgumentException("Password must be at least 12 characters long");
+        }
+
+        String regex = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{12,}$";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(password);
 
-        return password.length() >= 12 && matcher.matches();
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException("Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character");
+        }
+
+        return true;
     }
 
     /**

@@ -42,7 +42,7 @@ public class UserService {
 
         Response response;
 
-        if (userBean.registerEmail(user)) {
+        if (userBean.registerEmail(user, ipAddress)) {
             response = Response.status(201).entity("User registered successfully").build();
             logger.info("User with IP address {} registered the email {} successfully", ipAddress, user.getEmail());
         } else {
@@ -134,6 +134,48 @@ public class UserService {
         } else {
             response = Response.status(400).entity("Error logging out").build();
             logger.info("User with IP address {} tried to logout unsuccessfully", ipAddress);
+        }
+
+        return response;
+    }
+
+    @POST
+    @Path("/recover-password")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response recoverPassword(@HeaderParam("email") String email, @Context HttpServletRequest request) {
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with IP address {} is trying to recover password with email {}", ipAddress, email);
+
+        Response response;
+
+        if (userBean.recoverPassword(email, ipAddress)) {
+            response = Response.status(200).entity("Password recovery email sent successfully").build();
+            logger.info("An email was sent to {} with a password recovery link, to user with IP address {}", email, ipAddress);
+        } else {
+            response = Response.status(400).entity("Error sending password recovery email").build();
+            logger.info("Failed to send an email to {} with a password recovery link, to user with IP address {}", email, ipAddress);
+        }
+
+        return response;
+    }
+
+    @PUT
+    @Path("/reset-password")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response changePassword(@HeaderParam("token") String validationToken, @HeaderParam("password") String password, @Context HttpServletRequest request) {
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with IP address {} is trying to change password", ipAddress);
+
+        Response response;
+
+        if (userBean.resetPassword(validationToken, password)) {
+            response = Response.status(200).entity("Password changed successfully").build();
+            logger.info("User with IP address {} changed password successfully", ipAddress);
+        } else {
+            response = Response.status(400).entity("Error changing password").build();
+            logger.info("User with IP address {} tried to change password unsuccessfully", ipAddress);
         }
 
         return response;

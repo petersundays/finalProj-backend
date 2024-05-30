@@ -51,7 +51,7 @@ public class AdminService {
                 }
             } else {
                 response = Response.status(401).entity("Unauthorized").build();
-                logger.info("Unauthorized admin tried to set session timeout");
+                logger.info("Unauthorized user tried to set session timeout");
             }
         } catch (Exception e) {
             response = Response.status(500).entity("Internal server error").build();

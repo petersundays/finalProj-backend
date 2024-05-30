@@ -1,6 +1,7 @@
 package domcast.finalprojbackend.bean.user;
 
 import domcast.finalprojbackend.dao.SessionTokenDao;
+import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dao.ValidationTokenDao;
 import domcast.finalprojbackend.entity.SessionTokenEntity;
 import domcast.finalprojbackend.entity.UserEntity;
@@ -31,6 +32,10 @@ public class TokenBean implements Serializable {
     private ValidationTokenDao validationTokenDao;
     @EJB
     private SessionTokenDao sessionTokenDao;
+    @EJB
+    UserDao userDao;
+    @EJB
+    UserBean userBean;
 
     // Default constructor
     public TokenBean() {
@@ -43,7 +48,7 @@ public class TokenBean implements Serializable {
      * @param expirationMinutes the number of minutes the token is valid for
      * @return the generated validation token
      */
-    public ValidationTokenEntity generateValidationToken(UserEntity user, int expirationMinutes) {
+    public ValidationTokenEntity generateValidationToken(UserEntity user, int expirationMinutes, String ip_address) {
         logger.info("Generating validation token");
 
         ValidationTokenEntity validationTokenEntity = new ValidationTokenEntity();
@@ -57,6 +62,7 @@ public class TokenBean implements Serializable {
             validationTokenEntity.setToken(token);
             validationTokenEntity.setUser(user);
             validationTokenEntity.setExpirationTime(validationTokenEntity.getCreationTime().plusMinutes(expirationMinutes));
+            validationTokenEntity.setIpAddress(ip_address);
 
             logger.info("Validation token generated");
         } catch (NullPointerException e) {
@@ -107,15 +113,6 @@ public class TokenBean implements Serializable {
     }
 
     /**
-     * Sets the session token as inactive
-     * @param token the token to be set as inactive
-     * @return boolean value indicating if the token was set as inactive
-     */
-    public boolean setSessionTokenInactive(String token) {
-        return sessionTokenDao.setTokenInactive(token);
-    }
-
-    /**
      * Checks if the session token is from an admin type user
      * @param token the session token to be checked
      * @return boolean value indicating if the session token is from an admin type user
@@ -140,5 +137,26 @@ public class TokenBean implements Serializable {
      */
     public List<SessionTokenEntity> findActiveSessionsExceededTimeout(int timeout) {
         return sessionTokenDao.findActiveSessionsExceededTimeout(timeout, LocalDateTime.now());
+    }
+
+    /**
+     * Checks if the validation token is expired
+     * @param token the validation token to be checked
+     * @return boolean value indicating if the validation token is expired
+     */
+    public boolean isValidationTokenExpired(String token) {
+        boolean expired = validationTokenDao.isTokenExpired(token);
+
+        if (expired) {
+            logger.info("Validation token is expired: {}", token);
+            try {
+                setTokenInactive(token);
+                logger.info("Validation token set as inactive: {}", token);
+            } catch (Exception e) {
+                logger.error("Error setting validation token as inactive", e);
+            }
+        }
+
+        return expired;
     }
 }

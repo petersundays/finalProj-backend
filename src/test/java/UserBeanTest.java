@@ -12,6 +12,7 @@ import domcast.finalprojbackend.dto.UserDto.Login;
 import domcast.finalprojbackend.entity.LabEntity;
 import domcast.finalprojbackend.entity.SessionTokenEntity;
 import domcast.finalprojbackend.entity.UserEntity;
+import domcast.finalprojbackend.entity.ValidationTokenEntity;
 import domcast.finalprojbackend.enums.LabEnum;
 import domcast.finalprojbackend.enums.TypeOfUserEnum;
 import org.apache.logging.log4j.LogManager;
@@ -69,16 +70,17 @@ public class UserBeanTest {
         FirstRegistration firstRegistration = new FirstRegistration();
         firstRegistration.setEmail("test@test.com");
         firstRegistration.setPassword("password");
+        String ipAddress = "192.168.0.1"; // Add the IP address
 
         // Mock the behavior of the dependencies
         when(validatorAndHasher.isInputValid(firstRegistration)).thenReturn(true);
         when(validatorAndHasher.hashPassword(firstRegistration.getPassword())).thenReturn("hashedPassword");
-        when(tokenBean.generateValidationToken(any(UserEntity.class), anyInt())).thenReturn(new ValidationTokenEntity());
+        when(tokenBean.generateValidationToken(any(UserEntity.class), anyInt(), eq(ipAddress))).thenReturn(new ValidationTokenEntity());
         when(userDao.persist(any(UserEntity.class))).thenReturn(true);
         when(emailBean.sendConfirmationEmail(anyString(), anyString())).thenReturn(true);
 
         // Act
-        boolean result = userBean.registerEmail(firstRegistration);
+        boolean result = userBean.registerEmail(firstRegistration, ipAddress);
 
         // Assert
         assertTrue(result);
@@ -87,7 +89,6 @@ public class UserBeanTest {
         verify(emailBean, times(1)).sendConfirmationEmail(anyString(), anyString());
     }
 */
-
     /**
      * Test method for registerEmail when input is invalid
      * This test checks the failure case where the input validation fails.
@@ -98,13 +99,14 @@ public class UserBeanTest {
         FirstRegistration firstRegistration = new FirstRegistration();
         firstRegistration.setEmail("invalid@test.com");
         firstRegistration.setPassword("password");
+        String ipAddress = "192.168.0.1"; // Add the IP address
 
         // Mock the behavior of the validatorAndHasher to return false for isInputValid
         when(validatorAndHasher.isInputValid(firstRegistration)).thenReturn(false);
 
         // Act
         // Call the method under test
-        boolean result = userBean.registerEmail(firstRegistration);
+        boolean result = userBean.registerEmail(firstRegistration, ipAddress);
 
         // Assert
         // Check that the method returned false and that the userDao.persist method was not called

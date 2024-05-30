@@ -58,7 +58,7 @@ public class UserBean implements Serializable {
      * @param firstRegistration the email and password to be registered
      * @return boolean value indicating if the email was registered
      */
-    public boolean registerEmail (FirstRegistration firstRegistration) {
+    public boolean registerEmail (FirstRegistration firstRegistration, String ipAddress) {
         logger.info("Registering email: {}", firstRegistration.getEmail());
 
         // Checks if the email and password are valid
@@ -85,7 +85,7 @@ public class UserBean implements Serializable {
         UserEntity userEntity = convertFirstRegistrationToUserEntity(firstRegistration);
 
         // Generates a validation token
-        ValidationTokenEntity validationToken = tokenBean.generateValidationToken(userEntity, 48 * 60);
+        ValidationTokenEntity validationToken = tokenBean.generateValidationToken(userEntity, 48 * 60, ipAddress);
         if (validationToken == null) {
             logger.error("Error while generating validation token");
             return false;
@@ -121,7 +121,22 @@ public class UserBean implements Serializable {
 
         // Checks if the user is null or if the validation token is null
         if (user == null || user.getValidationToken() == null) {
-            logger.error("User is null");
+            logger.error("User is null or validation token is null");
+            return false;
+        }
+
+        // Checks if the validation token is still valid and deletes the registration if it is not
+        if (tokenBean.isValidationTokenExpired(user.getValidationToken())) {
+            logger.error("Validation token is expired: {}", user.getValidationToken());
+            // Retrieve the user associated with the expired token
+            UserEntity userEntityToDelete = userDao.findUserByValidationToken(user.getValidationToken());
+            if (userEntityToDelete != null) {
+                logger.info("Deleting user with email: {}", userEntityToDelete.getEmail());
+                // Delete the user associated with the expired token
+                if (!delete(userEntityToDelete.getEmail())) {
+                    logger.error("Error deleting user with email: {}", userEntityToDelete.getEmail());
+                }
+            }
             return false;
         }
 
@@ -458,25 +473,129 @@ public class UserBean implements Serializable {
 
     }
 
-    public boolean setSessionTimeout(int sessionTimeout) {
-        try {
-            systemBean.setSessionTimeout(sessionTimeout);
-            return true;
-        } catch (Exception e) {
-            logger.error("Error while setting session timeout: {}", e.getMessage());
+    public boolean recoverPassword (String email, String ipAddress){
+        logger.info("Recovering password for user with email: {}", email);
+
+        // Checks if the email is null
+        if (email == null) {
+            logger.error("Email is null");
             return false;
         }
-    }
 
-    public boolean setProjectMaxUsers(int projectMaxUsers) {
-        try {
-            systemBean.setProjectMaxMembers(projectMaxUsers);
-            return true;
-        } catch (Exception e) {
-            logger.error("Error while setting project max members: {}", e.getMessage());
+        logger.info("Email is not null");
+
+        // Finds the user by the email
+        UserEntity user = userDao.findUserByEmail(email);
+
+        // Checks if the user is null
+        if (user == null) {
+            logger.error("User not found with email: {}", email);
             return false;
         }
+
+        if (user.getType() == TypeOfUserEnum.NOT_CONFIRMED) {
+            logger.error("User not confirmed: {}", email);
+            return false;
+        }
+
+        logger.info("User found with email: {}", email);
+
+        // Generates a validation token
+        ValidationTokenEntity validationToken = tokenBean.generateValidationToken(user, 5, ipAddress);
+
+        // Checks if the validation token is null
+        if (validationToken == null) {
+            logger.error("Error while generating validation token for password recovery");
+            return false;
+        }
+
+        logger.info("Validation token generated for password recovery");
+
+        // Adds the validation token to the user
+        user.addValidationToken(validationToken);
+
+        // Merges the user
+        if (!userDao.merge(user)) {
+            logger.error("Error while recovering password for user with email: {}", email);
+            return false;
+        }
+
+        logger.info("Password recovery initiated for user with email: {}", email);
+
+        // Sends the password recovery email
+        if (!emailBean.sendPasswordResetEmail(email, user.getFirstName(), validationToken.getToken())) {
+            logger.error("Password recovery email not sent to: {}", email);
+            return false;
+        }
+
+        logger.info("Password recovery email sent to: {}", email);
+        return true;
     }
 
+    public boolean resetPassword (String validationToken, String password) {
+        logger.info("Changing password for user with validation token: {}", validationToken);
+
+        // Checks if the validation token is null
+        if (validationToken == null) {
+            logger.error("Validation token is null");
+            return false;
+        }
+
+        logger.info("Validation token is not null");
+
+        // Checks if the validation token is still valid
+        if (tokenBean.isValidationTokenExpired(validationToken)) {
+            logger.error("Validation token is expired: {}", validationToken);
+            return false;
+        }
+
+        // Finds the user by the validation token
+        UserEntity user = userDao.findUserByValidationToken(validationToken);
+
+        // Checks if the user is null
+        if (user == null) {
+            logger.error("User not found with validation token: {}", validationToken);
+            return false;
+        }
+
+        logger.info("User found with validation token: {}", validationToken);
+
+        // Checks if the password is valid
+        if (!validatorAndHasher.isPasswordValid(password)) {
+            logger.error("Password is invalid");
+            return false;
+        }
+
+        logger.info("Password is valid");
+
+        // Hashes the password
+        String hashedPassword = validatorAndHasher.hashPassword(password);
+
+        // Checks if the hashed password is null
+        if (hashedPassword == null) {
+            logger.error("Error while hashing password");
+            return false;
+        }
+
+        logger.info("Password hashed");
+
+        // Sets the user's password to the hashed password
+        user.setPassword(hashedPassword);
+
+        // Tries to set the validation token as inactive
+        if (!tokenBean.setTokenInactive(validationToken)) {
+            logger.error("Error while inactivating validation token: {}", validationToken);
+            return false;
+        }
+
+        // Merges the user
+        if (!userDao.merge(user)) {
+            logger.error("Error while changing password for user with validation token: {}", validationToken);
+            return false;
+        }
+
+        logger.info("Password changed for user with validation token: {}", validationToken);
+        return true;
+    }
 
 }

@@ -26,7 +26,7 @@ import java.time.LocalDateTime;
 @DiscriminatorColumn(name = "token_type")
 
 @NamedQuery(name = "Token.setTokenInactive", query = "UPDATE ValidationTokenEntity t SET t.active = false WHERE t.token = :token")
-
+@NamedQuery(name = "Token.isTokenValid", query = "SELECT COUNT(t) FROM ValidationTokenEntity t WHERE t.token = :token AND t.expirationTime > CURRENT_TIMESTAMP")
 public class ValidationTokenEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -35,6 +35,10 @@ public class ValidationTokenEntity implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false, unique = true, updatable = false)
     protected int id;
+
+    // IP from which the session was created
+    @Column(name = "ip_address", nullable = false)
+    private String ipAddress;
 
     // The generated token for the user
     @Column(name = "token", nullable = false, unique = true, updatable = false)
@@ -64,6 +68,14 @@ public class ValidationTokenEntity implements Serializable {
 
     public int getId() {
         return id;
+    }
+
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
     }
 
     public String getToken() {
