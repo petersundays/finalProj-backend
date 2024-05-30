@@ -47,3 +47,7 @@ mvnw
 *.cmd
 
 *.xml
+
+logs/
+
+domcast.log

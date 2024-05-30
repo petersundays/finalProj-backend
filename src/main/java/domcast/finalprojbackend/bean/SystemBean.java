@@ -1,8 +1,14 @@
 package domcast.finalprojbackend.bean;
 
 import java.io.Serializable;
+import java.util.List;
+
+import domcast.finalprojbackend.bean.user.TokenBean;
+import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.dao.SystemDao;
+import domcast.finalprojbackend.entity.SessionTokenEntity;
 import jakarta.ejb.EJB;
+import jakarta.ejb.Schedule;
 import jakarta.ejb.Stateless;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,6 +26,10 @@ public class SystemBean implements Serializable {
     // Inject the SystemDao EJB
     @EJB
     private SystemDao systemDao;
+    @EJB
+    private TokenBean tokenBean;
+    @EJB
+    private UserBean userBean;
 
     /**
      * Default constructor for SystemBean.
@@ -96,6 +106,37 @@ public class SystemBean implements Serializable {
         } catch (Exception e) {
             logger.error("Error getting number of system variables", e);
             throw new RuntimeException("Error getting number of system variables", e);
+        }
+    }
+
+    /**
+     * Session timer that checks for active sessions that have exceeded the timeout every 30 seconds and logs them out.
+     */
+    @Schedule(second="*/30", minute="*", hour="*") // this automatic timer is set to expire every 30 seconds
+    public void sessionTimer() throws Exception {
+        logger.info("Session timer started");
+
+        try {
+            // Find active sessions that have exceeded the timeout
+            List<SessionTokenEntity> activeSessions = tokenBean.findActiveSessionsExceededTimeout(getSessionTimeout());
+
+            // Log out the active sessions that have exceeded the timeout
+            for (SessionTokenEntity session : activeSessions) {
+                logger.info("Session token {} has exceeded the timeout", session.getToken());
+
+                try {
+                    userBean.logout(session.getToken());
+                    logger.info("Session token {} has been logged out", session.getToken());
+                } catch (Exception e) {
+                    logger.error("Error setting session token {} logout time to now", session.getToken(), e);
+                    throw e;
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error in session timer", e);
+            throw e;
+        } finally {
+            logger.info("Session timer ended");
         }
     }
 }

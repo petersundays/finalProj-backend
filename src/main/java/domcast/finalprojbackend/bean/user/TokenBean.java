@@ -12,7 +12,9 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.List;
 
 /**
  * Bean for token operations
@@ -120,5 +122,23 @@ public class TokenBean implements Serializable {
      */
     public boolean isSessionTokenFromAdminTypeUser(String token) {
         return sessionTokenDao.isSessionTokenFromAdminTypeUser(token);
+    }
+
+    /**
+     * Sets the session token logout time to the current time
+     * @param token the session token to be updated
+     * @return boolean value indicating if the operation was successful
+     */
+    public boolean setSessionTokenLogoutToNow(String token) {
+        return sessionTokenDao.setSessionTokenLogoutToNow(token);
+    }
+
+    /**
+     * Finds active sessions that have exceeded the timeout
+     * @param timeout the session timeout
+     * @return the list of session tokens that have exceeded the timeout
+     */
+    public List<SessionTokenEntity> findActiveSessionsExceededTimeout(int timeout) {
+        return sessionTokenDao.findActiveSessionsExceededTimeout(timeout, LocalDateTime.now());
     }
 }

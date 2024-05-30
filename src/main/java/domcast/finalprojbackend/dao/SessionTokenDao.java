@@ -8,6 +8,10 @@ import jakarta.persistence.NonUniqueResultException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Data access object for session token entity
  * @see SessionTokenEntity
@@ -50,5 +54,40 @@ public class SessionTokenDao extends ValidationTokenDao {
         }
     }
 
+    /**
+     * Sets the session token logout time to now
+     * @param token the session token to be updated
+     * @return boolean value indicating if the operation was successful
+     */
+    public boolean setSessionTokenLogoutToNow(String token) {
+        logger.info("Setting session token {} logout time to now", token);
+        try {
+            int updatedEntities = em.createNamedQuery("SessionToken.setSessionTokenLogoutToNow")
+                    .setParameter("token", token)
+                    .executeUpdate();
+            return updatedEntities > 0;
+        } catch (Exception e) {
+            logger.error("Error setting session token {} logout time to now", token, e);
+            return false;
+        }
+    }
+
+    /**
+     * Finds the active sessions that have exceeded the timeout
+     * @param timeout the timeout to be checked in seconds
+     * @return the list of session tokens that have exceeded the timeout
+     */
+    public List<SessionTokenEntity> findActiveSessionsExceededTimeout(int timeout, LocalDateTime currentTime) {
+        logger.info("Finding active sessions that have exceeded the timeout");
+        LocalDateTime timeBeforeNow = currentTime.minusMinutes(timeout);
+        try {
+            return em.createNamedQuery("SessionToken.findActiveSessionsExceededTimeout", SessionTokenEntity.class)
+                    .setParameter("timeBeforeNow", timeBeforeNow)
+                    .getResultList();
+        } catch (Exception e) {
+            logger.error("Error finding active sessions that have exceeded the timeout", e);
+            return new ArrayList<>();
+        }
+    }
 }
 

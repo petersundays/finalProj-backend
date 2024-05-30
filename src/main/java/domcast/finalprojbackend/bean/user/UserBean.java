@@ -290,8 +290,8 @@ public class UserBean implements Serializable {
 
         logger.info("Session token is not null");
 
-        // Tries to inactivate the session token
-        if (!tokenBean.setTokenInactive(sessionToken)) {
+        // Tries to inactivate the session token and set the session token logout time to the current time
+        if (!tokenBean.setTokenInactive(sessionToken) || !tokenBean.setSessionTokenLogoutToNow(sessionToken)) {
             logger.error("Error while inactivating session token: {}", sessionToken);
             return false;
         }
