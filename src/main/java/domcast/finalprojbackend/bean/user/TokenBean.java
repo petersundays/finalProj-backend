@@ -1,8 +1,11 @@
 package domcast.finalprojbackend.bean.user;
 
+import domcast.finalprojbackend.dao.SessionTokenDao;
+import domcast.finalprojbackend.dao.ValidationTokenDao;
 import domcast.finalprojbackend.entity.SessionTokenEntity;
 import domcast.finalprojbackend.entity.UserEntity;
 import domcast.finalprojbackend.entity.ValidationTokenEntity;
+import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -11,11 +14,21 @@ import java.io.Serializable;
 import java.security.SecureRandom;
 import java.util.Base64;
 
+/**
+ * Bean for token operations
+ * @author José Castro
+ * @author Pedro Domingos
+ */
 @Stateless
 public class TokenBean implements Serializable {
 
     private static final long serialVersionUID = 1L;
     private static final Logger logger = LogManager.getLogger(UserBean.class);
+
+    @EJB
+    private ValidationTokenDao validationTokenDao;
+    @EJB
+    private SessionTokenDao sessionTokenDao;
 
     // Default constructor
     public TokenBean() {
@@ -80,5 +93,32 @@ public class TokenBean implements Serializable {
         }
 
         return sessionTokenEntity;
+    }
+
+    /**
+     * Sets the validation token as inactive
+     * @param token the token to be set as inactive
+     * @return boolean value indicating if the token was set as inactive
+     */
+    public boolean setTokenInactive(String token) {
+        return validationTokenDao.setTokenInactive(token);
+    }
+
+    /**
+     * Sets the session token as inactive
+     * @param token the token to be set as inactive
+     * @return boolean value indicating if the token was set as inactive
+     */
+    public boolean setSessionTokenInactive(String token) {
+        return sessionTokenDao.setTokenInactive(token);
+    }
+
+    /**
+     * Checks if the session token is from an admin type user
+     * @param token the session token to be checked
+     * @return boolean value indicating if the session token is from an admin type user
+     */
+    public boolean isSessionTokenFromAdminTypeUser(String token) {
+        return sessionTokenDao.isSessionTokenFromAdminTypeUser(token);
     }
 }

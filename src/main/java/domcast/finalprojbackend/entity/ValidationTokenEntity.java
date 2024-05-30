@@ -24,6 +24,9 @@ import java.time.LocalDateTime;
 @Table(name = "tokens")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "token_type")
+
+@NamedQuery(name = "Token.setTokenInactive", query = "UPDATE ValidationTokenEntity t SET t.active = false WHERE t.token = :token")
+
 public class ValidationTokenEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 

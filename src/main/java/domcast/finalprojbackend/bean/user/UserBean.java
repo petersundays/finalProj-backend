@@ -1,5 +1,6 @@
 package domcast.finalprojbackend.bean.user;
 
+import domcast.finalprojbackend.bean.SystemBean;
 import domcast.finalprojbackend.dao.InterestDao;
 import domcast.finalprojbackend.dao.LabDao;
 import domcast.finalprojbackend.dao.SkillDao;
@@ -15,11 +16,9 @@ import jakarta.ejb.Stateless;
 import jakarta.persistence.NoResultException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.mindrot.jbcrypt.BCrypt;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -48,6 +47,8 @@ public class UserBean implements Serializable {
     private InterestDao interestDao;
     @EJB
     private SkillDao skillDao;
+    @EJB
+    private SystemBean systemBean;
 
     // Default constructor
     public UserBean() {}
@@ -186,6 +187,12 @@ public class UserBean implements Serializable {
             addSkillToUser(userEntity, user.getSkills());
         }
 
+        // Tries to set the validation token as inactive
+        if (!tokenBean.setTokenInactive(user.getValidationToken())) {
+            logger.error("Error while inactivating validation token: {}", user.getValidationToken());
+            return false;
+        }
+
         // Sets the user as confirmed
         userEntity.setType(TypeOfUserEnum.STANDARD);
 
@@ -229,7 +236,7 @@ public class UserBean implements Serializable {
         logger.info("User found: {}", login.getEmail());
 
         // Check if the password is valid, if not, throws an exception
-        if (!BCrypt.checkpw(login.getPassword(), user.getPassword())) {
+        if (!validatorAndHasher.checkPassword(login.getPassword(), user.getPassword())) {
             logger.error("Invalid password for user: {}", login.getEmail());
             throw new IllegalArgumentException("Invalid password");
         }
@@ -271,6 +278,27 @@ public class UserBean implements Serializable {
         return loggedUser;
     }
 
+
+    public boolean logout (String sessionToken){
+        logger.info("Logging out user with session token: {}", sessionToken);
+
+        // Checks if the session token is null
+        if (sessionToken == null) {
+            logger.error("Session token is null");
+            return false;
+        }
+
+        logger.info("Session token is not null");
+
+        // Tries to inactivate the session token
+        if (!tokenBean.setTokenInactive(sessionToken)) {
+            logger.error("Error while inactivating session token: {}", sessionToken);
+            return false;
+        }
+
+        logger.info("Session token inactivated: {}", sessionToken);
+        return true;
+    }
 
     /**
      * Deletes a user from the database
@@ -430,6 +458,25 @@ public class UserBean implements Serializable {
 
     }
 
-
-
+    public boolean setSessionTimeout(int sessionTimeout) {
+        try {
+            systemBean.setSessionTimeout(sessionTimeout);
+            return true;
+        } catch (Exception e) {
+            logger.error("Error while setting session timeout: {}", e.getMessage());
+            return false;
+        }
     }
+
+    public boolean setProjectMaxUsers(int projectMaxUsers) {
+        try {
+            systemBean.setProjectMaxMembers(projectMaxUsers);
+            return true;
+        } catch (Exception e) {
+            logger.error("Error while setting project max members: {}", e.getMessage());
+            return false;
+        }
+    }
+
+
+}

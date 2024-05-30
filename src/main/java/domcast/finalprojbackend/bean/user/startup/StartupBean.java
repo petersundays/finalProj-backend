@@ -4,16 +4,25 @@ import jakarta.annotation.PostConstruct;
 import jakarta.ejb.*;
 import jakarta.inject.Inject;
 
+import java.io.Serializable;
+
+/**
+ * Bean that creates the default labs and the default user
+ */
 @Singleton
 @Startup
-public class StartupBean {
+public class StartupBean implements Serializable {
 
     @Inject
-    UserAndLabCreator userAndLabCreator;
+    StartupCreator startupCreator;
 
+    /**
+     * Creates the default labs, the default user and sets the default system variables
+     */
     @PostConstruct
     public void init() {
-        userAndLabCreator.createDefaultLabs();
-        userAndLabCreator.createDefaultUser();
+        startupCreator.createDefaultLabs();
+        startupCreator.createDefaultUser();
+        startupCreator.setDefaultSystemVariables();
     }
 }
