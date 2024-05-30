@@ -49,3 +49,7 @@ mvnw
 *.xml
 
 logs/
+
+
+domcast.log
+

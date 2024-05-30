@@ -237,6 +237,7 @@ public class UserBeanTest {
         String sessionToken = "validToken";
 
         when(tokenBean.setTokenInactive(sessionToken)).thenReturn(true);
+        when(tokenBean.setSessionTokenLogoutToNow(sessionToken)).thenReturn(true);
 
         // Act
         boolean result = userBean.logout(sessionToken);
@@ -255,6 +256,7 @@ public class UserBeanTest {
         String sessionToken = "invalidToken";
 
         when(tokenBean.setTokenInactive(sessionToken)).thenReturn(false);
+        when(tokenBean.setSessionTokenLogoutToNow(sessionToken)).thenReturn(false);
 
         // Act
         boolean result = userBean.logout(sessionToken);
