@@ -47,3 +47,5 @@ mvnw
 *.cmd
 
 *.xml
+
+logs/
