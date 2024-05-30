@@ -266,4 +266,97 @@ public class UserBeanTest {
         // Assert
         assertFalse(result);
     }
+
+    /**
+     * Test method for recoverPassword
+     * This test checks the successful case where the password recovery is successful.
+     */
+    @Test
+    public void testRecoverPassword_Success() {
+        // Arrange
+        String email = "test@test.com";
+        String ipAddress = "192.168.0.1";
+        UserEntity userEntity = new UserEntity();
+        userEntity.setType(TypeOfUserEnum.STANDARD);
+        ValidationTokenEntity validationTokenEntity = new ValidationTokenEntity();
+
+        // Mock the behavior of the dependencies
+        when(userDao.findUserByEmail(email)).thenReturn(userEntity);
+        when(tokenBean.generateValidationToken(userEntity, 5, ipAddress)).thenReturn(validationTokenEntity);
+        when(userDao.merge(userEntity)).thenReturn(true);
+        when(emailBean.sendPasswordResetEmail(email, userEntity.getFirstName(), validationTokenEntity.getToken())).thenReturn(true);
+
+        // Act
+        boolean result = userBean.recoverPassword(email, ipAddress);
+
+        // Assert
+        assertTrue(result);
+    }
+
+    /**
+     * Test method for recoverPassword
+     * This test checks the failure case where the password recovery is unsuccessful.
+     */
+    @Test
+    public void testRecoverPassword_Failure() {
+        // Arrange
+        String email = "invalid@test.com";
+        String ipAddress = "192.168.0.1";
+
+        // Mock the behavior of the userDao to return null for findUserByEmail
+        when(userDao.findUserByEmail(email)).thenReturn(null);
+
+        // Act
+        boolean result = userBean.recoverPassword(email, ipAddress);
+
+        // Assert
+        assertFalse(result);
+    }
+
+    /**
+     * Test method for resetPassword
+     * This test checks the successful case where the password reset is successful.
+     */
+    @Test
+    public void testResetPassword_Success() {
+        // Arrange
+        String validationToken = "validToken";
+        String password = "password";
+        UserEntity userEntity = new UserEntity();
+
+        // Mock the behavior of the dependencies
+        when(tokenBean.isValidationTokenExpired(validationToken)).thenReturn(false);
+        when(userDao.findUserByValidationToken(validationToken)).thenReturn(userEntity);
+        when(validatorAndHasher.isPasswordValid(password)).thenReturn(true);
+        when(validatorAndHasher.hashPassword(password)).thenReturn("hashedPassword");
+        when(tokenBean.setTokenInactive(validationToken)).thenReturn(true);
+        when(userDao.merge(userEntity)).thenReturn(true);
+
+        // Act
+        boolean result = userBean.resetPassword(validationToken, password);
+
+        // Assert
+        assertTrue(result);
+    }
+
+    /**
+     * Test method for resetPassword
+     * This test checks the failure case where the password reset is unsuccessful.
+     */
+    @Test
+    public void testResetPassword_Failure() {
+        // Arrange
+        String validationToken = "invalidToken";
+        String password = "password";
+
+        // Mock the behavior of the tokenBean to return true for isValidationTokenExpired
+        when(tokenBean.isValidationTokenExpired(validationToken)).thenReturn(true);
+
+        // Act
+        boolean result = userBean.resetPassword(validationToken, password);
+
+        // Assert
+        assertFalse(result);
+    }
+
 }
