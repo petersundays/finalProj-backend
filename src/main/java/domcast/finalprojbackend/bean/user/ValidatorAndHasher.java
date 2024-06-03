@@ -134,22 +134,6 @@ public class ValidatorAndHasher {
     }
 
     /**
-     * Checks if the password is correct
-     * @param plainPassword the plain password
-     * @param hashedPassword the hashed password
-     * @return boolean value indicating if the password is correct
-     */
-    public boolean checkPassword(String plainPassword, String hashedPassword) {
-        logger.info("Checking if password is correct");
-        try {
-            return BCrypt.checkpw(plainPassword, hashedPassword);
-        } catch (Exception e) {
-            logger.error("Error while checking password: {}", e.getMessage());
-            return false;
-        }
-    }
-
-    /**
      * Checks if the image is valid
      * @param bytes the image to be checked
      * @return boolean value indicating if the image is valid

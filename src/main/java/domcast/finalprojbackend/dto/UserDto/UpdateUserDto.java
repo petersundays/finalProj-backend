@@ -6,21 +6,16 @@ import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.ArrayList;
 
 /**
- * Represents a logged in user in the system.
- * Contains user's personal details, interests, skills, and session token.
+ * UpdateUserDto is a Data Transfer Object (DTO) class used for updating user information.
+ * It contains all the necessary information for a user to update their information.
+ * This includes the user's unique identifier, first name, last name, nickname, photo, biography, workplace, interests, and skills.
  * @author José Castro
  * @author Pedro Domingos
  */
 @XmlRootElement
-public class LoggedUser {
+public class UpdateUserDto {
     @XmlElement
     private int id;  // The unique identifier of the user
-
-    @XmlElement
-    private String email;  // The email address of the user
-
-    @XmlElement
-    private String sessionToken;  // The session token for the user, used for authentication
 
     @XmlElement
     private String firstName;  // The first name of the user
@@ -30,9 +25,6 @@ public class LoggedUser {
 
     @XmlElement
     private String nickname;  // The nickname of the user
-
-    @XmlElement
-    private String photo;  // The URL of the user's profile photo
 
     @XmlElement
     private String biography;  // A short biography of the user
@@ -47,9 +39,9 @@ public class LoggedUser {
     private ArrayList<String> skills;  // A list of the user's skills
 
     /**
-     * Default constructor for LoggedUser.
+     * Default constructor for UpdateUserDto.
      */
-    public LoggedUser() {
+    public UpdateUserDto() {
     }
 
     // Getters and setters for all fields
@@ -60,22 +52,6 @@ public class LoggedUser {
 
     public void setId(int id) {
         this.id = id;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getSessionToken() {
-        return sessionToken;
-    }
-
-    public void setSessionToken(String sessionToken) {
-        this.sessionToken = sessionToken;
     }
 
     public String getFirstName() {
@@ -100,14 +76,6 @@ public class LoggedUser {
 
     public void setNickname(String nickname) {
         this.nickname = nickname;
-    }
-
-    public String getPhoto() {
-        return photo;
-    }
-
-    public void setPhoto(String photo) {
-        this.photo = photo;
     }
 
     public String getBiography() {

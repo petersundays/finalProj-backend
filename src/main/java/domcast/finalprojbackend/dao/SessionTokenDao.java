@@ -89,5 +89,30 @@ public class SessionTokenDao extends ValidationTokenDao {
             return new ArrayList<>();
         }
     }
+
+    /**
+     * Checks if the token is active and from the user id
+     * @param token the token to be checked
+     * @param userId the user id to be checked
+     * @return boolean value indicating if the token is active and from the user id
+     */
+    public boolean isTokenActiveAndFromUserId(String token, int userId) {
+        logger.info("Checking if token {} is active and from user id {}", token, userId);
+        try {
+            return (Long) em.createNamedQuery("SessionToken.isTokenActiveAndFromUserId")
+                    .setParameter("token", token)
+                    .setParameter("userId", userId)
+                    .getSingleResult() > 0;
+        } catch (NoResultException e) {
+            logger.error("No session token found for token {}", token, e);
+            return false;
+        } catch (NonUniqueResultException e) {
+            logger.error("Multiple session tokens found for token {}", token, e);
+            return false;
+        } catch (Exception e) {
+            logger.error("Error checking if session token is from admin type user", e);
+            return false;
+        }
+    }
 }
 
