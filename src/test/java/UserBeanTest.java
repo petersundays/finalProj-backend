@@ -15,13 +15,24 @@ import domcast.finalprojbackend.entity.UserEntity;
 import domcast.finalprojbackend.entity.ValidationTokenEntity;
 import domcast.finalprojbackend.enums.LabEnum;
 import domcast.finalprojbackend.enums.TypeOfUserEnum;
+import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jboss.resteasy.plugins.providers.multipart.InputPart;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -51,6 +62,12 @@ public class UserBeanTest {
 
     @Mock
     private LabDao labDao; // Mock the LabDao
+
+    @Mock
+    private InputPart inputPart; // Mock the InputPart
+
+    @Mock
+    private MultipartFormDataInput input; // Mock the MultipartFormDataInput
 
     /**
      * Setup method to initialize mocks
@@ -359,4 +376,50 @@ public class UserBeanTest {
         assertFalse(result);
     }
 
+    /**
+     * Test method for uploadPhoto
+     * This test checks the successful case where the photo upload is successful.
+     */
+    @Test
+    public void testUploadPhoto_Success() throws Exception {
+        // Arrange
+        String token = "validToken";
+        UserEntity userEntity = new UserEntity();
+        userEntity.setId(1);
+
+        // Create a real InputStream with some dummy data
+        byte[] bytes = new byte[10];
+        InputStream inputStream = new ByteArrayInputStream(bytes);
+
+        Map<String, List<InputPart>> uploadForm = new HashMap<>();
+        uploadForm.put("photo", Arrays.asList(inputPart));
+
+        // Mock the behavior of the dependencies
+        when(userDao.findUserByActiveValidationOrSessionToken(token)).thenReturn(userEntity);
+        when(input.getFormDataMap()).thenReturn(uploadForm);
+        when(inputPart.getBody(InputStream.class, null)).thenReturn(inputStream);
+        when(validatorAndHasher.isValidImage(bytes)).thenReturn(true);
+
+        // Act
+        userBean.uploadPhoto(token, input);
+
+        // Verify that the userDao.merge method was called
+        verify(userDao, times(1)).merge(any(UserEntity.class));
+    }
+
+    /**
+     * Test method for uploadPhoto
+     * This test checks the failure case where the photo upload fails.
+     */
+    @Test
+    public void testUploadPhoto_Failure() throws Exception {
+        // Arrange
+        String token = "invalidToken";
+
+        // Mock the behavior of the userDao to return null for findUserByActiveValidationOrSessionToken
+        when(userDao.findUserByActiveValidationOrSessionToken(token)).thenReturn(null);
+
+        // Act and Assert
+        assertThrows(Exception.class, () -> userBean.uploadPhoto(token, input));
+    }
 }

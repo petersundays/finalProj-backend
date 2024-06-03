@@ -14,11 +14,19 @@ import domcast.finalprojbackend.enums.TypeOfUserEnum;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.NoResultException;
+import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jboss.resteasy.plugins.providers.multipart.InputPart;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -32,6 +40,7 @@ public class UserBean implements Serializable {
 
     private static final long serialVersionUID = 1L;
     private static final Logger logger = LogManager.getLogger(UserBean.class);
+    private static final String PHOTO_STORAGE_PATH = "C:\\wildfly-30.0.1.Final\\bin";
 
     @EJB
     private UserDao userDao;
@@ -598,4 +607,85 @@ public class UserBean implements Serializable {
         return true;
     }
 
+    /**
+     * This method is responsible for uploading a user's photo.
+     * It first verifies the user's existence using the provided token.
+     * If the user exists, it reads the photo from the input, creates necessary directories,
+     * and writes the photo to the appropriate location.
+     * If the photo upload is successful, it updates the user's photo attribute in the database.
+     *
+     * @param token The token used to identify the user.
+     * @param input The multipart form data input containing the photo.
+     * @throws Exception If any error occurs during the photo upload process.
+     */
+    public void uploadPhoto(String token, MultipartFormDataInput input) throws Exception {
+        logger.info("Uploading photo for user with token: {}", token);
+        UserEntity user = userDao.findUserByActiveValidationOrSessionToken(token);
+        if (user == null) {
+            logger.error("User not found with token: {}", token);
+            throw new Exception("User not found");
+        }
+
+        logger.info("User found with token: {}", token);
+
+        // Get the photo from the input
+        Map<String, List<InputPart>> uploadForm = input.getFormDataMap();
+        List<InputPart> inputParts = uploadForm.get("photo");
+
+        if (inputParts == null || inputParts.isEmpty()) {
+            logger.error("No photo found in input");
+            throw new Exception("No photo found in input");
+        }
+
+        // Process each input part
+        for (InputPart inputPart : inputParts) {
+            try {
+                InputStream inputStream = inputPart.getBody(InputStream.class, null);
+                byte[] bytes = IOUtils.toByteArray(inputStream);
+
+                // Validate the input photo
+                if (!validatorAndHasher.isValidImage(bytes)) {
+                    logger.error("Invalid image file");
+                    throw new Exception("Invalid image file");
+                }
+
+                // Create the necessary directories
+                String photosDirPath = PHOTO_STORAGE_PATH + File.separator + "photos";
+                File photosDir = new File(photosDirPath);
+                if (!photosDir.exists() && !photosDir.mkdirs()) {
+                    logger.error("Failed to create directory: {}", photosDirPath);
+                    throw new Exception("Failed to create directory: " + photosDirPath);
+                }
+
+                String userDirPath = photosDirPath + File.separator + user.getId();
+                File userDir = new File(userDirPath);
+                if (!userDir.exists() && !userDir.mkdirs()) {
+                    logger.error("Failed to create directory: {}", userDirPath);
+                    throw new Exception("Failed to create directory: " + userDirPath);
+                }
+
+                // Write the photo to the appropriate location
+                String path = userDirPath + File.separator + "profile_pic_" + user.getId() + ".jpg";
+                File file = new File(path);
+
+                // If the file already exists, delete it
+                try (FileOutputStream fos = new FileOutputStream(file)) {
+                    logger.info("Writing photo to file: {}", path);
+                    fos.write(bytes);
+                }
+
+                // Update the user's photo attribute in the database
+                try {
+                    user.setPhoto(path);
+                    userDao.merge(user);
+                    logger.info("Photo uploaded for user with token: {}", token);
+                } catch (Exception e) {
+                    logger.error("Error while updating user's photo: {}", e.getMessage());
+                    throw new Exception("Error while updating user's photo: " + e.getMessage(), e);
+                }
+            } catch (Exception e) {
+                throw new Exception("Error in uploadPhoto: " + e.getMessage(), e);
+            }
+        }
+    }
 }
