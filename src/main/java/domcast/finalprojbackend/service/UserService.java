@@ -13,6 +13,8 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
+import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 
 /**
  * UserService class that handles user related operations.
@@ -80,6 +82,36 @@ public class UserService {
 
         return response;
     }
+
+    /**
+     * Uploads a photo for a user.
+     *
+     * @param token The token of the user.
+     * @param input The input containing the photo.
+     * @return A response indicating the result of the operation.
+     */
+    @POST
+    @Path("/photo/{token}")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response uploadPhoto(@PathParam("token") String token, MultipartFormDataInput input, @Context HttpServletRequest request) {
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with IP address {} is trying to upload a photo", ipAddress);
+
+        Response response;
+
+        try {
+            userBean.uploadPhoto(token, input);
+            response = Response.status(200).entity("Photo uploaded successfully").build();
+            logger.info("User with IP address {} uploaded a photo successfully", ipAddress);
+        } catch (Exception e) {
+            response = Response.status(400).entity("Error uploading photo").build();
+            logger.info("User with IP address {} tried to upload a photo unsuccessfully", ipAddress);
+        }
+
+        return response;
+    }
+
 
     /**
      * Logs a user in.
@@ -164,7 +196,7 @@ public class UserService {
     @Path("/reset-password")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response changePassword(@HeaderParam("token") String validationToken, @HeaderParam("password") String password, @Context HttpServletRequest request) {
+    public Response resetPassword(@HeaderParam("token") String validationToken, @HeaderParam("password") String password, @Context HttpServletRequest request) {
         String ipAddress = request.getRemoteAddr();
         logger.info("User with IP address {} is trying to change password", ipAddress);
 

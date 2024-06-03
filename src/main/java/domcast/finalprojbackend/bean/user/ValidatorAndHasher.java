@@ -8,6 +8,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mindrot.jbcrypt.BCrypt;
 
+import javax.imageio.ImageIO;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -130,8 +133,33 @@ public class ValidatorAndHasher {
         }
     }
 
+    /**
+     * Checks if the password is correct
+     * @param plainPassword the plain password
+     * @param hashedPassword the hashed password
+     * @return boolean value indicating if the password is correct
+     */
     public boolean checkPassword(String plainPassword, String hashedPassword) {
-        return BCrypt.checkpw(plainPassword, hashedPassword);
+        logger.info("Checking if password is correct");
+        try {
+            return BCrypt.checkpw(plainPassword, hashedPassword);
+        } catch (Exception e) {
+            logger.error("Error while checking password: {}", e.getMessage());
+            return false;
+        }
     }
 
+    /**
+     * Checks if the image is valid
+     * @param bytes the image to be checked
+     * @return boolean value indicating if the image is valid
+     */
+    public boolean isValidImage(byte[] bytes) {
+        try {
+            return ImageIO.read(new ByteArrayInputStream(bytes)) != null;
+        } catch (IOException e) {
+            logger.error("Error while checking image: {}", e.getMessage());
+            return false;
+        }
+    }
 }
