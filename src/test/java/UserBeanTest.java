@@ -1,8 +1,5 @@
 
-import domcast.finalprojbackend.bean.user.EmailBean;
-import domcast.finalprojbackend.bean.user.TokenBean;
-import domcast.finalprojbackend.bean.user.UserBean;
-import domcast.finalprojbackend.bean.user.ValidatorAndHasher;
+import domcast.finalprojbackend.bean.user.*;
 import domcast.finalprojbackend.dao.LabDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.UserDto.FirstRegistration;
@@ -68,6 +65,9 @@ public class UserBeanTest {
 
     @Mock
     private MultipartFormDataInput input; // Mock the MultipartFormDataInput
+
+    @Mock
+    private AuthenticationBean authenticationBean; // Mock the AuthenticationBean
 
     /**
      * Setup method to initialize mocks
@@ -217,7 +217,7 @@ public class UserBeanTest {
 
         when(validatorAndHasher.isLoginValid(login)).thenReturn(true);
         when(userDao.findUserByEmail(login.getEmail())).thenReturn(userEntity);
-        when(validatorAndHasher.checkPassword(login.getPassword(), userEntity.getPassword())).thenReturn(true);
+        when(authenticationBean.checkPassword(login.getPassword(), userEntity.getPassword())).thenReturn(true);
         when(tokenBean.generateSessionToken(userEntity, ipAddress)).thenReturn(sessionTokenEntity);
         when(userDao.merge(userEntity)).thenReturn(true);
 

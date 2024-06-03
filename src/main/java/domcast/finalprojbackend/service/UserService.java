@@ -1,10 +1,9 @@
 package domcast.finalprojbackend.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import domcast.finalprojbackend.bean.user.AuthenticationBean;
 import domcast.finalprojbackend.bean.user.UserBean;
-import domcast.finalprojbackend.dto.UserDto.FirstRegistration;
-import domcast.finalprojbackend.dto.UserDto.FullRegistration;
-import domcast.finalprojbackend.dto.UserDto.LoggedUser;
-import domcast.finalprojbackend.dto.UserDto.Login;
+import domcast.finalprojbackend.dto.UserDto.*;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.*;
@@ -14,7 +13,6 @@ import jakarta.ws.rs.core.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
-import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 
 /**
  * UserService class that handles user related operations.
@@ -26,6 +24,9 @@ public class UserService {
 
     @Inject
     private UserBean userBean;
+
+    @Inject
+    private AuthenticationBean authenticationBean;
 
     /**
      * Registers a new user.
@@ -86,23 +87,24 @@ public class UserService {
     /**
      * Uploads a photo for a user.
      *
-     * @param token The token of the user.
-     * @param input The input containing the photo.
-     * @return A response indicating the result of the operation.
+     * @param token The session token of the user.
+     * @param input The photo to upload.
+     * @param request The HTTP request.
+     * @return A response indicating the result of the operation, with the path of the uploaded photo.
      */
     @POST
-    @Path("/photo/{token}")
+    @Path("/photo")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response uploadPhoto(@PathParam("token") String token, MultipartFormDataInput input, @Context HttpServletRequest request) {
+    public Response uploadPhoto(@HeaderParam("token") String token, MultipartFormDataInput input, @Context HttpServletRequest request) {
         String ipAddress = request.getRemoteAddr();
         logger.info("User with IP address {} is trying to upload a photo", ipAddress);
 
         Response response;
 
         try {
-            userBean.uploadPhoto(token, input);
-            response = Response.status(200).entity("Photo uploaded successfully").build();
+            String photoPath = userBean.uploadPhoto(token, input);
+            response = Response.status(200).entity(photoPath).build();
             logger.info("User with IP address {} uploaded a photo successfully", ipAddress);
         } catch (Exception e) {
             response = Response.status(400).entity("Error uploading photo").build();
@@ -171,6 +173,13 @@ public class UserService {
         return response;
     }
 
+    /**
+     * Recovers a user's password.
+     *
+     * @param email   The email of the user to recover the password.
+     * @param request The HTTP request.
+     * @return A response indicating the result of the operation.
+     */
     @POST
     @Path("/recover-password")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -192,6 +201,14 @@ public class UserService {
         return response;
     }
 
+    /**
+     * Resets a user's password.
+     *
+     * @param validationToken The validation token of the user to reset the password.
+     * @param password        The new password.
+     * @param request         The HTTP request.
+     * @return A response indicating the result of the operation.
+     */
     @PUT
     @Path("/reset-password")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -212,4 +229,47 @@ public class UserService {
 
         return response;
     }
+
+    /**
+     * Updates a user's profile.
+     *
+     * @param sessionToken The session token of the user to update the profile.
+     * @param user         The updated user.
+     * @param request      The HTTP request.
+     * @return A response indicating the result of the operation.
+     */
+    @PUT
+    @Path("")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response updateUser(@HeaderParam("token") String sessionToken, UpdateUserDto user, @Context HttpServletRequest request) {
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with IP address {} is trying to update their profile", ipAddress);
+
+        Response response;
+        LoggedUser updatedUser;
+
+        if (!authenticationBean.isTokenActiveAndFromUserId(sessionToken, user.getId())) {
+            response = Response.status(401).entity("Unauthorized").build();
+            logger.info("User with IP address {} tried to update the profile from user with id {} without authorization", ipAddress, user.getId());
+            return response;
+        }
+
+        try {
+            updatedUser = userBean.updateUserProfile(user, sessionToken);
+
+            // Convert the updatedUser object to a JSON string
+            ObjectMapper mapper = new ObjectMapper();
+            String updatedUserJson = mapper.writeValueAsString(updatedUser);
+
+            response = Response.status(200).entity(updatedUserJson).build();
+            logger.info("User with IP address {} updated its profile successfully", ipAddress);
+        } catch (Exception e) {
+            response = Response.status(400).entity("Error updating profile").build();
+            logger.info("User with IP address {} tried to update its profile unsuccessfully", ipAddress);
+        }
+
+        return response;
+    }
+
+
 }

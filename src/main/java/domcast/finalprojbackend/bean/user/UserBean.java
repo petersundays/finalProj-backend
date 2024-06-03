@@ -5,10 +5,7 @@ import domcast.finalprojbackend.dao.InterestDao;
 import domcast.finalprojbackend.dao.LabDao;
 import domcast.finalprojbackend.dao.SkillDao;
 import domcast.finalprojbackend.dao.UserDao;
-import domcast.finalprojbackend.dto.UserDto.FirstRegistration;
-import domcast.finalprojbackend.dto.UserDto.FullRegistration;
-import domcast.finalprojbackend.dto.UserDto.LoggedUser;
-import domcast.finalprojbackend.dto.UserDto.Login;
+import domcast.finalprojbackend.dto.UserDto.*;
 import domcast.finalprojbackend.entity.*;
 import domcast.finalprojbackend.enums.TypeOfUserEnum;
 import jakarta.ejb.EJB;
@@ -24,10 +21,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Bean responsible for the user operations
@@ -58,6 +52,8 @@ public class UserBean implements Serializable {
     private SkillDao skillDao;
     @EJB
     private SystemBean systemBean;
+    @EJB
+    private AuthenticationBean authenticationBean;
 
     // Default constructor
     public UserBean() {}
@@ -260,7 +256,7 @@ public class UserBean implements Serializable {
         logger.info("User found: {}", login.getEmail());
 
         // Check if the password is valid, if not, throws an exception
-        if (!validatorAndHasher.checkPassword(login.getPassword(), user.getPassword())) {
+        if (!authenticationBean.checkPassword(login.getPassword(), user.getPassword())) {
             logger.error("Invalid password for user: {}", login.getEmail());
             throw new IllegalArgumentException("Invalid password");
         }
@@ -375,12 +371,12 @@ public class UserBean implements Serializable {
         ArrayList<String> interests = new ArrayList<>();
         ArrayList<String> skills = new ArrayList<>();
 
-        // Add each of the user's interests to the interests list
+        // Add each of the user's interests to the interest's list
         for(M2MUserInterest userInterest : user.getInterests()) {
             interests.add(userInterest.getInterest().getName());
         }
 
-        // Add each of the user's skills to the skills list
+        // Add each of the user's skills to the skill's list
         for(M2MUserSkill userSkill : user.getUserSkills()) {
             skills.add(userSkill.getSkill().getName());
         }
@@ -618,7 +614,7 @@ public class UserBean implements Serializable {
      * @param input The multipart form data input containing the photo.
      * @throws Exception If any error occurs during the photo upload process.
      */
-    public void uploadPhoto(String token, MultipartFormDataInput input) throws Exception {
+    public String uploadPhoto(String token, MultipartFormDataInput input) throws Exception {
         logger.info("Uploading photo for user with token: {}", token);
         UserEntity user = userDao.findUserByActiveValidationOrSessionToken(token);
         if (user == null) {
@@ -632,9 +628,18 @@ public class UserBean implements Serializable {
         Map<String, List<InputPart>> uploadForm = input.getFormDataMap();
         List<InputPart> inputParts = uploadForm.get("photo");
 
+        // If no photo is found in the input, set the default photo
         if (inputParts == null || inputParts.isEmpty()) {
-            logger.error("No photo found in input");
-            throw new Exception("No photo found in input");
+            logger.info("No photo found in input, setting default photo");
+            String defaultPhotoPath = PHOTO_STORAGE_PATH + File.separator + "photos" + File.separator + "default" + File.separator + "default_user.jpg";
+            File defaultPhoto = new File(defaultPhotoPath);
+            if (defaultPhoto.exists()) {
+                user.setPhoto(defaultPhotoPath);
+                userDao.merge(user);
+            } else {
+                logger.error("Default photo not found at path: {}", defaultPhotoPath);
+            }
+            return defaultPhotoPath;
         }
 
         // Process each input part
@@ -686,6 +691,73 @@ public class UserBean implements Serializable {
             } catch (Exception e) {
                 throw new Exception("Error in uploadPhoto: " + e.getMessage(), e);
             }
+        }
+
+        return user.getPhoto();
+    }
+
+    public LoggedUser updateUserProfile (UpdateUserDto user, String token) {
+        logger.info("Updating user profile");
+
+        if (user == null) {
+            logger.error("User is null");
+            throw new IllegalArgumentException("User is null");
+        }
+
+        UserEntity userEntity = userDao.findUserById(user.getId());
+
+        if (userEntity == null) {
+            throw new NoSuchElementException("User not found with id: " + user.getId());
+        }
+
+        try {
+            if (user.getFirstName() != null) {
+                userEntity.setFirstName(user.getFirstName());
+            }
+
+            if (user.getLastName() != null) {
+                userEntity.setLastName(user.getLastName());
+            }
+
+            if (user.getNickname() != null) {
+                userEntity.setNickname(user.getNickname());
+            }
+
+            if (user.getBiography() != null) {
+                userEntity.setBiography(user.getBiography());
+            }
+
+            if (user.getWorkplace() != null) {
+                LabEntity labEntity = labDao.findLabByCity(user.getWorkplace());
+                if (labEntity != null) {
+                    userEntity.setWorkplace(labEntity);
+                }
+            }
+
+            if (user.getInterests() != null && !user.getInterests().isEmpty()) {
+                userEntity.getInterests().clear();
+                addInterestToUser(userEntity, user.getInterests());
+            }
+
+            if (user.getSkills() != null && !user.getSkills().isEmpty()) {
+                userEntity.getUserSkills().clear();
+                addSkillToUser(userEntity, user.getSkills());
+            }
+
+            userDao.merge(userEntity);
+            LoggedUser loggedUser = convertUserEntityToLoggedUser(userEntity, token);
+
+            if (loggedUser == null) {
+                logger.error("Error while converting user to logged user");
+                throw new IllegalArgumentException("Error while converting user to logged user");
+            }
+
+            // Returns the logged user
+            return loggedUser;
+
+        } catch (Exception e) {
+            logger.error("Error while updating user profile: {}", e.getMessage());
+            return null;
         }
     }
 }

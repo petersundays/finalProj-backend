@@ -30,6 +30,24 @@ public class UserDao extends AbstractDao<UserEntity> {
     }
 
     /**
+     * Finds a user by their id.
+     *
+     * @param id the id of the user
+     * @return the UserEntity object if found, null otherwise
+     */
+    public  UserEntity findUserById(int id) {
+        logger.info("Finding user by id {}", id);
+        try {
+            return (UserEntity) em.createNamedQuery("User.findUserById").setParameter("id", id)
+                    .getSingleResult();
+
+        } catch (NoResultException e) {
+            logger.error("User with id {} not found", id);
+            return null;
+        }
+    }
+
+    /**
      * Finds a user by their email.
      *
      * @param email the email of the user

@@ -23,6 +23,9 @@ import java.time.LocalDateTime;
 @NamedQuery(name = "SessionToken.setSessionTokenLogoutToNow", query = "UPDATE SessionTokenEntity s SET s.logoutTime = CURRENT_TIMESTAMP WHERE s.token = :token")
 @NamedQuery(name = "SessionToken.findActiveSessionsExceededTimeout",
         query = "SELECT s FROM SessionTokenEntity s WHERE s.active = true AND s.lastAccess < :timeBeforeNow")
+@NamedQuery(name = "SessionToken.isTokenActiveAndFromUserId",
+        query = "SELECT COUNT(s) FROM SessionTokenEntity s WHERE s.active = true AND s.user.id = :userId AND s.token = :token")
+
 public class SessionTokenEntity extends ValidationTokenEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 

@@ -37,6 +37,7 @@ import java.util.Set;
 @Entity
 @Table(name = "user")
 
+@NamedQuery(name = "User.findUserById", query = "SELECT u FROM UserEntity u WHERE u.id = :id")
 @NamedQuery(name = "User.findUserByEmail", query = "SELECT u FROM UserEntity u WHERE u.email = :email")
 @NamedQuery(name = "User.findUserByValidationToken", query = "SELECT u FROM UserEntity u JOIN u.validationTokens vt WHERE vt.token = :token")
 @NamedQuery(name = "User.findUserByActiveValidationOrSessionToken", query = "SELECT u FROM UserEntity u JOIN u.validationTokens vt JOIN u.sessionTokens st WHERE (vt.token = :token AND vt.active = true) OR (st.token = :token AND st.active = true)")
