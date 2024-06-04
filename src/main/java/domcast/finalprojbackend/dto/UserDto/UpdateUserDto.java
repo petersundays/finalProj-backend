@@ -1,5 +1,7 @@
 package domcast.finalprojbackend.dto.UserDto;
 
+import domcast.finalprojbackend.dto.InterestDto;
+import domcast.finalprojbackend.dto.SkillDto;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 
@@ -38,6 +40,11 @@ public class UpdateUserDto {
     @XmlElement
     private ArrayList<String> skills;  // A list of the user's skills
 
+    @XmlElement
+    private ArrayList<InterestDto> interestDtos;
+
+    @XmlElement
+    private ArrayList<SkillDto> skillDtos;
     /**
      * Default constructor for UpdateUserDto.
      */
@@ -108,5 +115,21 @@ public class UpdateUserDto {
 
     public void setSkills(ArrayList<String> skills) {
         this.skills = skills;
+    }
+
+    public ArrayList<InterestDto> getInterestDtos() {
+        return interestDtos;
+    }
+
+    public void setInterestDtos(ArrayList<InterestDto> interestDtos) {
+        this.interestDtos = interestDtos;
+    }
+
+    public ArrayList<SkillDto> getSkillDtos() {
+        return skillDtos;
+    }
+
+    public void setSkillDtos(ArrayList<SkillDto> skillDtos) {
+        this.skillDtos = skillDtos;
     }
 }

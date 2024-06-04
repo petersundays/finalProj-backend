@@ -17,8 +17,10 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -285,13 +287,26 @@ public class UserService {
         return response;
     }*/
 
+    /**
+     * Updates a user's profile.
+     * This method is transactional and requires a new transaction,
+     * which means that if an exception occurs, the transaction will be rolled back.
+     *
+     * @param sessionToken The session token of the user to update the profile.
+     * @param request      The HTTP request.
+     * @return A response indicating the result of the operation.
+     */
     @PUT
     @Path("")
-    @Consumes(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Transactional
-    public Response updateUser(@HeaderParam("token") String sessionToken, ArrayList<InterestDto> interests, ArrayList<SkillDto> skills, UpdateUserDto user, @Context HttpServletRequest request, MultipartFormDataInput input) {
+    public Response updateUser(@HeaderParam("token") String sessionToken, MultipartFormDataInput input, @Context HttpServletRequest request) throws IOException {
         String ipAddress = request.getRemoteAddr();
         logger.info("User with IP address {} is trying to update their profile", ipAddress);
+
+        // Extract UpdateUserDto from MultipartFormDataInput
+        InputPart part = input.getFormDataMap().get("user").get(0);
+        UpdateUserDto user = part.getBody(UpdateUserDto.class, null);
 
         Response response;
         LoggedUser updatedUser;
@@ -305,13 +320,27 @@ public class UserService {
         try {
 
             // Create interests
-            interestBean.createInterests(interests);
+            boolean interestsCreated = interestBean.createInterests(user.getInterestDtos());
+            if (!interestsCreated) {
+                return Response.status(400).entity("Error creating interests").build();
+            }
 
             // Create skills
-            skillBean.createSkills(skills);
+            boolean skillsCreated = skillBean.createSkills(user.getSkillDtos());
+            if (!skillsCreated) {
+                return Response.status(400).entity("Error creating skills").build();
+            }
 
             // Update photo
-            String photoPath = userBean.uploadPhoto(sessionToken, input);
+            String photoPath = null;
+            if (input.getFormDataMap().containsKey("photo")) {
+                try {
+                    photoPath = userBean.uploadPhoto(sessionToken, input);
+                } catch (Exception e) {
+                    logger.error("Error uploading photo: {}", e.getMessage());
+                    throw e; // rethrow the exception to rollback the transaction
+                }
+            }
 
             // Update profile
             updatedUser = userBean.updateUserProfile(user, photoPath, sessionToken);

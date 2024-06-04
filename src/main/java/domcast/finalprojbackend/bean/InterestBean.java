@@ -1,6 +1,6 @@
 package domcast.finalprojbackend.bean;
 
-import domcast.finalprojbackend.bean.user.UserBean;
+import domcast.finalprojbackend.bean.user.ValidatorAndHasher;
 import domcast.finalprojbackend.dao.InterestDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.InterestDto;
@@ -26,35 +26,30 @@ public class InterestBean implements Serializable {
     private UserDao userDao;
     @EJB
     private InterestDao interestDao;
+    @EJB
+    private ValidatorAndHasher validatorAndHasher;
 
 
     /**
      * Creates new interests in the database based on a list of InterestDTOs passed as parameter
      * @param interestsList List of InterestDto with the interests to be created.
-     * Return List of String with the names of the interests created.
+     * Return boolean true if all interests were created successfully, false otherwise.
      */
-    public ArrayList<String> createInterests(ArrayList<InterestDto> interestsList) {
+    public boolean createInterests(ArrayList<InterestDto> interestsList) {
         logger.info("Entering createInterests");
 
         if (interestsList == null) {
-            logger.error("Interest's list must not be null");
-            throw new IllegalArgumentException("Interest's list must not be null");
+            logger.info("Interest's list is null, user did not update interests");
+            return true;
         }
 
         if (interestsList.isEmpty()) {
-            logger.error("Interest's list must not be empty");
-            throw new IllegalArgumentException("Interest's list must not be empty");
+            logger.info("Interest's list is empty, user did not update interests");
+            return true;
         }
 
         // Check if there are any null or empty interests and create a list with the names of the interests
-        ArrayList<String> interestsNames = new ArrayList<>();
-        for (InterestDto interest : interestsList) {
-            if (interest == null || interest.getName() == null || interest.getName().isEmpty() || interest.getType() == null) {
-                logger.error("Interest must not be null");
-                throw new IllegalArgumentException("Interest must not be null");
-            }
-            interestsNames.add(interest.getName());
-        }
+        ArrayList<String> interestsNames = validatorAndHasher.validateAndExtractInterestNames(interestsList);
 
         logger.info("Creating interests");
 
@@ -63,10 +58,8 @@ public class InterestBean implements Serializable {
 
             if (interests.size() == interestsList.size()) {
                 logger.info("All interests already exist in database");
-                return new ArrayList<>();
+                return true;
             }
-
-            ArrayList<String> createdInterests = new ArrayList<>();
 
             for (String interest : interestsNames) {
                 if (interests.stream().noneMatch(i -> i.getName().equals(interest))) {
@@ -74,17 +67,16 @@ public class InterestBean implements Serializable {
                     newInterest.setName(interest);
                     newInterest.setType(interestsList.get(interestsNames.indexOf(interest)).getType());
                     interestDao.persist(newInterest);
-                    createdInterests.add(interest);
                 }
             }
 
             logger.info("Interests created");
 
-            return createdInterests;
+            return true;
 
         } catch (Exception e) {
             logger.error("Error while creating interests: {}", e.getMessage());
-            throw e;
+            return false;
         }
     }
 
