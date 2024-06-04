@@ -35,10 +35,10 @@ public class FullRegistration {
     private String workplace;  // The workplace of the user
 
     @XmlElement
-    private ArrayList<String> interests;  // The list of interests of the user
+    private ArrayList<String> interests;  // The list of user's interests
 
     @XmlElement
-    private ArrayList<String> skills;  // The list of skills of the user
+    private ArrayList<String> skills;  // The list of user's skills
 
     /**
      * Default constructor for FullRegistration.
