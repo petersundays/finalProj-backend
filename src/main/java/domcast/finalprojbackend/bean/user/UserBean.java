@@ -1,5 +1,7 @@
 package domcast.finalprojbackend.bean.user;
 
+import domcast.finalprojbackend.bean.InterestBean;
+import domcast.finalprojbackend.bean.SkillBean;
 import domcast.finalprojbackend.bean.SystemBean;
 import domcast.finalprojbackend.dao.InterestDao;
 import domcast.finalprojbackend.dao.LabDao;
@@ -54,6 +56,10 @@ public class UserBean implements Serializable {
     private SystemBean systemBean;
     @EJB
     private AuthenticationBean authenticationBean;
+    @EJB
+    private InterestBean interestBean;
+    @EJB
+    private SkillBean skillBean;
 
     // Default constructor
     public UserBean() {}
@@ -197,14 +203,14 @@ public class UserBean implements Serializable {
             userEntity.setNickname(user.getNickname());
         }
 
-        // Checks if the user has a phone
+        // Checks if the user has interests
         if (user.getInterests() != null && !user.getInterests().isEmpty()) {
-            addInterestToUser(userEntity, user.getInterests());
+            interestBean.addInterestToUser(userEntity.getId(), user.getInterests());
         }
 
-        // Checks if the user has a phone
+        // Checks if the user has skills
         if (user.getSkills() != null && !user.getSkills().isEmpty()) {
-            addSkillToUser(userEntity, user.getSkills());
+            skillBean.addSkillToUser(userEntity.getId(), user.getSkills());
         }
 
         // Tries to set the validation token as inactive
@@ -397,7 +403,7 @@ public class UserBean implements Serializable {
         return loggedUser;
     }
 
-    public void addInterestToUser(UserEntity user, ArrayList<String> interestsList) {
+    /*public void addInterestToUser(UserEntity user, ArrayList<String> interestsList) {
         if (user == null || interestsList == null) {
             logger.error("User and interests list must not be null");
             throw new IllegalArgumentException("User and interests list must not be null");
@@ -435,9 +441,9 @@ public class UserBean implements Serializable {
             logger.error("Error while adding interests to user: {}", e.getMessage());
             throw e;
         }
-    }
+    }*/
 
-    public void addSkillToUser(UserEntity user, ArrayList<String> skillsList) {
+    /*public void addSkillToUser(UserEntity user, ArrayList<String> skillsList) {
         if (user == null || skillsList == null) {
             logger.error("User and skills list must not be null");
             throw new IllegalArgumentException("User and skills list must not be null");
@@ -476,7 +482,7 @@ public class UserBean implements Serializable {
             throw e;
         }
 
-    }
+    }*/
 
     public boolean recoverPassword (String email, String ipAddress){
         logger.info("Recovering password for user with email: {}", email);
@@ -696,7 +702,7 @@ public class UserBean implements Serializable {
         return user.getPhoto();
     }
 
-    public LoggedUser updateUserProfile (UpdateUserDto user, String token) {
+    public LoggedUser updateUserProfile (UpdateUserDto user, String photoPath, String token) {
         logger.info("Updating user profile");
 
         if (user == null) {
@@ -723,6 +729,10 @@ public class UserBean implements Serializable {
                 userEntity.setNickname(user.getNickname());
             }
 
+            if (photoPath != null) {
+                userEntity.setPhoto(photoPath);
+            }
+
             if (user.getBiography() != null) {
                 userEntity.setBiography(user.getBiography());
             }
@@ -736,12 +746,12 @@ public class UserBean implements Serializable {
 
             if (user.getInterests() != null && !user.getInterests().isEmpty()) {
                 userEntity.getInterests().clear();
-                addInterestToUser(userEntity, user.getInterests());
+                interestBean.addInterestToUser(userEntity.getId(), user.getInterests());
             }
 
             if (user.getSkills() != null && !user.getSkills().isEmpty()) {
                 userEntity.getUserSkills().clear();
-                addSkillToUser(userEntity, user.getSkills());
+                skillBean.addSkillToUser(userEntity.getId(), user.getSkills());
             }
 
             userDao.merge(userEntity);

@@ -1,11 +1,16 @@
 package domcast.finalprojbackend.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import domcast.finalprojbackend.bean.InterestBean;
+import domcast.finalprojbackend.bean.SkillBean;
 import domcast.finalprojbackend.bean.user.AuthenticationBean;
 import domcast.finalprojbackend.bean.user.UserBean;
+import domcast.finalprojbackend.dto.InterestDto;
+import domcast.finalprojbackend.dto.SkillDto;
 import domcast.finalprojbackend.dto.UserDto.*;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
@@ -13,6 +18,9 @@ import jakarta.ws.rs.core.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * UserService class that handles user related operations.
@@ -27,6 +35,12 @@ public class UserService {
 
     @Inject
     private AuthenticationBean authenticationBean;
+
+    @Inject
+    private InterestBean interestBean;
+
+    @Inject
+    private SkillBean skillBean;
 
     /**
      * Registers a new user.
@@ -238,7 +252,7 @@ public class UserService {
      * @param request      The HTTP request.
      * @return A response indicating the result of the operation.
      */
-    @PUT
+    /*@PUT
     @Path("")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response updateUser(@HeaderParam("token") String sessionToken, UpdateUserDto user, @Context HttpServletRequest request) {
@@ -256,6 +270,51 @@ public class UserService {
 
         try {
             updatedUser = userBean.updateUserProfile(user, sessionToken);
+
+            // Convert the updatedUser object to a JSON string
+            ObjectMapper mapper = new ObjectMapper();
+            String updatedUserJson = mapper.writeValueAsString(updatedUser);
+
+            response = Response.status(200).entity(updatedUserJson).build();
+            logger.info("User with IP address {} updated its profile successfully", ipAddress);
+        } catch (Exception e) {
+            response = Response.status(400).entity("Error updating profile").build();
+            logger.info("User with IP address {} tried to update its profile unsuccessfully", ipAddress);
+        }
+
+        return response;
+    }*/
+
+    @PUT
+    @Path("")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Transactional
+    public Response updateUser(@HeaderParam("token") String sessionToken, ArrayList<InterestDto> interests, ArrayList<SkillDto> skills, UpdateUserDto user, @Context HttpServletRequest request, MultipartFormDataInput input) {
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with IP address {} is trying to update their profile", ipAddress);
+
+        Response response;
+        LoggedUser updatedUser;
+
+        if (!authenticationBean.isTokenActiveAndFromUserId(sessionToken, user.getId())) {
+            response = Response.status(401).entity("Unauthorized").build();
+            logger.info("User with IP address {} tried to update the profile from user with id {} without authorization", ipAddress, user.getId());
+            return response;
+        }
+
+        try {
+
+            // Create interests
+            interestBean.createInterests(interests);
+
+            // Create skills
+            skillBean.createSkills(skills);
+
+            // Update photo
+            String photoPath = userBean.uploadPhoto(sessionToken, input);
+
+            // Update profile
+            updatedUser = userBean.updateUserProfile(user, photoPath, sessionToken);
 
             // Convert the updatedUser object to a JSON string
             ObjectMapper mapper = new ObjectMapper();

@@ -1,4 +1,4 @@
-package domcast.finalprojbackend.bean.user.startup;
+package domcast.finalprojbackend.bean.startup;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.ejb.*;
