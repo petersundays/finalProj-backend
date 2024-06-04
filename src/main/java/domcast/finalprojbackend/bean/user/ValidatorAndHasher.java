@@ -1,8 +1,12 @@
 package domcast.finalprojbackend.bean.user;
 
+import domcast.finalprojbackend.dto.InterestDto;
+import domcast.finalprojbackend.dto.SkillDto;
 import domcast.finalprojbackend.dto.UserDto.FirstRegistration;
 import domcast.finalprojbackend.dto.UserDto.FullRegistration;
 import domcast.finalprojbackend.dto.UserDto.Login;
+import domcast.finalprojbackend.enums.InterestEnum;
+import domcast.finalprojbackend.enums.SkillTypeEnum;
 import jakarta.ejb.Stateless;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -11,6 +15,7 @@ import org.mindrot.jbcrypt.BCrypt;
 import javax.imageio.ImageIO;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -145,5 +150,60 @@ public class ValidatorAndHasher {
             logger.error("Error while checking image: {}", e.getMessage());
             return false;
         }
+    }
+
+    /**
+     * Validates and extracts the interest names
+     * @param interestsList the list of interests to be validated
+     * @return the list of interest names
+     */
+    public ArrayList<String> validateAndExtractInterestNames(ArrayList<InterestDto> interestsList) {
+        logger.info("Validating and extracting interest names");
+
+        ArrayList<String> interestsNames = new ArrayList<>();
+        ArrayList<String> invalidInterests = new ArrayList<>();
+        for (InterestDto interest : interestsList) {
+            if (interest == null || interest.getName() == null || interest.getName().isEmpty() || interest.getType() == null || !InterestEnum.contains(interest.getType())) {
+                logger.error("Invalid interest: {}", interest);
+                assert interest != null;
+                System.out.println("**************** Interest Name: " + interest.getName() + " + Interest Type: " + interest.getType());
+                invalidInterests.add(interest.getName());
+                continue;
+            }
+            interestsNames.add(interest.getName());
+        }
+        if (!invalidInterests.isEmpty()) {
+            logger.error("Invalid interests: {}", invalidInterests);
+            throw new IllegalArgumentException("Invalid interests: " + String.join(", ", invalidInterests));
+        }
+        logger.info("Interest names validated and extracted");
+        return interestsNames;
+    }
+
+    /**
+     * Validates and extracts the skill names
+     * @param skillsList the list of skills to be validated
+     * @return the list of skill names
+     */
+    public ArrayList<String> validateAndExtractSkillNames(ArrayList<SkillDto> skillsList) {
+        logger.info("Validating and extracting skill names");
+
+        ArrayList<String> skillsNames = new ArrayList<>();
+        ArrayList<String> invalidSkills = new ArrayList<>();
+        for (SkillDto skill : skillsList) {
+            if (skill == null || skill.getName() == null || skill.getName().isEmpty() || skill.getType() == null || !SkillTypeEnum.contains(skill.getType())) {
+                logger.error("Invalid skill: {}", skill);
+                assert skill != null;
+                invalidSkills.add(skill.getName());
+                continue;
+            }
+            skillsNames.add(skill.getName());
+        }
+        if (!invalidSkills.isEmpty()) {
+            logger.error("Invalid skills: {}", invalidSkills);
+            throw new IllegalArgumentException("Invalid skills: " + String.join(", ", invalidSkills));
+        }
+        logger.info("Skill names validated and extracted");
+        return skillsNames;
     }
 }

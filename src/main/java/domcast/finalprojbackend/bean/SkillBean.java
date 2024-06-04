@@ -1,6 +1,7 @@
 package domcast.finalprojbackend.bean;
 
 import domcast.finalprojbackend.bean.user.UserBean;
+import domcast.finalprojbackend.bean.user.ValidatorAndHasher;
 import domcast.finalprojbackend.dao.InterestDao;
 import domcast.finalprojbackend.dao.SkillDao;
 import domcast.finalprojbackend.dao.UserDao;
@@ -25,35 +26,30 @@ public class SkillBean implements Serializable {
     private UserDao userDao;
     @EJB
     private SkillDao skillDao;
+    @EJB
+    private ValidatorAndHasher validatorAndHasher;
 
 
     /**
      * Creates new skills in the database based on a list of SkillDTOs passed as parameter
      * @param skillsList List of SkillDto with the skills to be created.
-     * Return List of String with the names of the skills created.
-     */
-    public ArrayList<String> createSkills(ArrayList<SkillDto> skillsList) {
+        * Return boolean true if all skills were created successfully, false otherwise.
+        */
+    public boolean createSkills(ArrayList<SkillDto> skillsList) {
         logger.info("Entering createSkills");
 
         if (skillsList == null) {
-            logger.error("Skill's list must not be null");
-            throw new IllegalArgumentException("Skill's list must not be null");
+            logger.error("Skill's list is null, user did not update interests");
+            return true;
         }
 
         if (skillsList.isEmpty()) {
-            logger.error("Skill's list must not be empty");
-            throw new IllegalArgumentException("Skill's list must not be empty");
+            logger.error("Skill's list is empty, user did not update interests");
+            return true;
         }
 
         // Check if there are any null or empty skills and create a list with the names of the skills
-        ArrayList<String> skillsNames = new ArrayList<>();
-        for (SkillDto skill : skillsList) {
-            if (skill == null || skill.getName() == null || skill.getName().isEmpty()) {
-                logger.error("Skill must not be null");
-                throw new IllegalArgumentException("Skill must not be null");
-            }
-            skillsNames.add(skill.getName());
-        }
+        ArrayList<String> skillsNames = validatorAndHasher.validateAndExtractSkillNames(skillsList);
 
         logger.info("Creating skills");
 
@@ -62,27 +58,24 @@ public class SkillBean implements Serializable {
 
             if (skills.size() == skillsList.size()) {
                 logger.info("All skills already exist in database");
-                return new ArrayList<>();
+                return true;
             }
-
-            ArrayList<String> createdSkills = new ArrayList<>();
 
             for (String skill : skillsNames) {
                 if (skills.stream().noneMatch(i -> i.getName().equals(skill))) {
                     SkillEntity newSkill = new SkillEntity();
                     newSkill.setName(skill);
                     skillDao.persist(newSkill);
-                    createdSkills.add(skill);
                 }
             }
 
             logger.info("Skills created");
 
-            return createdSkills;
+            return true;
 
         } catch (Exception e) {
             logger.error("Error while creating skills: {}", e.getMessage());
-            throw e;
+            return false;
         }
     }
 
