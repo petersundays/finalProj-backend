@@ -393,6 +393,7 @@ public class UserBean implements Serializable {
         loggedUser.setLastName(user.getLastName());
         loggedUser.setWorkplace(user.getWorkplace().getCity().getValue());
         loggedUser.setBiography(user.getBiography());
+        loggedUser.setVisible(user.isVisible());
         loggedUser.setPhoto(user.getPhoto());
         loggedUser.setNickname(user.getNickname());
         loggedUser.setSessionToken(sessionToken);
@@ -763,6 +764,10 @@ public class UserBean implements Serializable {
                 if (labEntity != null) {
                     userEntity.setWorkplace(labEntity);
                 }
+            }
+
+            if (user.isVisible() != null) {
+                userEntity.setVisible(user.isVisible());
             }
 
             if (user.getInterests() != null && !user.getInterests().isEmpty()) {

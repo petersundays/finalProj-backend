@@ -40,6 +40,9 @@ public class LoggedUser {
     private String biography;  // A short biography of the user
 
     @XmlElement
+    private boolean visible;  // The visibility of the user's profile.
+
+    @XmlElement
     private String workplace;  // The user's current workplace
 
     @XmlElement
@@ -118,6 +121,14 @@ public class LoggedUser {
 
     public void setBiography(String biography) {
         this.biography = biography;
+    }
+
+    public boolean isVisible() {
+        return visible;
+    }
+
+    public void setVisible(boolean visible) {
+        this.visible = visible;
     }
 
     public String getWorkplace() {
