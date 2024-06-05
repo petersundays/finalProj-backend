@@ -275,7 +275,6 @@ public class UserService {
         }
 
         try {
-            System.out.println("***** Entering try block *****");
             UpdateUserDto user = null;
             // Extract UpdateUserDto from MultipartFormDataInput and create interests and skills
             if (input.getFormDataMap().containsKey("user")) {
@@ -283,7 +282,6 @@ public class UserService {
                 String userString = part.getBodyAsString();
                 ObjectMapper mapper = new ObjectMapper();
                 user = mapper.readValue(userString, UpdateUserDto.class);
-
                 // Create interests
                 boolean interestsCreated = interestBean.createInterests(user.getInterestDtos());
                 if (!interestsCreated) {
