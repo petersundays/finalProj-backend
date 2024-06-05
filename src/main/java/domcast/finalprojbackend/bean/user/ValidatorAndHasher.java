@@ -163,10 +163,9 @@ public class ValidatorAndHasher {
         ArrayList<String> interestsNames = new ArrayList<>();
         ArrayList<String> invalidInterests = new ArrayList<>();
         for (InterestDto interest : interestsList) {
-            if (interest == null || interest.getName() == null || interest.getName().isEmpty() || interest.getType() == null || !InterestEnum.contains(interest.getType())) {
+            if (interest == null || interest.getName() == null || interest.getName().isEmpty() || !InterestEnum.containsId(interest.getType())) {
                 logger.error("Invalid interest: {}", interest);
                 assert interest != null;
-                System.out.println("**************** Interest Name: " + interest.getName() + " + Interest Type: " + interest.getType());
                 invalidInterests.add(interest.getName());
                 continue;
             }
@@ -191,7 +190,7 @@ public class ValidatorAndHasher {
         ArrayList<String> skillsNames = new ArrayList<>();
         ArrayList<String> invalidSkills = new ArrayList<>();
         for (SkillDto skill : skillsList) {
-            if (skill == null || skill.getName() == null || skill.getName().isEmpty() || skill.getType() == null || !SkillTypeEnum.contains(skill.getType())) {
+            if (skill == null || skill.getName() == null || skill.getName().isEmpty() || !SkillTypeEnum.containsId(skill.getType())) {
                 logger.error("Invalid skill: {}", skill);
                 assert skill != null;
                 invalidSkills.add(skill.getName());

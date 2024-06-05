@@ -60,16 +60,21 @@ public enum SkillTypeEnum {
         throw new IllegalArgumentException("Invalid SkillTypeEnum id: " + id);
     }
 
-    public static boolean contains(SkillTypeEnum type) {
-        for (SkillTypeEnum value : SkillTypeEnum.values()) {
-            if (value == type) {
+    /**
+     * Method that checks if the SkillTypeEnum contains a type with the given id.
+     * @param id the id to check
+     * @return true if the SkillTypeEnum contains the id, false otherwise
+     */
+    public static boolean containsId(int id) {
+        for (SkillTypeEnum skillTypeEnum : SkillTypeEnum.values()) {
+            if (skillTypeEnum.getId() == id) {
                 return true;
             }
         }
         return false;
     }
 
-    @JsonCreator
+/*    @JsonCreator
     public static SkillTypeEnum forValue(String value) {
         for (SkillTypeEnum skillTypeEnum : SkillTypeEnum.values()) {
             if (skillTypeEnum.getValue().equals(value)) {
@@ -77,5 +82,5 @@ public enum SkillTypeEnum {
             }
         }
         throw new IllegalArgumentException("Invalid SkillTypeEnum value: " + value);
-    }
+    }*/
 }

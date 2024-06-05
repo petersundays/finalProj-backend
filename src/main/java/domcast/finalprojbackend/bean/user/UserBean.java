@@ -12,7 +12,6 @@ import domcast.finalprojbackend.entity.*;
 import domcast.finalprojbackend.enums.TypeOfUserEnum;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
-import jakarta.persistence.NoResultException;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -55,7 +54,7 @@ public class UserBean implements Serializable {
     @EJB
     private SystemBean systemBean;
     @EJB
-    private AuthenticationBean authenticationBean;
+    private AuthenticationAndAuthorization authenticationAndAuthorization;
     @EJB
     private InterestBean interestBean;
     @EJB
@@ -262,7 +261,7 @@ public class UserBean implements Serializable {
         logger.info("User found: {}", login.getEmail());
 
         // Check if the password is valid, if not, throws an exception
-        if (!authenticationBean.checkPassword(login.getPassword(), user.getPassword())) {
+        if (!authenticationAndAuthorization.checkPassword(login.getPassword(), user.getPassword())) {
             logger.error("Invalid password for user: {}", login.getEmail());
             throw new IllegalArgumentException("Invalid password");
         }
@@ -388,11 +387,13 @@ public class UserBean implements Serializable {
         }
 
         // Set the LoggedUser's attributes using the UserEntity's attributes
-        loggedUser.setEmail(user.getEmail());
+        //loggedUser.setEmail(user.getEmail());
+        loggedUser.setId(user.getId());
         loggedUser.setFirstName(user.getFirstName());
         loggedUser.setLastName(user.getLastName());
         loggedUser.setWorkplace(user.getWorkplace().getCity().getValue());
         loggedUser.setBiography(user.getBiography());
+        loggedUser.setVisible(user.isVisible());
         loggedUser.setPhoto(user.getPhoto());
         loggedUser.setNickname(user.getNickname());
         loggedUser.setSessionToken(sessionToken);
@@ -702,18 +703,39 @@ public class UserBean implements Serializable {
         return user.getPhoto();
     }
 
-    public LoggedUser updateUserProfile (UpdateUserDto user, String photoPath, String token) {
+    public LoggedUser updateUserProfile (UpdateUserDto user, int userId, String photoPath, String token) {
         logger.info("Updating user profile");
 
-        if (user == null) {
-            logger.error("User is null");
-            throw new IllegalArgumentException("User is null");
-        }
+        UserEntity userEntity = userDao.findUserById(userId);
 
-        UserEntity userEntity = userDao.findUserById(user.getId());
-
+        // Checks if the user returned from the database is null
         if (userEntity == null) {
             throw new NoSuchElementException("User not found with id: " + user.getId());
+        }
+
+        // Checks if the user and photo path are null
+        if (user == null && photoPath == null) {
+            logger.error("User and photo path must not be null");
+            throw new IllegalArgumentException("User and photo path must not be null");
+        }
+
+        // If the user is null, it means that the user is updating the photo only
+        if (user == null) {
+            try {
+                userEntity.setPhoto(photoPath);
+                userDao.merge(userEntity);
+                LoggedUser loggedUser = convertUserEntityToLoggedUser(userEntity, token);
+
+                if (loggedUser == null) {
+                    logger.error("Error while converting user to logged user, after only updating photo");
+                    throw new IllegalArgumentException("Error while converting user to logged user");
+                }
+
+                // Returns the logged user
+                return loggedUser;
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         try {
@@ -742,6 +764,10 @@ public class UserBean implements Serializable {
                 if (labEntity != null) {
                     userEntity.setWorkplace(labEntity);
                 }
+            }
+
+            if (user.isVisible() != null) {
+                userEntity.setVisible(user.isVisible());
             }
 
             if (user.getInterests() != null && !user.getInterests().isEmpty()) {

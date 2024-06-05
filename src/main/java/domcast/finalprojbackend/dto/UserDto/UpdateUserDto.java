@@ -35,6 +35,9 @@ public class UpdateUserDto {
     private String workplace;  // The user's current workplace
 
     @XmlElement
+    private Boolean visible;  // The visibility of the user's profile. Being Boolean, it can be null, true, or false.
+
+    @XmlElement
     private ArrayList<String> interests;  // A list of the user's interests
 
     @XmlElement
@@ -99,6 +102,14 @@ public class UpdateUserDto {
 
     public void setWorkplace(String workplace) {
         this.workplace = workplace;
+    }
+
+    public Boolean isVisible() {
+        return visible;
+    }
+
+    public void setVisible(Boolean visible) {
+        this.visible = visible;
     }
 
     public ArrayList<String> getInterests() {

@@ -19,7 +19,7 @@ public class SkillDto {
     private String name;  // Name of the skill
 
     @XmlElement
-    private SkillTypeEnum type;  // Type of the skill
+    private int type;  // Type of the skill
 
     /**
      * Default constructor for SkillDto.
@@ -33,7 +33,7 @@ public class SkillDto {
      * @param name the name of the skill
      * @param type the type of the skill
      */
-    public SkillDto(String name, SkillTypeEnum type) {
+    public SkillDto(String name, int type) {
         this.name = name;
         this.type = type;
     }
@@ -61,7 +61,7 @@ public class SkillDto {
      *
      * @return the type of the skill
      */
-    public SkillTypeEnum getType() {
+    public int getType() {
         return type;
     }
 
@@ -70,7 +70,7 @@ public class SkillDto {
      *
      * @param type the new type of the skill
      */
-    public void setType(SkillTypeEnum type) {
+    public void setType(int type) {
         this.type = type;
     }
 }

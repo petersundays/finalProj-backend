@@ -49,19 +49,19 @@ public enum InterestEnum {
     }
 
     /**
-     * Method that checks if the Interest contains a type of InterestEnum.
-     * @param type the type of InterestEnum
-     * @return true if the Interest contains the type, false otherwise
+     * Method that checks if the InterestEnum contains a type with the given id.
+     * @param id the id to check
+     * @return true if the InterestEnum contains the id, false otherwise
      */
-    public static boolean contains(InterestEnum type) {
-        for (InterestEnum value : InterestEnum.values()) {
-            if (value == type) {
+    public static boolean containsId(int id) {
+        for (InterestEnum interestEnum : InterestEnum.values()) {
+            if (interestEnum.getId() == id) {
                 return true;
             }
         }
         return false;
     }
-
+/*
     @JsonCreator
     public static InterestEnum forValue(String value) {
         for (InterestEnum interestEnum : InterestEnum.values()) {
@@ -70,5 +70,5 @@ public enum InterestEnum {
             }
         }
         throw new IllegalArgumentException("Invalid InterestEnum value: " + value);
-    }
+    }*/
 }

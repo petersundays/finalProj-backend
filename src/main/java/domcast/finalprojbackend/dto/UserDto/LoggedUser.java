@@ -16,8 +16,10 @@ public class LoggedUser {
     @XmlElement
     private int id;  // The unique identifier of the user
 
+/*
     @XmlElement
     private String email;  // The email address of the user
+*/
 
     @XmlElement
     private String sessionToken;  // The session token for the user, used for authentication
@@ -36,6 +38,9 @@ public class LoggedUser {
 
     @XmlElement
     private String biography;  // A short biography of the user
+
+    @XmlElement
+    private boolean visible;  // The visibility of the user's profile.
 
     @XmlElement
     private String workplace;  // The user's current workplace
@@ -62,13 +67,13 @@ public class LoggedUser {
         this.id = id;
     }
 
-    public String getEmail() {
+/*    public String getEmail() {
         return email;
     }
 
     public void setEmail(String email) {
         this.email = email;
-    }
+    }*/
 
     public String getSessionToken() {
         return sessionToken;
@@ -116,6 +121,14 @@ public class LoggedUser {
 
     public void setBiography(String biography) {
         this.biography = biography;
+    }
+
+    public boolean isVisible() {
+        return visible;
+    }
+
+    public void setVisible(boolean visible) {
+        this.visible = visible;
     }
 
     public String getWorkplace() {

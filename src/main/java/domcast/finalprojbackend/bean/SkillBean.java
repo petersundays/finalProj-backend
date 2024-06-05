@@ -5,8 +5,11 @@ import domcast.finalprojbackend.bean.user.ValidatorAndHasher;
 import domcast.finalprojbackend.dao.InterestDao;
 import domcast.finalprojbackend.dao.SkillDao;
 import domcast.finalprojbackend.dao.UserDao;
+import domcast.finalprojbackend.dto.InterestDto;
 import domcast.finalprojbackend.dto.SkillDto;
 import domcast.finalprojbackend.entity.*;
+import domcast.finalprojbackend.enums.InterestEnum;
+import domcast.finalprojbackend.enums.SkillTypeEnum;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.NoResultException;
@@ -65,6 +68,9 @@ public class SkillBean implements Serializable {
                 if (skills.stream().noneMatch(i -> i.getName().equals(skill))) {
                     SkillEntity newSkill = new SkillEntity();
                     newSkill.setName(skill);
+                    // Get the corresponding SkillDto and set the type
+                    SkillDto skillDto = skillsList.get(skillsNames.indexOf(skill));
+                    newSkill.setType(convertTypeToEnum(skillDto.getType()));
                     skillDao.persist(newSkill);
                 }
             }
@@ -131,5 +137,9 @@ public class SkillBean implements Serializable {
             logger.error("Error while adding skills to user: {}", e.getMessage());
             throw e;
         }
+    }
+
+    public SkillTypeEnum convertTypeToEnum(int type) {
+        return SkillTypeEnum.fromId(type);
     }
 }

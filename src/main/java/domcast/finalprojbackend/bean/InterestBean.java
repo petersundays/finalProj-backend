@@ -7,6 +7,7 @@ import domcast.finalprojbackend.dto.InterestDto;
 import domcast.finalprojbackend.entity.InterestEntity;
 import domcast.finalprojbackend.entity.M2MUserInterest;
 import domcast.finalprojbackend.entity.UserEntity;
+import domcast.finalprojbackend.enums.InterestEnum;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.NoResultException;
@@ -65,7 +66,10 @@ public class InterestBean implements Serializable {
                 if (interests.stream().noneMatch(i -> i.getName().equals(interest))) {
                     InterestEntity newInterest = new InterestEntity();
                     newInterest.setName(interest);
-                    newInterest.setType(interestsList.get(interestsNames.indexOf(interest)).getType());
+
+                    // Get the corresponding InterestDto and set the type
+                    InterestDto interestDto = interestsList.get(interestsNames.indexOf(interest));
+                    newInterest.setType(convertTypeToEnum(interestDto.getType()));
                     interestDao.persist(newInterest);
                 }
             }
@@ -135,5 +139,9 @@ public class InterestBean implements Serializable {
             logger.error("Error while adding interests to user: {}", e.getMessage());
             throw e;
         }
+    }
+
+    public InterestEnum convertTypeToEnum(int type) {
+        return InterestEnum.fromId(type);
     }
 }

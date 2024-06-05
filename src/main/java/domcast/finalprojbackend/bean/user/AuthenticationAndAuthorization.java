@@ -8,7 +8,7 @@ import org.apache.logging.log4j.Logger;
 import org.mindrot.jbcrypt.BCrypt;
 
 @Stateless
-public class AuthenticationBean {
+public class AuthenticationAndAuthorization {
 
     private static final Logger logger = LogManager.getLogger(ValidatorAndHasher.class);
     @EJB
