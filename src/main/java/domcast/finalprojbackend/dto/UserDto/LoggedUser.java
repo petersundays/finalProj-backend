@@ -16,8 +16,10 @@ public class LoggedUser {
     @XmlElement
     private int id;  // The unique identifier of the user
 
+/*
     @XmlElement
     private String email;  // The email address of the user
+*/
 
     @XmlElement
     private String sessionToken;  // The session token for the user, used for authentication
@@ -62,13 +64,13 @@ public class LoggedUser {
         this.id = id;
     }
 
-    public String getEmail() {
+/*    public String getEmail() {
         return email;
     }
 
     public void setEmail(String email) {
         this.email = email;
-    }
+    }*/
 
     public String getSessionToken() {
         return sessionToken;

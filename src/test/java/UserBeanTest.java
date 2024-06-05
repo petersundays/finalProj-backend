@@ -12,7 +12,6 @@ import domcast.finalprojbackend.entity.UserEntity;
 import domcast.finalprojbackend.entity.ValidationTokenEntity;
 import domcast.finalprojbackend.enums.LabEnum;
 import domcast.finalprojbackend.enums.TypeOfUserEnum;
-import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
@@ -24,7 +23,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -67,7 +65,7 @@ public class UserBeanTest {
     private MultipartFormDataInput input; // Mock the MultipartFormDataInput
 
     @Mock
-    private AuthenticationBean authenticationBean; // Mock the AuthenticationBean
+    private AuthenticationAndAuthorization authenticationAndAuthorization; // Mock the AuthenticationBean
 
     /**
      * Setup method to initialize mocks
@@ -217,7 +215,7 @@ public class UserBeanTest {
 
         when(validatorAndHasher.isLoginValid(login)).thenReturn(true);
         when(userDao.findUserByEmail(login.getEmail())).thenReturn(userEntity);
-        when(authenticationBean.checkPassword(login.getPassword(), userEntity.getPassword())).thenReturn(true);
+        when(authenticationAndAuthorization.checkPassword(login.getPassword(), userEntity.getPassword())).thenReturn(true);
         when(tokenBean.generateSessionToken(userEntity, ipAddress)).thenReturn(sessionTokenEntity);
         when(userDao.merge(userEntity)).thenReturn(true);
 

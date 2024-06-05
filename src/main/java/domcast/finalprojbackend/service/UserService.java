@@ -3,10 +3,8 @@ package domcast.finalprojbackend.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import domcast.finalprojbackend.bean.InterestBean;
 import domcast.finalprojbackend.bean.SkillBean;
-import domcast.finalprojbackend.bean.user.AuthenticationBean;
+import domcast.finalprojbackend.bean.user.AuthenticationAndAuthorization;
 import domcast.finalprojbackend.bean.user.UserBean;
-import domcast.finalprojbackend.dto.InterestDto;
-import domcast.finalprojbackend.dto.SkillDto;
 import domcast.finalprojbackend.dto.UserDto.*;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,8 +19,6 @@ import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * UserService class that handles user related operations.
@@ -36,7 +32,7 @@ public class UserService {
     private UserBean userBean;
 
     @Inject
-    private AuthenticationBean authenticationBean;
+    private AuthenticationAndAuthorization authenticationAndAuthorization;
 
     @Inject
     private InterestBean interestBean;
@@ -248,47 +244,6 @@ public class UserService {
 
     /**
      * Updates a user's profile.
-     *
-     * @param sessionToken The session token of the user to update the profile.
-     * @param user         The updated user.
-     * @param request      The HTTP request.
-     * @return A response indicating the result of the operation.
-     */
-    /*@PUT
-    @Path("")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response updateUser(@HeaderParam("token") String sessionToken, UpdateUserDto user, @Context HttpServletRequest request) {
-        String ipAddress = request.getRemoteAddr();
-        logger.info("User with IP address {} is trying to update their profile", ipAddress);
-
-        Response response;
-        LoggedUser updatedUser;
-
-        if (!authenticationBean.isTokenActiveAndFromUserId(sessionToken, user.getId())) {
-            response = Response.status(401).entity("Unauthorized").build();
-            logger.info("User with IP address {} tried to update the profile from user with id {} without authorization", ipAddress, user.getId());
-            return response;
-        }
-
-        try {
-            updatedUser = userBean.updateUserProfile(user, sessionToken);
-
-            // Convert the updatedUser object to a JSON string
-            ObjectMapper mapper = new ObjectMapper();
-            String updatedUserJson = mapper.writeValueAsString(updatedUser);
-
-            response = Response.status(200).entity(updatedUserJson).build();
-            logger.info("User with IP address {} updated its profile successfully", ipAddress);
-        } catch (Exception e) {
-            response = Response.status(400).entity("Error updating profile").build();
-            logger.info("User with IP address {} tried to update its profile unsuccessfully", ipAddress);
-        }
-
-        return response;
-    }*/
-
-    /**
-     * Updates a user's profile.
      * This method is transactional and requires a new transaction,
      * which means that if an exception occurs, the transaction will be rolled back.
      *
@@ -300,35 +255,46 @@ public class UserService {
     @Path("")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Transactional
-    public Response updateUser(@HeaderParam("token") String sessionToken, MultipartFormDataInput input, @Context HttpServletRequest request) throws IOException {
+    public Response updateUser(@HeaderParam("token") String sessionToken, @HeaderParam("id") int userId, MultipartFormDataInput input, @Context HttpServletRequest request) throws IOException {
         String ipAddress = request.getRemoteAddr();
         logger.info("User with IP address {} is trying to update their profile", ipAddress);
 
-        // Extract UpdateUserDto from MultipartFormDataInput
-        InputPart part = input.getFormDataMap().get("user").get(0);
-        UpdateUserDto user = part.getBody(UpdateUserDto.class, null);
+        // Check if the input contains the necessary keys
+        if (!input.getFormDataMap().containsKey("user") && !input.getFormDataMap().containsKey("photo")) {
+            return Response.status(400).entity("No data provided").build();
+        }
 
         Response response;
         LoggedUser updatedUser;
 
-        if (!authenticationBean.isTokenActiveAndFromUserId(sessionToken, user.getId())) {
+        // Check if the user is authorized to update the profile
+        if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(sessionToken, userId)) {
             response = Response.status(401).entity("Unauthorized").build();
-            logger.info("User with IP address {} tried to update the profile from user with id {} without authorization", ipAddress, user.getId());
+            logger.info("User with IP address {} tried to update the profile from user with id {} without authorization", ipAddress, userId);
             return response;
         }
 
         try {
+            System.out.println("***** Entering try block *****");
+            UpdateUserDto user = null;
+            // Extract UpdateUserDto from MultipartFormDataInput and create interests and skills
+            if (input.getFormDataMap().containsKey("user")) {
+                InputPart part = input.getFormDataMap().get("user").get(0);
+                String userString = part.getBodyAsString();
+                ObjectMapper mapper = new ObjectMapper();
+                user = mapper.readValue(userString, UpdateUserDto.class);
 
-            // Create interests
-            boolean interestsCreated = interestBean.createInterests(user.getInterestDtos());
-            if (!interestsCreated) {
-                return Response.status(400).entity("Error creating interests").build();
-            }
+                // Create interests
+                boolean interestsCreated = interestBean.createInterests(user.getInterestDtos());
+                if (!interestsCreated) {
+                    return Response.status(400).entity("Error creating interests").build();
+                }
 
-            // Create skills
-            boolean skillsCreated = skillBean.createSkills(user.getSkillDtos());
-            if (!skillsCreated) {
-                return Response.status(400).entity("Error creating skills").build();
+                // Create skills
+                boolean skillsCreated = skillBean.createSkills(user.getSkillDtos());
+                if (!skillsCreated) {
+                    return Response.status(400).entity("Error creating skills").build();
+                }
             }
 
             // Update photo
@@ -338,12 +304,12 @@ public class UserService {
                     photoPath = userBean.uploadPhoto(sessionToken, input);
                 } catch (Exception e) {
                     logger.error("Error uploading photo: {}", e.getMessage());
-                    throw e; // rethrow the exception to rollback the transaction
+                    throw e; // rethrow the exception to roll back the transaction
                 }
             }
 
             // Update profile
-            updatedUser = userBean.updateUserProfile(user, photoPath, sessionToken);
+            updatedUser = userBean.updateUserProfile(user, userId, photoPath, sessionToken);
 
             // Convert the updatedUser object to a JSON string
             ObjectMapper mapper = new ObjectMapper();

@@ -18,7 +18,7 @@ public class InterestDto {
     private String name;  // Name of the interest
 
     @XmlElement
-    private InterestEnum type;  // Type of the interest
+    private int type;  // Type of the interest
 
     /**
      * Default constructor for InterestDto.
@@ -32,7 +32,7 @@ public class InterestDto {
      * @param name the name of the interest
      * @param type the type of the interest
      */
-    public InterestDto(String name, InterestEnum type) {
+    public InterestDto(String name, int type) {
         this.name = name;
         this.type = type;
     }
@@ -60,7 +60,7 @@ public class InterestDto {
      *
      * @return the type of the interest
      */
-    public InterestEnum getType() {
+    public int getType() {
         return type;
     }
 
@@ -69,7 +69,7 @@ public class InterestDto {
      *
      * @param type the new type of the interest
      */
-    public void setType(InterestEnum type) {
+    public void setType(int type) {
         this.type = type;
     }
 }
