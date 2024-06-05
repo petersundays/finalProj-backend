@@ -473,4 +473,137 @@ public class UserBeanTest {
             userBean.updateUserProfile(updateUserDto, userEntity.getId(), null, "token");
         });
     }
+    /**
+     * Test method for updateUserInterests
+     * This test checks the successful case where the user interests are updated correctly.
+     */
+    @Test
+    public void testUpdatePhoto_Success() {
+        // Arrange
+        UserEntity userEntity = new UserEntity();
+        userEntity.setId(1);
+        LabEntity labEntity = new LabEntity(); // Create a LabEntity
+        labEntity.setCity(LabEnum.LISBOA); // Set a city for the LabEntity
+        userEntity.setWorkplace(labEntity); // Set the LabEntity as the workplace of the UserEntity
+        String photoPath = "path/to/photo";
+        String token = "token";
+
+        when(userDao.merge(any(UserEntity.class))).thenReturn(true);
+
+        // Act
+        LoggedUser result = userBean.updatePhoto(userEntity, photoPath, token);
+
+        // Assert
+        assertNotNull(result);
+        verify(userDao, times(1)).merge(any(UserEntity.class));
+    }
+
+    /**
+     * Test method for updateUserInterests
+     * This test checks the failure case where the user interests are not updated.
+     */
+    @Test
+    public void testUpdatePhoto_Failure() {
+        // Arrange
+        UserEntity userEntity = new UserEntity();
+        userEntity.setId(1);
+        String photoPath = "path/to/photo";
+        String token = "token";
+
+        when(userDao.merge(any(UserEntity.class))).thenReturn(false);
+
+        // Act and Assert
+        assertThrows(RuntimeException.class, () -> userBean.updatePhoto(userEntity, photoPath, token));
+    }
+
+    /**
+     * Test method for updateUserInterests
+     * This test checks the successful case where the user interests are updated correctly.
+     */
+    @Test
+    public void testUpdateBasicInfoIfChanged_Success() {
+        // Arrange
+        UserEntity userEntity = new UserEntity();
+        userEntity.setId(1);
+        UpdateUserDto updateUserDto = new UpdateUserDto();
+        updateUserDto.setFirstName("John");
+        updateUserDto.setLastName("Doe");
+        updateUserDto.setWorkplace("Lisboa");
+        String photoPath = "path/to/photo";
+
+        LabEntity labEntity = new LabEntity(); // Create a LabEntity
+        labEntity.setCity(LabEnum.LISBOA); // Set a city for the LabEntity
+
+        when(labDao.findLabByCity(updateUserDto.getWorkplace())).thenReturn(labEntity);
+
+        // Act
+        UserEntity result = userBean.updateBasicInfoIfChanged(userEntity, updateUserDto, photoPath);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(updateUserDto.getFirstName(), result.getFirstName());
+        assertEquals(updateUserDto.getLastName(), result.getLastName());
+        assertEquals(updateUserDto.getWorkplace(), result.getWorkplace().getCity().getValue());
+    }
+
+    /**
+     * Test method for updateUserInterests
+     * This test checks the failure case where the user interests are not updated.
+     */
+    @Test
+    public void testUpdateBasicInfoIfChanged_Failure() {
+        // Arrange
+        UserEntity userEntity = null;
+        UpdateUserDto updateUserDto = new UpdateUserDto();
+        String photoPath = "path/to/photo";
+
+        // Act and Assert
+        assertThrows(IllegalArgumentException.class, () -> userBean.updateBasicInfoIfChanged(userEntity, updateUserDto, photoPath));
+    }
+
+    /**
+     * Test method for updateUserInterests
+     * This test checks the successful case where the user interests are updated correctly.
+     */
+    @Test
+    public void testUpdateUserInterestsIfChanged_Success() {
+        // Arrange
+        UserEntity userEntity = new UserEntity();
+        userEntity.setId(1);
+        UpdateUserDto updateUserDto = new UpdateUserDto();
+        ArrayList<String> interests = new ArrayList<>();
+        interests.add("Interest1");
+        interests.add("Interest2");
+        updateUserDto.setInterests(interests);
+
+        // Act
+        UserEntity result = userBean.updateUserInterestsIfChanged(userEntity, updateUserDto);
+
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.getInterests().isEmpty()); // The interests should be empty because the method clears them
+    }
+
+    /**
+     * Test method for updateUserSkillsIfChanged
+     * This test checks the successful case where the user skills are updated correctly.
+     */
+    @Test
+    public void testUpdateUserSkillsIfChanged_Success() {
+        // Arrange
+        UserEntity userEntity = new UserEntity();
+        userEntity.setId(1);
+        UpdateUserDto updateUserDto = new UpdateUserDto();
+        ArrayList<String> skills = new ArrayList<>();
+        skills.add("Skill1");
+        skills.add("Skill2");
+        updateUserDto.setSkills(skills);
+
+        // Act
+        UserEntity result = userBean.updateUserSkillsIfChanged(userEntity, updateUserDto);
+
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.getUserSkills().isEmpty()); // The skills should be empty because the method clears them
+    }
 }

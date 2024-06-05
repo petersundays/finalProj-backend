@@ -295,7 +295,7 @@ public class UserBean implements Serializable {
 
         // Checks if the logged user is null, if so, throws an exception
         if (loggedUser == null) {
-            logger.error("Error while converting user to logged user");
+            logger.error("Error while converting user to logged user, during login process");
             throw new IllegalArgumentException("Error while converting user to logged user");
         }
 
@@ -703,6 +703,14 @@ public class UserBean implements Serializable {
         return user.getPhoto();
     }
 
+    /**
+     * Updates the user's profile.
+     * @param user The user DTO containing the new information.
+     * @param userId The ID of the user to update.
+     * @param photoPath The path to the new photo.
+     * @param token The user's session token.
+     * @return The updated logged user.
+     */
     public LoggedUser updateUserProfile (UpdateUserDto user, int userId, String photoPath, String token) {
         logger.info("Updating user profile");
 
@@ -721,22 +729,76 @@ public class UserBean implements Serializable {
 
         // If the user is null, it means that the user is updating the photo only
         if (user == null) {
-            try {
-                userEntity.setPhoto(photoPath);
-                userDao.merge(userEntity);
-                LoggedUser loggedUser = convertUserEntityToLoggedUser(userEntity, token);
-
-                if (loggedUser == null) {
-                    logger.error("Error while converting user to logged user, after only updating photo");
-                    throw new IllegalArgumentException("Error while converting user to logged user");
-                }
-
-                // Returns the logged user
-                return loggedUser;
-            } catch (IllegalArgumentException e) {
-                throw new RuntimeException(e);
-            }
+            return updatePhoto(userEntity, photoPath, token);
         }
+
+        // If the photo path is null, it means that the user is updating the basic info only
+        // If the user is updating both the basic info and the photo,
+        // the photo path will be updated in the next step
+        try {
+            userEntity = updateBasicInfoIfChanged(userEntity, user, photoPath);
+
+            userEntity = updateUserInterestsIfChanged(userEntity, user);
+
+            userEntity = updateUserSkillsIfChanged(userEntity, user);
+
+            userDao.merge(userEntity);
+
+            LoggedUser loggedUser = convertUserEntityToLoggedUser(userEntity, token);
+
+            if (loggedUser == null) {
+                logger.error("Error while converting user to logged user");
+                throw new IllegalArgumentException("Error while converting user to logged user");
+            }
+
+            // Returns the logged user
+            return loggedUser;
+
+        } catch (Exception e) {
+            logger.error("Error while updating user profile: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Updates the user's photo.
+     * @param userEntity The user entity to update.
+     * @param photoPath The path to the new photo.
+     * @param token The user's session token.
+     * @return The updated logged user.
+     */
+    public LoggedUser updatePhoto (UserEntity userEntity, String photoPath, String token) {
+        try {
+            userEntity.setPhoto(photoPath);
+            userDao.merge(userEntity);
+            LoggedUser loggedUser = convertUserEntityToLoggedUser(userEntity, token);
+
+            if (loggedUser == null) {
+                logger.error("Error while converting user to logged user, after only updating photo");
+                throw new IllegalArgumentException("Error while converting user to logged user");
+            }
+
+            // Returns the logged user
+            return loggedUser;
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Updates the user's basic information if it has changed.
+     * @param userEntity The user entity to update.
+     * @param user The user DTO containing the new information.
+     * @param photoPath The path to the new photo.
+     * @return The updated user entity.
+     */
+    public UserEntity updateBasicInfoIfChanged (UserEntity userEntity, UpdateUserDto user, String photoPath) {
+
+        if (userEntity == null) {
+            throw new IllegalArgumentException("UserEntity must not be null");
+        }
+
+        logger.info("Updating basic info for user with id: {}", userEntity.getId());
 
         try {
             if (user.getFirstName() != null) {
@@ -759,6 +821,10 @@ public class UserBean implements Serializable {
                 userEntity.setBiography(user.getBiography());
             }
 
+            if (user.isVisible() != null) {
+                userEntity.setVisible(user.isVisible());
+            }
+
             if (user.getWorkplace() != null) {
                 LabEntity labEntity = labDao.findLabByCity(user.getWorkplace());
                 if (labEntity != null) {
@@ -766,34 +832,38 @@ public class UserBean implements Serializable {
                 }
             }
 
-            if (user.isVisible() != null) {
-                userEntity.setVisible(user.isVisible());
-            }
-
-            if (user.getInterests() != null && !user.getInterests().isEmpty()) {
-                userEntity.getInterests().clear();
-                interestBean.addInterestToUser(userEntity.getId(), user.getInterests());
-            }
-
-            if (user.getSkills() != null && !user.getSkills().isEmpty()) {
-                userEntity.getUserSkills().clear();
-                skillBean.addSkillToUser(userEntity.getId(), user.getSkills());
-            }
-
-            userDao.merge(userEntity);
-            LoggedUser loggedUser = convertUserEntityToLoggedUser(userEntity, token);
-
-            if (loggedUser == null) {
-                logger.error("Error while converting user to logged user");
-                throw new IllegalArgumentException("Error while converting user to logged user");
-            }
-
-            // Returns the logged user
-            return loggedUser;
-
+            return userEntity;
         } catch (Exception e) {
-            logger.error("Error while updating user profile: {}", e.getMessage());
-            return null;
+            logger.error("Error while updating basic info: {}", e.getMessage());
+            throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Updates the user's interests if they have changed.
+     * @param userEntity The user entity to update.
+     * @param user The user DTO containing the new information.
+     * @return The updated user entity.
+     */
+    public UserEntity updateUserInterestsIfChanged (UserEntity userEntity, UpdateUserDto user) {
+        if (user.getInterests() != null && !user.getInterests().isEmpty()) {
+            userEntity.getInterests().clear();
+            interestBean.addInterestToUser(userEntity.getId(), user.getInterests());
+        }
+        return userEntity;
+    }
+
+    /**
+     * Updates the user's skills if they have changed.
+     * @param userEntity The user entity to update.
+     * @param user The user DTO containing the new information.
+     * @return The updated user entity.
+     */
+    public UserEntity updateUserSkillsIfChanged (UserEntity userEntity, UpdateUserDto user) {
+        if (user.getSkills() != null && !user.getSkills().isEmpty()) {
+            userEntity.getUserSkills().clear();
+            skillBean.addSkillToUser(userEntity.getId(), user.getSkills());
+        }
+        return userEntity;
     }
 }
