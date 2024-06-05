@@ -1,11 +1,10 @@
 
+import domcast.finalprojbackend.bean.InterestBean;
+import domcast.finalprojbackend.bean.SkillBean;
 import domcast.finalprojbackend.bean.user.*;
 import domcast.finalprojbackend.dao.LabDao;
 import domcast.finalprojbackend.dao.UserDao;
-import domcast.finalprojbackend.dto.UserDto.FirstRegistration;
-import domcast.finalprojbackend.dto.UserDto.FullRegistration;
-import domcast.finalprojbackend.dto.UserDto.LoggedUser;
-import domcast.finalprojbackend.dto.UserDto.Login;
+import domcast.finalprojbackend.dto.UserDto.*;
 import domcast.finalprojbackend.entity.LabEntity;
 import domcast.finalprojbackend.entity.SessionTokenEntity;
 import domcast.finalprojbackend.entity.UserEntity;
@@ -24,10 +23,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -67,6 +63,11 @@ public class UserBeanTest {
     @Mock
     private AuthenticationAndAuthorization authenticationAndAuthorization; // Mock the AuthenticationBean
 
+    @Mock
+    private InterestBean interestBean;
+
+    @Mock
+    private SkillBean skillBean;
     /**
      * Setup method to initialize mocks
      */
@@ -419,5 +420,57 @@ public class UserBeanTest {
 
         // Act and Assert
         assertThrows(Exception.class, () -> userBean.uploadPhoto(token, input));
+    }
+
+    /**
+     * Test method for updateUserProfile
+     * This test checks the successful case where the user profile is updated correctly.
+     */
+    @Test
+    public void testUpdateUserProfile_Success() {
+        // Arrange
+        UpdateUserDto updateUserDto = new UpdateUserDto();
+        updateUserDto.setFirstName("John");
+        updateUserDto.setLastName("Doe");
+        updateUserDto.setWorkplace("Lisboa");
+
+        UserEntity userEntity = new UserEntity();
+        userEntity.setId(1);
+        LabEntity labEntity = new LabEntity(); // Create a LabEntity
+        labEntity.setCity(LabEnum.LISBOA); // Set a city for the LabEntity
+        userEntity.setWorkplace(labEntity); // Set the LabEntity as the workplace of the UserEntity
+
+        when(userDao.findUserById(userEntity.getId())).thenReturn(userEntity);
+        when(userDao.merge(any(UserEntity.class))).thenReturn(true);
+
+        // Act
+        LoggedUser result = userBean.updateUserProfile(updateUserDto, userEntity.getId(), null, "token");
+
+        // Assert
+        assertNotNull(result);
+        verify(userDao, times(1)).merge(any(UserEntity.class));
+    }
+
+    /**
+     * Test method for updateUserProfile when user is not found.
+     * This test checks the failure case where the user is not found.
+     */
+    @Test
+    public void testUpdateUserProfile_Failure() {
+        // Arrange
+        UpdateUserDto updateUserDto = new UpdateUserDto();
+        updateUserDto.setFirstName("John");
+        updateUserDto.setLastName("Doe");
+        updateUserDto.setWorkplace("Lisboa");
+
+        UserEntity userEntity = new UserEntity();
+        userEntity.setId(1);
+
+        when(userDao.findUserById(userEntity.getId())).thenReturn(null);
+
+        // Act and Assert
+        assertThrows(NoSuchElementException.class, () -> {
+            userBean.updateUserProfile(updateUserDto, userEntity.getId(), null, "token");
+        });
     }
 }
