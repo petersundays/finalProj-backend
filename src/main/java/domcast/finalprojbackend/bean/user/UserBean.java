@@ -58,6 +58,8 @@ public class UserBean implements Serializable {
     private InterestBean interestBean;
     @EJB
     private SkillBean skillBean;
+    @EJB
+    private PasswordBean passwordBean;
 
     // Default constructor
     public UserBean() {}
@@ -78,7 +80,7 @@ public class UserBean implements Serializable {
 
         logger.info("Email and password are valid");
 
-        String hashedPassword = validatorAndHasher.hashPassword(firstRegistration.getPassword());
+        String hashedPassword = passwordBean.hashPassword(firstRegistration.getPassword());
 
         if (hashedPassword == null) {
             logger.error("Error while hashing password");
@@ -563,7 +565,7 @@ public class UserBean implements Serializable {
         logger.info("User found with validation token: {}", validationToken);
 
         // Checks if the password is valid
-        if (!validatorAndHasher.isPasswordValid(password)) {
+        if (!passwordBean.isPasswordValid(password)) {
             logger.error("Password is invalid");
             return false;
         }
@@ -571,7 +573,7 @@ public class UserBean implements Serializable {
         logger.info("Password is valid");
 
         // Hashes the password
-        String hashedPassword = validatorAndHasher.hashPassword(password);
+        String hashedPassword = passwordBean.hashPassword(password);
 
         // Checks if the hashed password is null
         if (hashedPassword == null) {

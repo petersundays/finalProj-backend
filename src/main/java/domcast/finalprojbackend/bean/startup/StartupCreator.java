@@ -2,6 +2,7 @@ package domcast.finalprojbackend.bean.startup;
 
 
 import domcast.finalprojbackend.bean.SystemBean;
+import domcast.finalprojbackend.bean.user.PasswordBean;
 import domcast.finalprojbackend.bean.user.TokenBean;
 import domcast.finalprojbackend.bean.user.ValidatorAndHasher;
 import domcast.finalprojbackend.dao.LabDao;
@@ -53,6 +54,9 @@ public class StartupCreator implements Serializable {
     @Inject
     private TokenBean tokenBean;
 
+    @Inject
+    private PasswordBean passwordBean;
+
     /**
      * Creates default labs in the database.
      * This method is transactional and requires a new transaction.
@@ -87,7 +91,7 @@ public class StartupCreator implements Serializable {
 
         for (int i = 0; i < 10; i++) {
             UserEntity user = userDao.findUserByEmail("defaultUserEmail" + (i+1));
-            String password = validatorAndHasher.hashPassword("password" + (i+1));
+            String password = passwordBean.hashPassword("password" + (i+1));
             if (user == null) {
                 logger.info("Creating default user " + (i+1));
                 user = new UserEntity();
@@ -111,7 +115,7 @@ public class StartupCreator implements Serializable {
                 } else if (i == 1) {
                     user.setType(TypeOfUserEnum.ADMIN);
                     user.setEmail("admin@mail.com");
-                    user.setPassword(validatorAndHasher.hashPassword("admin"));
+                    user.setPassword(passwordBean.hashPassword("admin"));
                 } else {
                     user.setType(TypeOfUserEnum.STANDARD);
                 }
