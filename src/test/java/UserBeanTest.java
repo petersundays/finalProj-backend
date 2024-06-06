@@ -135,8 +135,7 @@ public class UserBeanTest {
      * Test method for fullRegistration
      * This test checks the successful case where the full registration is successful.
      */
-
-   /* @Test
+    @Test
     public void testFullRegistration_Success() {
         // Arrange
         FullRegistration fullRegistration = new FullRegistration();
@@ -144,28 +143,33 @@ public class UserBeanTest {
         fullRegistration.setFirstName("John");
         fullRegistration.setLastName("Doe");
         fullRegistration.setWorkplace("Lisboa");
+        fullRegistration.setInterests(new ArrayList<>());
+        fullRegistration.setSkills(new ArrayList<>());
 
         UserEntity userEntity = new UserEntity();
         LabEntity labEntity = new LabEntity();
         labEntity.setCity(LabEnum.LISBOA);
+        SessionTokenEntity sessionTokenEntity = new SessionTokenEntity(); // Create a SessionTokenEntity
 
         when(validatorAndHasher.isMandatoryDataValid(fullRegistration)).thenReturn(true);
         when(userDao.findUserByValidationToken(fullRegistration.getValidationToken())).thenReturn(userEntity);
         when(labDao.findLabByCity(fullRegistration.getWorkplace())).thenReturn(labEntity);
         when(tokenBean.setTokenInactive(fullRegistration.getValidationToken())).thenReturn(true); // Mock the inactivation of the token
+        when(tokenBean.generateSessionToken(userEntity, "ipAddress")).thenReturn(sessionTokenEntity); // Mock the generation of the session token
         when(userDao.merge(any(UserEntity.class))).thenReturn(true); // Simulate success
 
         // Act
-        boolean result = userBean.fullRegistration(fullRegistration);
+        LoggedUser result = userBean.fullRegistration(fullRegistration, "photoPath", "ipAddress");
 
         // Assert
-        assertTrue(result);
+        assertNotNull(result);
     }
 
-    *//**
-     * Test method for fullRegistration when mandatory data is invalid.
-     * This test checks the failure case where the mandatory data is invalid.
-     *//*
+
+    /**
+     * Test method for fullRegistration
+     * This test checks the failure case where the full registration is unsuccessful.
+     */
     @Test
     public void testFullRegistration_Failure() {
         // Arrange
@@ -184,11 +188,11 @@ public class UserBeanTest {
         when(userDao.merge(any(UserEntity.class))).thenReturn(false); // Simulate failure
 
         // Act
-        boolean result = userBean.fullRegistration(fullRegistration);
+        LoggedUser result = userBean.fullRegistration(fullRegistration, "photoPath", "ipAddress");
 
         // Assert
-        assertFalse(result);
-    }*/
+        assertNull(result);
+    }
 
 
     /**

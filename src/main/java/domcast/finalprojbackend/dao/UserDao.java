@@ -2,10 +2,19 @@ package domcast.finalprojbackend.dao;
 
 import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.entity.UserEntity;
+import domcast.finalprojbackend.enums.LabEnum;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.NoResultException;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * UserDao is a Data Access Object (DAO) class for UserEntity.
@@ -99,5 +108,32 @@ public class UserDao extends AbstractDao<UserEntity> {
             logger.error("User with active validation or session token {} not found", token);
             return null;
         }
+    }
+
+
+    public List<UserEntity> getUsersByCriteria(String firstName, String lastName, String nickname, String workplace) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<UserEntity> cq = cb.createQuery(UserEntity.class);
+
+        Root<UserEntity> user = cq.from(UserEntity.class);
+        List<Predicate> predicates = new ArrayList<>();
+        if (firstName != null) {
+            predicates.add(cb.equal(user.get("firstName"), firstName));
+        }
+        if (lastName != null) {
+            predicates.add(cb.equal(user.get("lastName"), lastName));
+        }
+        if (nickname != null) {
+            predicates.add(cb.equal(user.get("nickname"), nickname));
+        }
+        if (workplace != null) {
+            LabEnum workplaceEnum = LabEnum.valueOf(workplace.toUpperCase());
+            predicates.add(cb.equal(user.get("workplace").get("city"), workplaceEnum));
+        }
+
+        cq.select(user).where(cb.and(predicates.toArray(new Predicate[0])));
+
+        TypedQuery<UserEntity> query = em.createQuery(cq);
+        return query.getResultList();
     }
 }

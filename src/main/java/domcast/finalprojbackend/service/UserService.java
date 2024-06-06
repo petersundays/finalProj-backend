@@ -17,6 +17,7 @@ import org.apache.logging.log4j.Logger;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * UserService class that handles user related operations.
@@ -350,5 +351,39 @@ public class UserService {
         return response;
     }
 
+    @GET
+    @Path("")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getUsersByCriteria(@HeaderParam("token") String sessionToken,
+                                       @HeaderParam("id") int userId,
+                                       @QueryParam("firstName") String firstName,
+                                       @QueryParam("lastName") String lastName,
+                                       @QueryParam("nickname") String nickname,
+                                       @QueryParam("workplace") String workplace,
+                                       @Context HttpServletRequest request) {
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with IP address {} is trying to get users by criteria", ipAddress);
+
+        Response response;
+        List<SearchedUser> users;
+
+        // Check if the user is authorized to get users by criteria
+        if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(sessionToken, userId)) {
+            response = Response.status(401).entity("Unauthorized").build();
+            logger.info("User with IP address {} tried to get users by criteria without authorization", ipAddress);
+            return response;
+        }
+
+        try {
+            users = userBean.getUsersByCriteria(firstName, lastName, nickname, workplace);
+            response = Response.status(200).entity(users).build();
+            logger.info("User with IP address {} got users by criteria successfully", ipAddress);
+        } catch (Exception e) {
+            response = Response.status(400).entity("Error getting users by criteria").build();
+            logger.info("User with IP address {} tried to get users by criteria unsuccessfully", ipAddress);
+        }
+
+        return response;
+    }
 
 }

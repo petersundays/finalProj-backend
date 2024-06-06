@@ -189,13 +189,6 @@ public class UserBean implements Serializable {
             return null;
         }
 
-        /*// Merges the user entity
-        // If the merge fails, returns false
-        if (!userDao.merge(userEntity)) {
-            logger.error("Error while completing registration for user with validation token: {}", user.getValidationToken());
-            return null;
-        }*/
-
         logger.info("Registration completed for user with validation token: {}", user.getValidationToken());
 
         // Generate a session token for user
@@ -782,6 +775,13 @@ public class UserBean implements Serializable {
         }
     }
 
+    /**
+     * Registers the user's profile information.
+     * @param user The user entity to update.
+     * @param userInfo The user DTO containing the new information.
+     * @param photoPath The path to the new photo.
+     * @return The updated user entity.
+     */
     public UserEntity registerProfileInfo (UserEntity user, FullRegistration userInfo, String photoPath) {
 
         if (user == null) {
@@ -878,6 +878,12 @@ public class UserBean implements Serializable {
         }
     }
 
+    /**
+     * Extracts the user DTO from the input.
+     * @param input The multipart form data input containing the user DTO.
+     * @return The user DTO extracted from the input.
+     * @throws IOException If an error occurs while extracting the user DTO.
+     */
     public UpdateUserDto extractUpdateUserDto(MultipartFormDataInput input) throws IOException {
         InputPart part = input.getFormDataMap().get("user").get(0);
         String userString = part.getBodyAsString();
@@ -885,6 +891,12 @@ public class UserBean implements Serializable {
         return mapper.readValue(userString, UpdateUserDto.class);
     }
 
+    /**
+     * Extracts the full registration DTO from the input.
+     * @param input The multipart form data input containing the full registration DTO.
+     * @return The full registration DTO extracted from the input.
+     * @throws IOException If an error occurs while extracting the full registration DTO.
+     */
     public FullRegistration extractFullRegistrationDto(MultipartFormDataInput input) throws IOException {
         InputPart part = input.getFormDataMap().get("user").get(0);
         String userString = part.getBodyAsString();
@@ -892,20 +904,61 @@ public class UserBean implements Serializable {
         return mapper.readValue(userString, FullRegistration.class);
     }
 
+    /**
+     * Creates interests and skills when registering a user.
+     * @param user The user DTO containing the interests and skills.
+     * @return True if the interests and skills were created successfully, false otherwise.
+     */
     public boolean createInterestsAndSkillsForRegistration(FullRegistration user) {
         boolean interestsCreated = interestBean.createInterests(user.getInterestDtos());
         boolean skillsCreated = skillBean.createSkills(user.getSkillDtos());
         return interestsCreated && skillsCreated;
     }
 
+    /**
+     * Creates interests and skills when updating a user.
+     * @param user The user DTO containing the interests and skills.
+     * @return True if the interests and skills were created successfully, false otherwise.
+     */
     public boolean createInterestsAndSkillsForUpdate(UpdateUserDto user) {
         boolean interestsCreated = interestBean.createInterests(user.getInterestDtos());
         boolean skillsCreated = skillBean.createSkills(user.getSkillDtos());
         return interestsCreated && skillsCreated;
     }
 
+    /**
+     * Converts a user to a JSON string.
+     * @param updatedUser The user to convert.
+     * @return The user as a JSON string.
+     * @throws JsonProcessingException If an error occurs while converting the user to JSON.
+     */
     public String convertUserToJson(LoggedUser updatedUser) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         return mapper.writeValueAsString(updatedUser);
+    }
+
+    /**
+     * Retrieves a list of users based on the search criteria.
+     * @param firstName The first name of the user.
+     * @param lastName The last name of the user.
+     * @param nickname The nickname of the user.
+     * @param workplace The workplace of the user.
+     * @return A list of searched users.
+     */
+    public List<SearchedUser> getUsersByCriteria(String firstName, String lastName, String nickname, String workplace) {
+        List<UserEntity> users = userDao.getUsersByCriteria(firstName, lastName, nickname, workplace);
+        List<SearchedUser> searchedUsers = new ArrayList<>();
+
+        for (UserEntity user : users) {
+            SearchedUser searchedUser = new SearchedUser();
+            searchedUser.setId(user.getId());
+            searchedUser.setFirstName(user.getFirstName());
+            searchedUser.setLastName(user.getLastName());
+            searchedUser.setWorkplace(user.getWorkplace().getCity().getValue());
+            searchedUser.setPhoto(user.getPhoto());
+            searchedUsers.add(searchedUser);
+        }
+
+        return searchedUsers;
     }
 }

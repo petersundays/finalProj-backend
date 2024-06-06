@@ -22,7 +22,7 @@ public class StartupBean implements Serializable {
     @PostConstruct
     public void init() {
         startupCreator.createDefaultLabs();
-        startupCreator.createDefaultUser();
+        startupCreator.createDefaultUsers();
         startupCreator.setDefaultSystemVariables();
     }
 }
