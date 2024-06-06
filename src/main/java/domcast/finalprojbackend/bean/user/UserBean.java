@@ -124,29 +124,29 @@ public class UserBean implements Serializable {
     /**
      * Completes the registration of a user
      * @param user the user to be registered
-     * @return boolean value indicating if the registration was completed
+     * @param photoPath the path to the user's photo
+     * @return the logged user
      */
-    public boolean fullRegistration(FullRegistration user) {
-
+    public LoggedUser fullRegistration(FullRegistration user, String photoPath, String ipAddress) {
         // Checks if the user is null or if the validation token is null
         if (user == null || user.getValidationToken() == null) {
             logger.error("User is null or validation token is null");
-            return false;
+            throw new IllegalArgumentException("User is null or validation token is null");
         }
 
         // Checks if the validation token is still valid and deletes the registration if it is not
         if (tokenBean.isValidationTokenExpired(user.getValidationToken())) {
-            logger.error("Validation token is expired: {}", user.getValidationToken());
+            logger.error("Validation token is expired when trying to complete registration: {}", user.getValidationToken());
             // Retrieve the user associated with the expired token
             UserEntity userEntityToDelete = userDao.findUserByValidationToken(user.getValidationToken());
             if (userEntityToDelete != null) {
-                logger.info("Deleting user with email: {}", userEntityToDelete.getEmail());
+                logger.info("Deleting user with email, after validation token for registration has expired: {}", userEntityToDelete.getEmail());
                 // Delete the user associated with the expired token
                 if (!delete(userEntityToDelete.getEmail())) {
                     logger.error("Error deleting user with email: {}", userEntityToDelete.getEmail());
                 }
             }
-            return false;
+            return null;
         }
 
         logger.info("Completing registration for user with validation token: {}", user.getValidationToken());
@@ -154,7 +154,7 @@ public class UserBean implements Serializable {
         // Checks if the mandatory data is valid
         if (!validatorAndHasher.isMandatoryDataValid(user)) {
             logger.error("Mandatory data is invalid");
-            return false;
+            return null;
         }
 
         logger.info("Mandatory data is valid");
@@ -164,42 +164,14 @@ public class UserBean implements Serializable {
 
         // Checks if the user is null
         if (userEntity == null) {
-            logger.error("User not found with validation token: {}", user.getValidationToken());
-            return false;
+            logger.error("User not found with validation token, when trying to complete registration: {}", user.getValidationToken());
+            return null;
         }
 
-        logger.info("User found with validation token: {}", user.getValidationToken());
+        logger.info("User found with validation token, when trying to complete registration: {}", user.getValidationToken());
 
-        // Finds the lab by the city
-        LabEntity labEntity = labDao.findLabByCity(user.getWorkplace());
-
-        // Checks if the lab is null
-        if (labEntity == null) {
-            logger.error("Lab not found with city: {}", user.getWorkplace());
-            return false;
-        }
-
-        logger.info("Lab found with city: {}", user.getWorkplace());
-
-        // Sets the user's attributes
-        userEntity.setFirstName(user.getFirstName());
-        userEntity.setLastName(user.getLastName());
-        userEntity.setWorkplace(labEntity);
-
-        // Checks if the user has a biography
-        if (user.getBiography() != null) {
-            userEntity.setBiography(user.getBiography());
-        }
-
-        // Checks if the user has a photo
-        if (user.getPhoto() != null) {
-            userEntity.setPhoto(user.getPhoto());
-        }
-
-        // Checks if the user has a nickname
-        if (user.getNickname() != null) {
-            userEntity.setNickname(user.getNickname());
-        }
+        // Registers the user's profile information for the first time
+        userEntity = registerProfileInfo(userEntity, user, photoPath);
 
         // Checks if the user has interests
         if (user.getInterests() != null && !user.getInterests().isEmpty()) {
@@ -213,22 +185,48 @@ public class UserBean implements Serializable {
 
         // Tries to set the validation token as inactive
         if (!tokenBean.setTokenInactive(user.getValidationToken())) {
-            logger.error("Error while inactivating validation token: {}", user.getValidationToken());
-            return false;
+            logger.error("Error while inactivating validation token, after completing profile information, on register: {}", user.getValidationToken());
+            return null;
         }
 
-        // Sets the user as confirmed
-        userEntity.setType(TypeOfUserEnum.STANDARD);
-
-        // Merges the user entity
+        /*// Merges the user entity
         // If the merge fails, returns false
         if (!userDao.merge(userEntity)) {
             logger.error("Error while completing registration for user with validation token: {}", user.getValidationToken());
-            return false;
-        }
+            return null;
+        }*/
 
         logger.info("Registration completed for user with validation token: {}", user.getValidationToken());
-        return true;
+
+        // Generate a session token for user
+        SessionTokenEntity sessionToken = tokenBean.generateSessionToken(userEntity, ipAddress);
+
+        // Checks if the session token is null, if so, throws an exception
+        if (sessionToken == null) {
+            logger.error("Error while generating session token, during registration process");
+            return null;
+        }
+
+        // Adds the session token to the user
+        userEntity.addSessionToken(sessionToken);
+
+        // Merges the user
+        if (!userDao.merge(userEntity)) {
+            logger.error("Error while merging in user, during registration process: {}", userEntity.getEmail());
+            return null;
+        }
+
+        // Converts the user entity to a logged user
+        LoggedUser loggedUser = convertUserEntityToLoggedUser(userEntity, sessionToken.getToken());
+
+        // Checks if the logged user is null, if so, throws an exception
+        if (loggedUser == null) {
+            logger.error("Error while converting user to logged user, during registration process");
+            return null;
+        }
+
+        // Returns the logged user
+        return loggedUser;
     }
 
     /**
@@ -784,6 +782,48 @@ public class UserBean implements Serializable {
         }
     }
 
+    public UserEntity registerProfileInfo (UserEntity user, FullRegistration userInfo, String photoPath) {
+
+        if (user == null) {
+            throw new IllegalArgumentException("UserEntity must not be null");
+        }
+
+        // Finds the lab by the city
+        LabEntity labEntity = labDao.findLabByCity(userInfo.getWorkplace());
+
+        // Checks if the lab is null
+        if (labEntity == null) {
+            logger.error("Lab not found with city: {}", user.getWorkplace());
+            throw new IllegalArgumentException("Lab not found with city: " + user.getWorkplace());
+        }
+
+        logger.info("Lab found with city: {}", user.getWorkplace());
+
+        // Sets the user's attributes
+        user.setFirstName(userInfo.getFirstName());
+        user.setLastName(userInfo.getLastName());
+        user.setWorkplace(labEntity);
+
+        // Checks if the user has a biography
+        if (userInfo.getBiography() != null) {
+            user.setBiography(userInfo.getBiography());
+        }
+
+        // Checks if the user has a photo
+        if (photoPath != null) {
+            user.setPhoto(photoPath);
+        }
+
+        // Checks if the user has a nickname
+        if (userInfo.getNickname() != null) {
+            user.setNickname(userInfo.getNickname());
+        }
+
+        // Sets the user as confirmed
+        user.setType(TypeOfUserEnum.STANDARD);
+
+        return user;
+    }
     /**
      * Updates the user's basic information if it has changed.
      * @param userEntity The user entity to update.
@@ -838,14 +878,27 @@ public class UserBean implements Serializable {
         }
     }
 
-    public UpdateUserDto extractUserDto (MultipartFormDataInput input) throws IOException {
+    public UpdateUserDto extractUpdateUserDto(MultipartFormDataInput input) throws IOException {
         InputPart part = input.getFormDataMap().get("user").get(0);
         String userString = part.getBodyAsString();
         ObjectMapper mapper = new ObjectMapper();
         return mapper.readValue(userString, UpdateUserDto.class);
     }
 
-    public boolean createInterestsAndSkills(UpdateUserDto user) {
+    public FullRegistration extractFullRegistrationDto(MultipartFormDataInput input) throws IOException {
+        InputPart part = input.getFormDataMap().get("user").get(0);
+        String userString = part.getBodyAsString();
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(userString, FullRegistration.class);
+    }
+
+    public boolean createInterestsAndSkillsForRegistration(FullRegistration user) {
+        boolean interestsCreated = interestBean.createInterests(user.getInterestDtos());
+        boolean skillsCreated = skillBean.createSkills(user.getSkillDtos());
+        return interestsCreated && skillsCreated;
+    }
+
+    public boolean createInterestsAndSkillsForUpdate(UpdateUserDto user) {
         boolean interestsCreated = interestBean.createInterests(user.getInterestDtos());
         boolean skillsCreated = skillBean.createSkills(user.getSkillDtos());
         return interestsCreated && skillsCreated;

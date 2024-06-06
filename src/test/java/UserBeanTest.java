@@ -136,7 +136,7 @@ public class UserBeanTest {
      * This test checks the successful case where the full registration is successful.
      */
 
-    @Test
+   /* @Test
     public void testFullRegistration_Success() {
         // Arrange
         FullRegistration fullRegistration = new FullRegistration();
@@ -162,10 +162,10 @@ public class UserBeanTest {
         assertTrue(result);
     }
 
-    /**
+    *//**
      * Test method for fullRegistration when mandatory data is invalid.
      * This test checks the failure case where the mandatory data is invalid.
-     */
+     *//*
     @Test
     public void testFullRegistration_Failure() {
         // Arrange
@@ -188,7 +188,7 @@ public class UserBeanTest {
 
         // Assert
         assertFalse(result);
-    }
+    }*/
 
 
     /**

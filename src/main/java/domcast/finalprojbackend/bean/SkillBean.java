@@ -92,6 +92,8 @@ public class SkillBean implements Serializable {
      */
     public void addSkillToUser(int userId, ArrayList<String> skillsList) {
 
+        logger.info("Entering addSkillToUser");
+
         UserEntity user = null;
         try {
             user = userDao.findUserById(userId);
@@ -121,10 +123,13 @@ public class SkillBean implements Serializable {
             }
 
             for (SkillEntity skill : skills) {
-                M2MUserSkill userSkill = new M2MUserSkill();
-                userSkill.setUser(user);
-                userSkill.setSkill(skill);
-                user.addUserSkill(userSkill);
+                // Check if the user already has this skill
+                if (user.getUserSkills().stream().noneMatch(us -> us.getSkill().equals(skill))) {
+                    M2MUserSkill userSkill = new M2MUserSkill();
+                    userSkill.setUser(user);
+                    userSkill.setSkill(skill);
+                    user.addUserSkill(userSkill);
+                }
             }
 
             userDao.merge(user);

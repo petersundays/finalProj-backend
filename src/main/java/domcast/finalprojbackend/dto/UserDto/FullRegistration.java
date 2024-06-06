@@ -40,6 +40,12 @@ public class FullRegistration {
     @XmlElement
     private ArrayList<String> skills;  // The list of user's skills
 
+    @XmlElement
+    private ArrayList<InterestDto> interestDtos;
+
+    @XmlElement
+    private ArrayList<SkillDto> skillDtos;
+
     /**
      * Default constructor for FullRegistration.
      */
@@ -206,5 +212,41 @@ public class FullRegistration {
      */
     public void setSkills(ArrayList<String> skills) {
         this.skills = skills;
+    }
+
+    /**
+     * Getter for the list of interest DTOs of the user.
+     *
+     * @return the list of interest DTOs of the user
+     */
+    public ArrayList<InterestDto> getInterestDtos() {
+        return interestDtos;
+    }
+
+    /**
+     * Setter for the list of interest DTOs of the user.
+     *
+     * @param interestDtos the new list of interest DTOs of the user
+     */
+    public void setInterestDtos(ArrayList<InterestDto> interestDtos) {
+        this.interestDtos = interestDtos;
+    }
+
+    /**
+     * Getter for the list of skill DTOs of the user.
+     *
+     * @return the list of skill DTOs of the user
+     */
+    public ArrayList<SkillDto> getSkillDtos() {
+        return skillDtos;
+    }
+
+    /**
+     * Setter for the list of skill DTOs of the user.
+     *
+     * @param skillDtos the new list of skill DTOs of the user
+     */
+    public void setSkillDtos(ArrayList<SkillDto> skillDtos) {
+        this.skillDtos = skillDtos;
     }
 }
