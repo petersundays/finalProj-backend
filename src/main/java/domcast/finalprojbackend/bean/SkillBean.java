@@ -1,14 +1,13 @@
 package domcast.finalprojbackend.bean;
 
-import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.bean.user.ValidatorAndHasher;
-import domcast.finalprojbackend.dao.InterestDao;
 import domcast.finalprojbackend.dao.SkillDao;
 import domcast.finalprojbackend.dao.UserDao;
-import domcast.finalprojbackend.dto.InterestDto;
 import domcast.finalprojbackend.dto.SkillDto;
-import domcast.finalprojbackend.entity.*;
-import domcast.finalprojbackend.enums.InterestEnum;
+import domcast.finalprojbackend.dto.UserDto.UpdateUserDto;
+import domcast.finalprojbackend.entity.M2MUserSkill;
+import domcast.finalprojbackend.entity.SkillEntity;
+import domcast.finalprojbackend.entity.UserEntity;
 import domcast.finalprojbackend.enums.SkillTypeEnum;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
@@ -18,6 +17,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Set;
 
 @Stateless
@@ -139,7 +139,57 @@ public class SkillBean implements Serializable {
         }
     }
 
+    /**
+     * Converts a skill type from an integer to a SkillTypeEnum
+     * @param type The integer representing the skill type
+     * @return The SkillTypeEnum corresponding to the integer
+     */
     public SkillTypeEnum convertTypeToEnum(int type) {
         return SkillTypeEnum.fromId(type);
+    }
+
+    /**
+     * Updates the user's skills if they have changed.
+     * This method iterates over the user's existing skills and updates them based on the new list of skills.
+     * If a skill is in the new list, it is set to active. If a skill is not in the new list, it is set to inactive.
+     * If a skill is in the new list but not in the existing list, it is added to the user's skills.
+     * @param userEntity The user entity to update.
+     * @param user The user DTO containing the new information.
+     * @return The updated user entity.
+     */
+    public UserEntity updateUserSkillsIfChanged(UserEntity userEntity, UpdateUserDto user) {
+        if (user.getSkills() != null && !user.getSkills().isEmpty()) {
+            // Convert the list of new skills to a set for efficient lookups
+            Set<String> newSkills = new HashSet<>(user.getSkills());
+
+            // Iterate over the existing relationships
+            for (M2MUserSkill userSkill : userEntity.getUserSkills()) {
+                String skillName = userSkill.getSkill().getName();
+
+                if (newSkills.contains(skillName)) {
+                    // The skill is in the new list, so ensure it's active
+                    userSkill.setActive(true);
+                    newSkills.remove(skillName);
+                } else {
+                    // The skill is not in the new list, so set it to inactive
+                    userSkill.setActive(false);
+                }
+            }
+
+            // Any remaining skills in the new list are new skills for the user
+            for (String skillName : newSkills) {
+                SkillEntity skillEntity = skillDao.findSkillByName(skillName);
+                if (skillEntity != null) {
+                    M2MUserSkill userSkill = new M2MUserSkill();
+                    userSkill.setUser(userEntity);
+                    userSkill.setSkill(skillEntity);
+                    userSkill.setActive(true);
+                    userEntity.addUserSkill(userSkill);
+                }
+            }
+
+            userDao.merge(userEntity);
+        }
+        return userEntity;
     }
 }

@@ -4,6 +4,7 @@ import domcast.finalprojbackend.bean.user.ValidatorAndHasher;
 import domcast.finalprojbackend.dao.InterestDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.InterestDto;
+import domcast.finalprojbackend.dto.UserDto.UpdateUserDto;
 import domcast.finalprojbackend.entity.InterestEntity;
 import domcast.finalprojbackend.entity.M2MUserInterest;
 import domcast.finalprojbackend.entity.UserEntity;
@@ -16,6 +17,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Set;
 
 @Stateless
@@ -141,7 +143,57 @@ public class InterestBean implements Serializable {
         }
     }
 
+    /**
+     * Converts an interest type to an enum.
+     * @param type The interest type to convert.
+     * @return The corresponding InterestEnum.
+     */
     public InterestEnum convertTypeToEnum(int type) {
         return InterestEnum.fromId(type);
+    }
+
+    /**
+     * Updates the user's interests if they have changed.
+     * This method iterates over the user's existing interests and updates them based on the new list of interests.
+     * If an interest is in the new list, it is set to active. If an interest is not in the new list, it is set to inactive.
+     * If an interest is in the new list but not in the existing list, it is added to the user's interests.
+     * @param userEntity The user entity to update.
+     * @param user The user DTO containing the new information.
+     * @return The updated user entity.
+     */
+    public UserEntity updateUserInterestsIfChanged(UserEntity userEntity, UpdateUserDto user) {
+        if (user.getInterests() != null && !user.getInterests().isEmpty()) {
+            // Convert the list of new interests to a set for efficient lookups
+            Set<String> newInterests = new HashSet<>(user.getInterests());
+
+            // Iterate over the existing relationships
+            for (M2MUserInterest userInterest : userEntity.getInterests()) {
+                String interestName = userInterest.getInterest().getName();
+
+                if (newInterests.contains(interestName)) {
+                    // The interest is in the new list, so ensure it's active
+                    userInterest.setActive(true);
+                    newInterests.remove(interestName);
+                } else {
+                    // The interest is not in the new list, so set it to inactive
+                    userInterest.setActive(false);
+                }
+            }
+
+            // Any remaining interests in the new list are new interests for the user
+            for (String interestName : newInterests) {
+                InterestEntity interestEntity = interestDao.findInterestByName(interestName);
+                if (interestEntity != null) {
+                    M2MUserInterest userInterest = new M2MUserInterest();
+                    userInterest.setUser(userEntity);
+                    userInterest.setInterest(interestEntity);
+                    userInterest.setActive(true);
+                    userEntity.addInterest(userInterest);
+                }
+            }
+
+            userDao.merge(userEntity);
+        }
+        return userEntity;
     }
 }
