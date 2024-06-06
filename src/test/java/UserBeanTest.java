@@ -1,6 +1,3 @@
-
-import domcast.finalprojbackend.bean.InterestBean;
-import domcast.finalprojbackend.bean.SkillBean;
 import domcast.finalprojbackend.bean.user.*;
 import domcast.finalprojbackend.dao.LabDao;
 import domcast.finalprojbackend.dao.UserDao;
@@ -64,10 +61,7 @@ public class UserBeanTest {
     private AuthenticationAndAuthorization authenticationAndAuthorization; // Mock the AuthenticationBean
 
     @Mock
-    private InterestBean interestBean;
-
-    @Mock
-    private SkillBean skillBean;
+    private PasswordBean passwordBean; // Mock the PasswordBean
     /**
      * Setup method to initialize mocks
      */
@@ -347,8 +341,8 @@ public class UserBeanTest {
         // Mock the behavior of the dependencies
         when(tokenBean.isValidationTokenExpired(validationToken)).thenReturn(false);
         when(userDao.findUserByValidationToken(validationToken)).thenReturn(userEntity);
-        when(validatorAndHasher.isPasswordValid(password)).thenReturn(true);
-        when(validatorAndHasher.hashPassword(password)).thenReturn("hashedPassword");
+        when(passwordBean.isPasswordValid(password)).thenReturn(true);
+        when(passwordBean.hashPassword(password)).thenReturn("hashedPassword");
         when(tokenBean.setTokenInactive(validationToken)).thenReturn(true);
         when(userDao.merge(userEntity)).thenReturn(true);
 

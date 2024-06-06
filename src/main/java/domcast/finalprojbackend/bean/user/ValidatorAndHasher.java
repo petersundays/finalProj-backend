@@ -7,16 +7,15 @@ import domcast.finalprojbackend.dto.UserDto.FullRegistration;
 import domcast.finalprojbackend.dto.UserDto.Login;
 import domcast.finalprojbackend.enums.InterestEnum;
 import domcast.finalprojbackend.enums.SkillTypeEnum;
+import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.mindrot.jbcrypt.BCrypt;
 
 import javax.imageio.ImageIO;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Stateless
@@ -27,6 +26,9 @@ public class ValidatorAndHasher {
             "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
 
     private static final Pattern pattern = Pattern.compile(EMAIL_PATTERN);
+
+    @EJB
+    private PasswordBean passwordBean;
 
     /**
      * Checks if the email is valid
@@ -62,7 +64,7 @@ public class ValidatorAndHasher {
             throw new IllegalArgumentException("FirstRegistration object cannot be null");
         }
 
-        return isEmailValid(firstRegistration.getEmail()) && isPasswordValid(firstRegistration.getPassword());
+        return isEmailValid(firstRegistration.getEmail()) && passwordBean.isPasswordValid(firstRegistration.getPassword());
     }
 
     public boolean isMandatoryDataValid(FullRegistration fullRegistration) {
@@ -96,7 +98,7 @@ public class ValidatorAndHasher {
      * @throws IllegalArgumentException if the password is not valid, null or blank
      * @param password the password to be checked
      * @return boolean value indicating if the password is valid
-     */
+     *//*
     public boolean isPasswordValid(String password) throws IllegalArgumentException {
         logger.info("Checking if password is valid");
 
@@ -123,11 +125,11 @@ public class ValidatorAndHasher {
         return true;
     }
 
-    /**
+    *//**
      * Hashes the password
      * @param password the password to be hashed
      * @return the hashed password as a string
-     */
+     *//*
     public String hashPassword (String password) {
         logger.info("Hashing password");
         try {
@@ -137,7 +139,7 @@ public class ValidatorAndHasher {
             return null;
         }
     }
-
+*/
     /**
      * Checks if the image is valid
      * @param bytes the image to be checked
