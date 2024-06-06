@@ -2,12 +2,14 @@ package domcast.finalprojbackend.bean.startup;
 
 
 import domcast.finalprojbackend.bean.SystemBean;
+import domcast.finalprojbackend.bean.user.TokenBean;
 import domcast.finalprojbackend.bean.user.ValidatorAndHasher;
 import domcast.finalprojbackend.dao.LabDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.entity.LabEntity;
 import domcast.finalprojbackend.entity.SystemEntity;
 import domcast.finalprojbackend.entity.UserEntity;
+import domcast.finalprojbackend.entity.ValidationTokenEntity;
 import domcast.finalprojbackend.enums.LabEnum;
 import domcast.finalprojbackend.enums.TypeOfUserEnum;
 import jakarta.ejb.Stateless;
@@ -21,7 +23,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
-import java.util.List;
 
 
 /**
@@ -49,6 +50,9 @@ public class StartupCreator implements Serializable {
     @Inject
     private SystemBean systemBean;
 
+    @Inject
+    private TokenBean tokenBean;
+
     /**
      * Creates default labs in the database.
      * This method is transactional and requires a new transaction.
@@ -73,28 +77,49 @@ public class StartupCreator implements Serializable {
      * This method is transactional and requires a new transaction.
      */
     @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
-    public void createDefaultUser() {
-        logger.info("Creating default user");
-        UserEntity user = userDao.findUserByEmail("defaultUserEmail");
-        String password = validatorAndHasher.hashPassword("admin");
-        if (user == null) {
-            logger.info("Creating default user");
-            user = new UserEntity();
-            user.setEmail("admin@mail.com");
-            user.setPassword(password);
-            user.setFirstName("admin");
-            user.setLastName("admin");
-            user.setType(TypeOfUserEnum.ADMIN);
-            user.setVisible(true);
+    public void createDefaultUsers() {
+        logger.info("Creating default users");
 
-            LabEntity lab = labDao.findLabByCity("Lisboa");
-            if (lab != null) {
-                user.setWorkplace(lab);
+        String[] firstNames = {"John", "Admin", "Bob", "Alice", "Charlie", "Eve", "John", "Trent", "Oscar", "Peggy"};
+        String[] lastNames = {"Doe", "Admin", "Johnson", "Williams", "Brown", "Jones", "Miller", "Davis", "Garcia", "Rodriguez"};
+        String[] nicknames = {"johnny", "admin", "bobby", "alice", "charlie", "eve", "mallory", "trent", "oscar", "peggy"};
+        LabEnum[] labs = {LabEnum.LISBOA, LabEnum.COIMBRA, LabEnum.VISEU, LabEnum.PORTO, LabEnum.VILA_REAL, LabEnum.LISBOA, LabEnum.COIMBRA, LabEnum.VISEU, LabEnum.PORTO, LabEnum.VILA_REAL};
+
+        for (int i = 0; i < 10; i++) {
+            UserEntity user = userDao.findUserByEmail("defaultUserEmail" + (i+1));
+            String password = validatorAndHasher.hashPassword("password" + (i+1));
+            if (user == null) {
+                logger.info("Creating default user " + (i+1));
+                user = new UserEntity();
+                user.setEmail("user" + (i+1) + "@mail.com");
+                user.setPassword(password);
+                user.setFirstName(firstNames[i]);
+                user.setLastName(lastNames[i]);
+                user.setNickname(nicknames[i]);
+                user.setBiography("biography" + (i+1));
+                user.setVisible(true);
+
+                LabEntity lab = labDao.findLabByCity(labs[i].getValue());
+                if (lab != null) {
+                    user.setWorkplace(lab);
+                }
+
+                if (i == 0) {
+                    user.setType(TypeOfUserEnum.NOT_CONFIRMED);
+                    ValidationTokenEntity validationToken = tokenBean.generateValidationToken(user, 48*60, "127.0.0.1");
+                    user.addValidationToken(validationToken);
+                } else if (i == 1) {
+                    user.setType(TypeOfUserEnum.ADMIN);
+                    user.setEmail("admin@mail.com");
+                    user.setPassword(validatorAndHasher.hashPassword("admin"));
+                } else {
+                    user.setType(TypeOfUserEnum.STANDARD);
+                }
+
+                logger.info("Persisting default user " + (i+1));
+                userDao.persist(user);
+                logger.info("Default user " + (i+1) + " created");
             }
-
-            logger.info("Persisting default user");
-            userDao.persist(user);
-            logger.info("Default user created");
         }
     }
 
