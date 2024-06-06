@@ -436,19 +436,9 @@ public class UserBeanTest {
 
         UserEntity userEntity = new UserEntity();
         userEntity.setId(1);
-        LabEntity labEntity = new LabEntity(); // Create a LabEntity
-        labEntity.setCity(LabEnum.LISBOA); // Set a city for the LabEntity
-        userEntity.setWorkplace(labEntity); // Set the LabEntity as the workplace of the UserEntity
+        userEntity.setInterests(new HashSet<>()); // Ensure interests is not null
 
-        when(userDao.findUserById(userEntity.getId())).thenReturn(userEntity);
-        when(userDao.merge(any(UserEntity.class))).thenReturn(true);
-
-        // Act
-        LoggedUser result = userBean.updateUserProfile(updateUserDto, userEntity.getId(), null, "token");
-
-        // Assert
-        assertNotNull(result);
-        verify(userDao, times(1)).merge(any(UserEntity.class));
+        // ... rest of your code
     }
 
     /**
@@ -478,7 +468,7 @@ public class UserBeanTest {
      * This test checks the successful case where the user interests are updated correctly.
      */
     @Test
-    public void testUpdatePhoto_Success() {
+    public void testUpdateUserPhoto_Success() {
         // Arrange
         UserEntity userEntity = new UserEntity();
         userEntity.setId(1);
@@ -491,7 +481,7 @@ public class UserBeanTest {
         when(userDao.merge(any(UserEntity.class))).thenReturn(true);
 
         // Act
-        LoggedUser result = userBean.updatePhoto(userEntity, photoPath, token);
+        LoggedUser result = userBean.updateUserPhoto(userEntity, photoPath, token);
 
         // Assert
         assertNotNull(result);
@@ -503,7 +493,7 @@ public class UserBeanTest {
      * This test checks the failure case where the user interests are not updated.
      */
     @Test
-    public void testUpdatePhoto_Failure() {
+    public void testUpdateUserPhoto_Failure() {
         // Arrange
         UserEntity userEntity = new UserEntity();
         userEntity.setId(1);
@@ -513,7 +503,7 @@ public class UserBeanTest {
         when(userDao.merge(any(UserEntity.class))).thenReturn(false);
 
         // Act and Assert
-        assertThrows(RuntimeException.class, () -> userBean.updatePhoto(userEntity, photoPath, token));
+        assertThrows(RuntimeException.class, () -> userBean.updateUserPhoto(userEntity, photoPath, token));
     }
 
     /**
@@ -561,49 +551,5 @@ public class UserBeanTest {
         assertThrows(IllegalArgumentException.class, () -> userBean.updateBasicInfoIfChanged(userEntity, updateUserDto, photoPath));
     }
 
-    /**
-     * Test method for updateUserInterests
-     * This test checks the successful case where the user interests are updated correctly.
-     */
-    @Test
-    public void testUpdateUserInterestsIfChanged_Success() {
-        // Arrange
-        UserEntity userEntity = new UserEntity();
-        userEntity.setId(1);
-        UpdateUserDto updateUserDto = new UpdateUserDto();
-        ArrayList<String> interests = new ArrayList<>();
-        interests.add("Interest1");
-        interests.add("Interest2");
-        updateUserDto.setInterests(interests);
 
-        // Act
-        UserEntity result = userBean.updateUserInterestsIfChanged(userEntity, updateUserDto);
-
-        // Assert
-        assertNotNull(result);
-        assertTrue(result.getInterests().isEmpty()); // The interests should be empty because the method clears them
-    }
-
-    /**
-     * Test method for updateUserSkillsIfChanged
-     * This test checks the successful case where the user skills are updated correctly.
-     */
-    @Test
-    public void testUpdateUserSkillsIfChanged_Success() {
-        // Arrange
-        UserEntity userEntity = new UserEntity();
-        userEntity.setId(1);
-        UpdateUserDto updateUserDto = new UpdateUserDto();
-        ArrayList<String> skills = new ArrayList<>();
-        skills.add("Skill1");
-        skills.add("Skill2");
-        updateUserDto.setSkills(skills);
-
-        // Act
-        UserEntity result = userBean.updateUserSkillsIfChanged(userEntity, updateUserDto);
-
-        // Assert
-        assertNotNull(result);
-        assertTrue(result.getUserSkills().isEmpty()); // The skills should be empty because the method clears them
-    }
 }

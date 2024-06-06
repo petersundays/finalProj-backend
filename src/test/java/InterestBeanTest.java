@@ -3,8 +3,10 @@ import domcast.finalprojbackend.bean.user.ValidatorAndHasher;
 import domcast.finalprojbackend.dao.InterestDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.InterestDto;
+import domcast.finalprojbackend.dto.UserDto.UpdateUserDto;
 import domcast.finalprojbackend.entity.InterestEntity;
 import domcast.finalprojbackend.entity.UserEntity;
+import domcast.finalprojbackend.enums.InterestEnum;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -128,6 +130,89 @@ public class InterestBeanTest {
         // Act and Assert
         assertThrows(RuntimeException.class, () -> {
             interestBean.addInterestToUser(userEntity.getId(), interestsList);
+        });
+    }
+
+    /**
+     * Test method for convertTypeToEnum
+     * This test checks the successful case where the type is converted correctly.
+     */
+    @Test
+    public void testConvertTypeToEnum_Success() {
+        // Arrange
+        int type = 1; // Assuming 1 corresponds to a valid InterestEnum
+
+        // Act
+        InterestEnum result = interestBean.convertTypeToEnum(type);
+
+        // Assert
+        assertEquals(InterestEnum.fromId(type), result);
+    }
+
+    /**
+     * Test method for convertTypeToEnum
+     * This test checks the failure case where an invalid type is passed.
+     */
+    @Test
+    public void testConvertTypeToEnum_Failure() {
+        // Arrange
+        int invalidType = -1; // Assuming -1 is an invalid InterestEnum
+
+        // Act
+        InterestEnum result = interestBean.convertTypeToEnum(invalidType);
+
+        // Assert
+        assertNull(result);
+    }
+
+    /**
+     * Test method for updateUserInterestsIfChanged
+     * This test checks the successful case where the user's interests are updated correctly.
+     */
+    @Test
+    public void testUpdateUserInterestsIfChanged_Success() {
+        // Arrange
+        UserEntity userEntity = new UserEntity();
+        userEntity.setId(1);
+        userEntity.setInterests(new HashSet<>());
+
+        UpdateUserDto updateUserDto = new UpdateUserDto();
+        ArrayList<String> interests = new ArrayList<>();
+        interests.add("Interest1");
+        updateUserDto.setInterests(interests);
+
+        when(userDao.findUserById(userEntity.getId())).thenReturn(userEntity);
+        when(interestDao.findInterestByName(any(String.class))).thenReturn(new InterestEntity());
+
+        // Act
+        UserEntity result = interestBean.updateUserInterestsIfChanged(userEntity, updateUserDto);
+
+        // Assert
+        assertNotNull(result);
+        verify(userDao, times(1)).merge(any(UserEntity.class));
+    }
+
+    /**
+     * Test method for updateUserInterestsIfChanged when an exception is thrown.
+     * This test checks the failure case where an exception is thrown.
+     */
+    @Test
+    public void testUpdateUserInterestsIfChanged_Failure() {
+        // Arrange
+        UserEntity userEntity = new UserEntity();
+        userEntity.setId(1);
+        userEntity.setInterests(new HashSet<>());
+
+        UpdateUserDto updateUserDto = new UpdateUserDto();
+        ArrayList<String> interests = new ArrayList<>();
+        interests.add("NonExistentInterest");
+        updateUserDto.setInterests(interests);
+
+        when(interestDao.findInterestByName(any(String.class))).thenThrow(new RuntimeException());
+
+        // Act and Assert
+        assertThrows(RuntimeException.class, () -> {
+            interestBean.updateUserInterestsIfChanged(userEntity, updateUserDto);
         });
     }
 }

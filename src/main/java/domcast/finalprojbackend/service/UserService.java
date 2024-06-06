@@ -15,7 +15,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
 import java.io.IOException;
@@ -278,20 +277,12 @@ public class UserService {
             UpdateUserDto user = null;
             // Extract UpdateUserDto from MultipartFormDataInput and create interests and skills
             if (input.getFormDataMap().containsKey("user")) {
-                InputPart part = input.getFormDataMap().get("user").get(0);
-                String userString = part.getBodyAsString();
-                ObjectMapper mapper = new ObjectMapper();
-                user = mapper.readValue(userString, UpdateUserDto.class);
-                // Create interests
-                boolean interestsCreated = interestBean.createInterests(user.getInterestDtos());
-                if (!interestsCreated) {
-                    return Response.status(400).entity("Error creating interests").build();
-                }
-
-                // Create skills
-                boolean skillsCreated = skillBean.createSkills(user.getSkillDtos());
-                if (!skillsCreated) {
-                    return Response.status(400).entity("Error creating skills").build();
+                user = userBean.extractUserDto(input);
+                // Create interests and skills
+                if (!userBean.createInterestsAndSkills(user)) {
+                    logger.error("Error creating interests and skills");
+                    response = Response.status(400).entity("Error creating interests and skills").build();
+                    return response;
                 }
             }
 
@@ -310,8 +301,7 @@ public class UserService {
             updatedUser = userBean.updateUserProfile(user, userId, photoPath, sessionToken);
 
             // Convert the updatedUser object to a JSON string
-            ObjectMapper mapper = new ObjectMapper();
-            String updatedUserJson = mapper.writeValueAsString(updatedUser);
+            String updatedUserJson = userBean.convertUserToJson(updatedUser);
 
             response = Response.status(200).entity(updatedUserJson).build();
             logger.info("User with IP address {} updated its profile successfully", ipAddress);

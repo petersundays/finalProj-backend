@@ -1,5 +1,7 @@
 package domcast.finalprojbackend.bean.user;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import domcast.finalprojbackend.bean.InterestBean;
 import domcast.finalprojbackend.bean.SkillBean;
 import domcast.finalprojbackend.bean.SystemBean;
@@ -18,10 +20,7 @@ import org.apache.logging.log4j.Logger;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.Serializable;
+import java.io.*;
 import java.util.*;
 
 /**
@@ -729,7 +728,7 @@ public class UserBean implements Serializable {
 
         // If the user is null, it means that the user is updating the photo only
         if (user == null) {
-            return updatePhoto(userEntity, photoPath, token);
+            return updateUserPhoto(userEntity, photoPath, token);
         }
 
         // If the photo path is null, it means that the user is updating the basic info only
@@ -738,9 +737,9 @@ public class UserBean implements Serializable {
         try {
             userEntity = updateBasicInfoIfChanged(userEntity, user, photoPath);
 
-            userEntity = updateUserInterestsIfChanged(userEntity, user);
+            userEntity = interestBean.updateUserInterestsIfChanged(userEntity, user);
 
-            userEntity = updateUserSkillsIfChanged(userEntity, user);
+            userEntity = skillBean.updateUserSkillsIfChanged(userEntity, user);
 
             userDao.merge(userEntity);
 
@@ -767,7 +766,7 @@ public class UserBean implements Serializable {
      * @param token The user's session token.
      * @return The updated logged user.
      */
-    public LoggedUser updatePhoto (UserEntity userEntity, String photoPath, String token) {
+    public LoggedUser updateUserPhoto(UserEntity userEntity, String photoPath, String token) {
         try {
             userEntity.setPhoto(photoPath);
             userDao.merge(userEntity);
@@ -839,31 +838,21 @@ public class UserBean implements Serializable {
         }
     }
 
-    /**
-     * Updates the user's interests if they have changed.
-     * @param userEntity The user entity to update.
-     * @param user The user DTO containing the new information.
-     * @return The updated user entity.
-     */
-    public UserEntity updateUserInterestsIfChanged (UserEntity userEntity, UpdateUserDto user) {
-        if (user.getInterests() != null && !user.getInterests().isEmpty()) {
-            userEntity.getInterests().clear();
-            interestBean.addInterestToUser(userEntity.getId(), user.getInterests());
-        }
-        return userEntity;
+    public UpdateUserDto extractUserDto (MultipartFormDataInput input) throws IOException {
+        InputPart part = input.getFormDataMap().get("user").get(0);
+        String userString = part.getBodyAsString();
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(userString, UpdateUserDto.class);
     }
 
-    /**
-     * Updates the user's skills if they have changed.
-     * @param userEntity The user entity to update.
-     * @param user The user DTO containing the new information.
-     * @return The updated user entity.
-     */
-    public UserEntity updateUserSkillsIfChanged (UserEntity userEntity, UpdateUserDto user) {
-        if (user.getSkills() != null && !user.getSkills().isEmpty()) {
-            userEntity.getUserSkills().clear();
-            skillBean.addSkillToUser(userEntity.getId(), user.getSkills());
-        }
-        return userEntity;
+    public boolean createInterestsAndSkills(UpdateUserDto user) {
+        boolean interestsCreated = interestBean.createInterests(user.getInterestDtos());
+        boolean skillsCreated = skillBean.createSkills(user.getSkillDtos());
+        return interestsCreated && skillsCreated;
+    }
+
+    public String convertUserToJson(LoggedUser updatedUser) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.writeValueAsString(updatedUser);
     }
 }
