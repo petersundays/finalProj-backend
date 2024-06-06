@@ -125,10 +125,13 @@ public class InterestBean implements Serializable {
             }
 
             for (InterestEntity interest : interests) {
-                M2MUserInterest userInterest = new M2MUserInterest();
-                userInterest.setUser(user);
-                userInterest.setInterest(interest);
-                user.addInterest(userInterest);
+                // Check if the user already has this interest
+                if (user.getInterests().stream().noneMatch(ui -> ui.getInterest().equals(interest))) {
+                    M2MUserInterest userInterest = new M2MUserInterest();
+                    userInterest.setUser(user);
+                    userInterest.setInterest(interest);
+                    user.addInterest(userInterest);
+                }
             }
 
             userDao.merge(user);

@@ -1,6 +1,5 @@
 package domcast.finalprojbackend.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import domcast.finalprojbackend.bean.InterestBean;
 import domcast.finalprojbackend.bean.SkillBean;
 import domcast.finalprojbackend.bean.user.AuthenticationAndAuthorization;
@@ -70,26 +69,63 @@ public class UserService {
     /**
      * Confirms a user's registration.
      *
-     * @param user    The user to confirm.
+     * @param input   The data to confirm the registration.
      * @param request The HTTP request.
      * @return A response indicating the result of the operation.
      */
     @POST
     @Path("/confirm")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response confirmUser(FullRegistration user, @Context HttpServletRequest request) {
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    public Response confirmUser(MultipartFormDataInput input, @Context HttpServletRequest request) {
         String ipAddress = request.getRemoteAddr();
         logger.info("User with IP address {} is trying to confirm registration", ipAddress);
 
-        Response response;
+        // Check if the input contains the necessary keys
+        if (!input.getFormDataMap().containsKey("user")) {
+            logger.error("No data provided when trying to confirm registration");
+            return Response.status(400).entity("No data provided").build();
+        }
 
-        if (userBean.fullRegistration(user)) {
-            response = Response.status(200).entity("User confirmed registration successfully").build();
-            logger.info("User with IP address {} confirmed registration successfully with validation token {}", ipAddress, user.getValidationToken());
-        } else {
-            response = Response.status(400).entity("Error confirming registration").build();
-            logger.info("User with IP address {} tried to confirm registration unsuccessfully with validation token {}", ipAddress, user.getValidationToken());
+        Response response;
+        LoggedUser registeredUser;
+
+        try {
+            FullRegistration user = userBean.extractFullRegistrationDto(input);
+            logger.info("Extracted FullRegistration object: {}", user);
+
+            // Create interests and skills
+            if (!userBean.createInterestsAndSkillsForRegistration(user)) {
+                logger.error("Error creating interests and skills for user: {}", user);
+                response = Response.status(400).entity("Error creating interests and skills").build();
+                return response;
+            }
+
+            // Update photo
+            String photoPath = null;
+            if (input.getFormDataMap().containsKey("photo")) {
+                try {
+                    photoPath = userBean.uploadPhoto(user.getValidationToken(), input);
+                    logger.info("Uploaded photo for user: {}", user);
+                } catch (IOException e) {
+                    logger.error("Error uploading photo for user: {}", user, e);
+                    response = Response.status(400).entity("Error uploading photo").build();
+                    return response;
+                }
+            }
+
+            // Complete registration
+            registeredUser = userBean.fullRegistration(user, photoPath, ipAddress);
+            logger.info("Completed registration for user: {}", registeredUser);
+
+            // Convert the registeredUser object to a JSON string
+            String registeredUserJson = userBean.convertUserToJson(registeredUser);
+            System.out.println(registeredUserJson);
+
+            response = Response.status(200).entity(registeredUserJson).build();
+            logger.info("User with IP address {} confirmed registration successfully", ipAddress);
+        } catch (Exception e) {
+            logger.error("Error confirming registration for user with IP address {}", ipAddress, e);
+            response = Response.status(400).entity("Error confirming registration: " + e.getMessage()).build();
         }
 
         return response;
@@ -260,6 +296,7 @@ public class UserService {
 
         // Check if the input contains the necessary keys
         if (!input.getFormDataMap().containsKey("user") && !input.getFormDataMap().containsKey("photo")) {
+            logger.error("No data provided when trying to update the profile");
             return Response.status(400).entity("No data provided").build();
         }
 
@@ -277,9 +314,9 @@ public class UserService {
             UpdateUserDto user = null;
             // Extract UpdateUserDto from MultipartFormDataInput and create interests and skills
             if (input.getFormDataMap().containsKey("user")) {
-                user = userBean.extractUserDto(input);
+                user = userBean.extractUpdateUserDto(input);
                 // Create interests and skills
-                if (!userBean.createInterestsAndSkills(user)) {
+                if (!userBean.createInterestsAndSkillsForUpdate(user)) {
                     logger.error("Error creating interests and skills");
                     response = Response.status(400).entity("Error creating interests and skills").build();
                     return response;
