@@ -41,6 +41,8 @@ import java.util.Set;
 @NamedQuery(name = "User.findUserByEmail", query = "SELECT u FROM UserEntity u WHERE u.email = :email")
 @NamedQuery(name = "User.findUserByValidationToken", query = "SELECT u FROM UserEntity u JOIN u.validationTokens vt WHERE vt.token = :token")
 @NamedQuery(name = "User.findUserByActiveValidationOrSessionToken", query = "SELECT u FROM UserEntity u JOIN u.validationTokens vt JOIN u.sessionTokens st WHERE (vt.token = :token AND vt.active = true) OR (st.token = :token AND st.active = true)")
+@NamedQuery(name = "User.getUserPassword", query = "SELECT u.password FROM UserEntity u WHERE u.id = :id")
+@NamedQuery(name = "User.setUserPassword", query = "UPDATE UserEntity u SET u.password = :password WHERE u.id = :id")
 
 public class UserEntity implements Serializable {
     private static final long serialVersionUID = 1L;

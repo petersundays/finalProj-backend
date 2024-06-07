@@ -110,7 +110,15 @@ public class UserDao extends AbstractDao<UserEntity> {
         }
     }
 
-
+    /**
+     * Gets a list of users by criteria.
+     *
+     * @param firstName the first name of the user
+     * @param lastName the last name of the user
+     * @param nickname the nickname of the user
+     * @param workplace the workplace of the user
+     * @return a list of UserEntity objects
+     */
     public List<UserEntity> getUsersByCriteria(String firstName, String lastName, String nickname, String workplace) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<UserEntity> cq = cb.createQuery(UserEntity.class);
@@ -135,5 +143,35 @@ public class UserDao extends AbstractDao<UserEntity> {
 
         TypedQuery<UserEntity> query = em.createQuery(cq);
         return query.getResultList();
+    }
+
+    /**
+     * Gets the user password by id.
+     *
+     * @param id the id of the user
+     * @return the password of the user
+     */
+    public String getUserPassword(int id) {
+        logger.info("Getting user password");
+        try {
+            return (String) em.createNamedQuery("User.getUserPassword").setParameter("id", id)
+                    .getSingleResult();
+
+        } catch (NoResultException e) {
+            logger.error("User password not found");
+            return null;
+        }
+    }
+
+    /**
+     * Sets the user password by id.
+     *
+     * @param id the id of the user
+     * @param password the password to be set
+     */
+    public void setUserPassword(int id, String password) {
+        logger.info("Setting user password");
+        em.createNamedQuery("User.setUserPassword").setParameter("id", id).setParameter("password", password)
+                .executeUpdate();
     }
 }
