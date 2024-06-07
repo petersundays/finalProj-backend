@@ -1,10 +1,10 @@
 package domcast.finalprojbackend.bean;
 
-import domcast.finalprojbackend.bean.user.ValidatorAndHasher;
+import domcast.finalprojbackend.bean.user.DataValidator;
 import domcast.finalprojbackend.dao.InterestDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.InterestDto;
-import domcast.finalprojbackend.dto.UserDto.UpdateUserDto;
+import domcast.finalprojbackend.dto.userDto.UpdateUserDto;
 import domcast.finalprojbackend.entity.InterestEntity;
 import domcast.finalprojbackend.entity.M2MUserInterest;
 import domcast.finalprojbackend.entity.UserEntity;
@@ -30,8 +30,13 @@ public class InterestBean implements Serializable {
     @EJB
     private InterestDao interestDao;
     @EJB
-    private ValidatorAndHasher validatorAndHasher;
+    private DataValidator dataValidator;
 
+    /**
+     * Default constructor for InterestBean.
+     */
+    public InterestBean() {
+    }
 
     /**
      * Creates new interests in the database based on a list of InterestDTOs passed as parameter
@@ -52,7 +57,7 @@ public class InterestBean implements Serializable {
         }
 
         // Check if there are any null or empty interests and create a list with the names of the interests
-        ArrayList<String> interestsNames = validatorAndHasher.validateAndExtractInterestNames(interestsList);
+        ArrayList<String> interestsNames = dataValidator.validateAndExtractInterestNames(interestsList);
 
         logger.info("Creating interests");
 

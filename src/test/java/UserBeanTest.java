@@ -1,7 +1,7 @@
 import domcast.finalprojbackend.bean.user.*;
 import domcast.finalprojbackend.dao.LabDao;
 import domcast.finalprojbackend.dao.UserDao;
-import domcast.finalprojbackend.dto.UserDto.*;
+import domcast.finalprojbackend.dto.userDto.*;
 import domcast.finalprojbackend.entity.LabEntity;
 import domcast.finalprojbackend.entity.SessionTokenEntity;
 import domcast.finalprojbackend.entity.UserEntity;
@@ -40,7 +40,7 @@ public class UserBeanTest {
     private UserDao userDao; // Mock the UserDao
 
     @Mock
-    private ValidatorAndHasher validatorAndHasher; // Mock the ValidatorAndHasher
+    private DataValidator dataValidator; // Mock the ValidatorAndHasher
 
     @Mock
     private TokenBean tokenBean; // Mock the TokenBean
@@ -112,7 +112,7 @@ public class UserBeanTest {
         String ipAddress = "192.168.0.1"; // Add the IP address
 
         // Mock the behavior of the validatorAndHasher to return false for isInputValid
-        when(validatorAndHasher.isInputValid(firstRegistration)).thenReturn(false);
+        when(dataValidator.isInputValid(firstRegistration)).thenReturn(false);
 
         // Act
         // Call the method under test
@@ -145,7 +145,7 @@ public class UserBeanTest {
         labEntity.setCity(LabEnum.LISBOA);
         SessionTokenEntity sessionTokenEntity = new SessionTokenEntity(); // Create a SessionTokenEntity
 
-        when(validatorAndHasher.isMandatoryDataValid(fullRegistration)).thenReturn(true);
+        when(dataValidator.isMandatoryDataValid(fullRegistration)).thenReturn(true);
         when(userDao.findUserByValidationToken(fullRegistration.getValidationToken())).thenReturn(userEntity);
         when(labDao.findLabByCity(fullRegistration.getWorkplace())).thenReturn(labEntity);
         when(tokenBean.setTokenInactive(fullRegistration.getValidationToken())).thenReturn(true); // Mock the inactivation of the token
@@ -176,7 +176,7 @@ public class UserBeanTest {
         UserEntity userEntity = new UserEntity();
         LabEntity labEntity = new LabEntity();
 
-        when(validatorAndHasher.isMandatoryDataValid(fullRegistration)).thenReturn(true);
+        when(dataValidator.isMandatoryDataValid(fullRegistration)).thenReturn(true);
         when(userDao.findUserByValidationToken(fullRegistration.getValidationToken())).thenReturn(userEntity);
         when(labDao.findLabByCity(fullRegistration.getWorkplace())).thenReturn(labEntity);
         when(userDao.merge(any(UserEntity.class))).thenReturn(false); // Simulate failure
@@ -212,7 +212,7 @@ public class UserBeanTest {
 
         SessionTokenEntity sessionTokenEntity = new SessionTokenEntity();
 
-        when(validatorAndHasher.isLoginValid(login)).thenReturn(true);
+        when(dataValidator.isLoginValid(login)).thenReturn(true);
         when(userDao.findUserByEmail(login.getEmail())).thenReturn(userEntity);
         when(authenticationAndAuthorization.checkPassword(login.getPassword(), userEntity.getPassword())).thenReturn(true);
         when(tokenBean.generateSessionToken(userEntity, ipAddress)).thenReturn(sessionTokenEntity);
@@ -237,7 +237,7 @@ public class UserBeanTest {
         login.setPassword("password");
         String ipAddress = "192.168.0.1";
 
-        when(validatorAndHasher.isLoginValid(login)).thenReturn(false);
+        when(dataValidator.isLoginValid(login)).thenReturn(false);
 
         // Act and Assert
         assertThrows(IllegalArgumentException.class, () -> userBean.login(login, ipAddress));
@@ -395,7 +395,7 @@ public class UserBeanTest {
         when(userDao.findUserByActiveValidationOrSessionToken(token)).thenReturn(userEntity);
         when(input.getFormDataMap()).thenReturn(uploadForm);
         when(inputPart.getBody(InputStream.class, null)).thenReturn(inputStream);
-        when(validatorAndHasher.isValidImage(bytes)).thenReturn(true);
+        when(dataValidator.isValidImage(bytes)).thenReturn(true);
 
         // Act
         userBean.uploadPhoto(token, input);

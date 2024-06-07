@@ -1,9 +1,9 @@
 import domcast.finalprojbackend.bean.InterestBean;
-import domcast.finalprojbackend.bean.user.ValidatorAndHasher;
+import domcast.finalprojbackend.bean.user.DataValidator;
 import domcast.finalprojbackend.dao.InterestDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.InterestDto;
-import domcast.finalprojbackend.dto.UserDto.UpdateUserDto;
+import domcast.finalprojbackend.dto.userDto.UpdateUserDto;
 import domcast.finalprojbackend.entity.InterestEntity;
 import domcast.finalprojbackend.entity.UserEntity;
 import domcast.finalprojbackend.enums.InterestEnum;
@@ -36,7 +36,7 @@ public class InterestBeanTest {
     private InterestDao interestDao;
 
     @Mock
-    private ValidatorAndHasher validatorAndHasher;
+    private DataValidator dataValidator;
 
     @BeforeEach
     public void setup() {
@@ -56,7 +56,7 @@ public class InterestBeanTest {
         interestDto.setType(1);
         interestsList.add(interestDto);
 
-        when(validatorAndHasher.validateAndExtractInterestNames(interestsList)).thenReturn(new ArrayList<>());
+        when(dataValidator.validateAndExtractInterestNames(interestsList)).thenReturn(new ArrayList<>());
         when(interestDao.findInterestsByListOfNames(any(ArrayList.class))).thenReturn(new HashSet<>());
 
         // Act
@@ -79,7 +79,7 @@ public class InterestBeanTest {
         interestDto.setType(1);
         interestsList.add(interestDto);
 
-        when(validatorAndHasher.validateAndExtractInterestNames(interestsList)).thenThrow(new RuntimeException());
+        when(dataValidator.validateAndExtractInterestNames(interestsList)).thenThrow(new RuntimeException());
 
         // Act and Assert
         assertThrows(RuntimeException.class, () -> {

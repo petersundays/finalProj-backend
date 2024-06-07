@@ -9,7 +9,7 @@ import domcast.finalprojbackend.dao.InterestDao;
 import domcast.finalprojbackend.dao.LabDao;
 import domcast.finalprojbackend.dao.SkillDao;
 import domcast.finalprojbackend.dao.UserDao;
-import domcast.finalprojbackend.dto.UserDto.*;
+import domcast.finalprojbackend.dto.userDto.*;
 import domcast.finalprojbackend.entity.*;
 import domcast.finalprojbackend.enums.TypeOfUserEnum;
 import jakarta.ejb.EJB;
@@ -39,7 +39,7 @@ public class UserBean implements Serializable {
     @EJB
     private UserDao userDao;
     @EJB
-    private ValidatorAndHasher validatorAndHasher;
+    private DataValidator dataValidator;
     @EJB
     private TokenBean tokenBean;
     @EJB
@@ -73,7 +73,7 @@ public class UserBean implements Serializable {
         logger.info("Registering email: {}", firstRegistration.getEmail());
 
         // Checks if the email and password are valid
-        if (!validatorAndHasher.isInputValid(firstRegistration)) {
+        if (!dataValidator.isInputValid(firstRegistration)) {
             logger.error("Email or password are invalid");
             return false;
         }
@@ -154,7 +154,7 @@ public class UserBean implements Serializable {
         logger.info("Completing registration for user with validation token: {}", user.getValidationToken());
 
         // Checks if the mandatory data is valid
-        if (!validatorAndHasher.isMandatoryDataValid(user)) {
+        if (!dataValidator.isMandatoryDataValid(user)) {
             logger.error("Mandatory data is invalid");
             return null;
         }
@@ -234,7 +234,7 @@ public class UserBean implements Serializable {
         logger.info("Logging in user with email: {}", login.getEmail());
 
         // Checks if the login is null
-        if (!validatorAndHasher.isLoginValid(login)) {
+        if (!dataValidator.isLoginValid(login)) {
             logger.error("Login is invalid");
             throw new IllegalArgumentException("Login is invalid");
         }
@@ -648,7 +648,7 @@ public class UserBean implements Serializable {
                 byte[] bytes = IOUtils.toByteArray(inputStream);
 
                 // Validate the input photo
-                if (!validatorAndHasher.isValidImage(bytes)) {
+                if (!dataValidator.isValidImage(bytes)) {
                     logger.error("Invalid image file");
                     throw new Exception("Invalid image file");
                 }
@@ -956,8 +956,10 @@ public class UserBean implements Serializable {
             searchedUser.setId(user.getId());
             searchedUser.setFirstName(user.getFirstName());
             searchedUser.setLastName(user.getLastName());
+            searchedUser.setNickname(user.getNickname());
             searchedUser.setWorkplace(user.getWorkplace().getCity().getValue());
             searchedUser.setPhoto(user.getPhoto());
+            searchedUser.setVisible(user.isVisible());
             searchedUsers.add(searchedUser);
         }
 
@@ -1025,5 +1027,93 @@ public class UserBean implements Serializable {
             logger.error(message);
         }
         return message;
+    }
+
+    /**
+     * Returns the public profile of a user.
+     * This method is used when a user's public profile is requested.
+     * @param id The ID of the user.
+     *           If the ID is null, an IllegalArgumentException is thrown.
+     * @return The public profile of the user.
+     */
+    public PublicProfileUser returnPublicProfile (Integer id) {
+        if (id == null) {
+            throw new IllegalArgumentException("ID cannot be null");
+        }
+
+        logger.info("Getting public profile for user with id: {}", id);
+
+        try {
+            UserEntity user = userDao.findUserById(id);
+
+            if (user == null) {
+                logger.error("User not found with id: {}", id);
+                throw new NoSuchElementException("User not found with id: " + id);
+            }
+
+            if (user.getType() == TypeOfUserEnum.NOT_CONFIRMED) {
+                logger.error("Cannot get public profile for user with id: {}. User not confirmed", id);
+                throw new IllegalArgumentException("User not confirmed");
+            }
+
+            if (!user.isVisible()) {
+                logger.error("User is not visible: {}", id);
+                throw new IllegalArgumentException("User is not visible");
+            }
+
+            logger.info("User found with id: {}", id);
+
+            return convertUserEntityToPublicProfile(user);
+        } catch (Exception e) {
+            logger.error("Error while getting public profile for user with id: {}. Error: {}", id, e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * Converts a UserEntity object to a PublicProfileUser object.
+     * This method is used when a user's public profile is requested.
+     *
+     * @param user The UserEntity object that represents the user whose public profile is requested.
+     *             If the user is null, an IllegalArgumentException is thrown.
+     * @return A PublicProfileUser object that contains the user's public profile details.
+     */
+    public PublicProfileUser convertUserEntityToPublicProfile(UserEntity user) {
+        if (user == null) {
+            throw new IllegalArgumentException("UserEntity cannot be null");
+        }
+
+        logger.info("Converting user entity to public profile user for user with id: {}", user.getId());
+
+        Set<String> interests = new HashSet<>();
+        Set<String> skills = new HashSet<>();
+
+        PublicProfileUser publicProfileUser = new PublicProfileUser();
+        publicProfileUser.setId(user.getId());
+        publicProfileUser.setFirstName(user.getFirstName());
+        publicProfileUser.setLastName(user.getLastName());
+        publicProfileUser.setWorkplace(user.getWorkplace() != null ? user.getWorkplace().getCity().getValue() : "N/A");
+        publicProfileUser.setBiography(user.getBiography() != null ? user.getBiography() : "N/A");
+        publicProfileUser.setPhoto(user.getPhoto() != null ? user.getPhoto() : "N/A");
+        publicProfileUser.setNickname(user.getNickname() != null ? user.getNickname() : "N/A");
+
+        // Add each of the user's interests to the interest's list
+        if (user.getInterests() != null) {
+            for (M2MUserInterest userInterest : user.getInterests()) {
+                interests.add(userInterest.getInterest().getName());
+            }
+        }
+
+        // Add each of the user's skills to the skill's list
+        if (user.getUserSkills() != null) {
+            for (M2MUserSkill userSkill : user.getUserSkills()) {
+                skills.add(userSkill.getSkill().getName());
+            }
+        }
+
+        publicProfileUser.setInterests(interests);
+        publicProfileUser.setSkills(skills);
+
+        return publicProfileUser;
     }
 }

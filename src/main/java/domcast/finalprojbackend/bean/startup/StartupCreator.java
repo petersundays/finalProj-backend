@@ -4,7 +4,7 @@ package domcast.finalprojbackend.bean.startup;
 import domcast.finalprojbackend.bean.SystemBean;
 import domcast.finalprojbackend.bean.user.PasswordBean;
 import domcast.finalprojbackend.bean.user.TokenBean;
-import domcast.finalprojbackend.bean.user.ValidatorAndHasher;
+import domcast.finalprojbackend.bean.user.DataValidator;
 import domcast.finalprojbackend.dao.LabDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.entity.LabEntity;
@@ -46,7 +46,7 @@ public class StartupCreator implements Serializable {
     private LabDao labDao;
 
     @Inject
-    private ValidatorAndHasher validatorAndHasher;
+    private DataValidator dataValidator;
 
     @Inject
     private SystemBean systemBean;
@@ -116,6 +116,8 @@ public class StartupCreator implements Serializable {
                     user.setType(TypeOfUserEnum.ADMIN);
                     user.setEmail("admin@mail.com");
                     user.setPassword(passwordBean.hashPassword("admin"));
+                } else if (i == 2 || i == 5) {
+                    user.setVisible(true);
                 } else {
                     user.setType(TypeOfUserEnum.STANDARD);
                 }

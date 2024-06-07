@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 @Stateless
 public class PasswordBean {
 
-    private static final Logger logger = LogManager.getLogger(ValidatorAndHasher.class);
+    private static final Logger logger = LogManager.getLogger(DataValidator.class);
 
     @EJB
     private UserDao userDao;

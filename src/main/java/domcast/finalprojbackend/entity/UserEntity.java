@@ -86,7 +86,7 @@ public class UserEntity implements Serializable {
 
     // Visibility of the user
     @Column(name = "visible", nullable = false)
-    private boolean visible = true;
+    private boolean visible = false;
 
     // The type is an enum
     @Convert(converter = TypeOfUserEnumConverter.class)
