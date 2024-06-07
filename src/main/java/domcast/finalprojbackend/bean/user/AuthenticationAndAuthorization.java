@@ -1,6 +1,7 @@
 package domcast.finalprojbackend.bean.user;
 
 import domcast.finalprojbackend.dao.SessionTokenDao;
+import domcast.finalprojbackend.dao.UserDao;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import org.apache.logging.log4j.LogManager;
@@ -11,8 +12,11 @@ import org.mindrot.jbcrypt.BCrypt;
 public class AuthenticationAndAuthorization {
 
     private static final Logger logger = LogManager.getLogger(ValidatorAndHasher.class);
+
     @EJB
     private SessionTokenDao sessionTokenDao;
+    @EJB
+    private UserDao userDao;
 
     /**
      * Checks if the password is correct
@@ -45,4 +49,18 @@ public class AuthenticationAndAuthorization {
             return false;
         }
     }
-}
+
+    /**
+     * Checks if the user is an admin
+     * @param sessionToken the session token of the user
+     * @return boolean value indicating if the user is an admin
+     */
+    public boolean isUserAdmin(String sessionToken) {
+        logger.info("Checking if user is admin");
+        try {
+            return userDao.isUserAdmin(sessionToken);
+        } catch (Exception e) {
+            logger.error("Error while checking if user is admin: {}", e.getMessage());
+            return false;
+        }
+    }}

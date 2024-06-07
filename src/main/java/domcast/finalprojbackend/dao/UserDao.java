@@ -3,6 +3,7 @@ package domcast.finalprojbackend.dao;
 import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.entity.UserEntity;
 import domcast.finalprojbackend.enums.LabEnum;
+import domcast.finalprojbackend.enums.TypeOfUserEnum;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
@@ -173,5 +174,64 @@ public class UserDao extends AbstractDao<UserEntity> {
         logger.info("Setting user password");
         em.createNamedQuery("User.setUserPassword").setParameter("id", id).setParameter("password", password)
                 .executeUpdate();
+    }
+
+    /**
+     * Sets the user type by id.
+     *
+     * @param id the id of the user
+     * @param type the type to be set
+     * @return true if the user type was set, false otherwise
+     */
+    public boolean setUserType(int id, int type) {
+        logger.info("Setting user type");
+        try {
+            TypeOfUserEnum userType = TypeOfUserEnum.fromId(type);
+            em.createNamedQuery("User.setUserType").setParameter("id", id).setParameter("type", userType)
+                    .executeUpdate();
+            return true;
+        } catch (Exception e) {
+            logger.error("User type not set");
+            return false;
+        }
+    }
+
+    /**
+     * Gets the user type by id.
+     *
+     * @param id the id of the user
+     * @return the id of the user type
+     */
+    public int getUserType(int id) {
+        logger.info("Getting user type");
+        try {
+            TypeOfUserEnum userType = (TypeOfUserEnum) em.createNamedQuery("User.getUserType").setParameter("id", id)
+                    .getSingleResult();
+            return userType.getId();
+        } catch (NoResultException e) {
+            logger.error("User type not found");
+            return -1;
+        }
+    }
+
+    /**
+     * Checks if the user is an admin.
+     * @param token the session token of the user
+     * @return true if the user is an admin, false otherwise
+     */
+    public boolean isUserAdmin(String token) {
+        logger.info("Checking if user is admin");
+        try {
+            UserEntity user = (UserEntity) em.createNamedQuery("User.isUserAdminByToken")
+                    .setParameter("token", token)
+                    .getSingleResult();
+            return user != null;
+        } catch (NoResultException e) {
+            logger.error("User with token {} is not an admin", token);
+            return false;
+        } catch (Exception e) {
+            logger.error("Error while checking if user is admin: {}", e.getMessage());
+            return false;
+        }
     }
 }

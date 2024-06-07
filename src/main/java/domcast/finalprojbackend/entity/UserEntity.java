@@ -43,6 +43,9 @@ import java.util.Set;
 @NamedQuery(name = "User.findUserByActiveValidationOrSessionToken", query = "SELECT u FROM UserEntity u JOIN u.validationTokens vt JOIN u.sessionTokens st WHERE (vt.token = :token AND vt.active = true) OR (st.token = :token AND st.active = true)")
 @NamedQuery(name = "User.getUserPassword", query = "SELECT u.password FROM UserEntity u WHERE u.id = :id")
 @NamedQuery(name = "User.setUserPassword", query = "UPDATE UserEntity u SET u.password = :password WHERE u.id = :id")
+@NamedQuery(name = "User.setUserType", query = "UPDATE UserEntity u SET u.type = :type WHERE u.id = :id")
+@NamedQuery(name = "User.getUserType", query = "SELECT u.type FROM UserEntity u WHERE u.id = :id")
+@NamedQuery(name = "User.isUserAdminByToken", query = "SELECT u FROM UserEntity u JOIN u.sessionTokens st WHERE st.token = :token AND u.type = domcast.finalprojbackend.enums.TypeOfUserEnum.ADMIN")
 
 public class UserEntity implements Serializable {
     private static final long serialVersionUID = 1L;
