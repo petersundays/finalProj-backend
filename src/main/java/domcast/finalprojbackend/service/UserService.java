@@ -311,7 +311,7 @@ public class UserService {
         // Check if the user is authorized to update the profile
         if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(sessionToken, userId)) {
             response = Response.status(401).entity("Unauthorized").build();
-            logger.info("User with IP address {} tried to update the profile from user with id {} without authorization", ipAddress, userId);
+            logger.info("User with session token {} tried to update the profile from user with id {} without authorization", sessionToken, userId);
             return response;
         }
 
@@ -374,7 +374,7 @@ public class UserService {
         // Check if the user is authorized to get users by criteria
         if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(sessionToken, userId)) {
             response = Response.status(401).entity("Unauthorized").build();
-            logger.info("User with IP address {} tried to get users by criteria without authorization", ipAddress);
+            logger.info("User with session token {} tried to get users by criteria without authorization", sessionToken);
             return response;
         }
 
@@ -416,7 +416,7 @@ public class UserService {
         // Check if the user is authorized to update the password
         if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(sessionToken, userId)) {
             response = Response.status(401).entity("Unauthorized").build();
-            logger.info("User with IP address {} tried to update the password from user with id {} without authorization", ipAddress, userId);
+            logger.info("User with session token {} tried to update the password from user with id {} without authorization", sessionToken, userId);
             return response;
         }
 
@@ -431,4 +431,46 @@ public class UserService {
 
         return response;
     }
+
+    /**
+     * Updates the user type for a user.
+     *
+     * @param sessionToken The session token of the user to update the user type.
+     * @param userId       The id of the user to update the user type.
+     * @param type         The new type of the user.
+     * @param request      The HTTP request.
+     * @return A response indicating the result of the operation.
+     */
+    @PUT
+    @Path("/type")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response updateUserType (@HeaderParam("token") String sessionToken,
+                                    @HeaderParam("loggedId") int loggedId,
+                                    @HeaderParam("id") int userId,
+                                    @HeaderParam("type") int type,
+                                    @Context HttpServletRequest request) {
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with IP address {} is trying to update user type of user with id {}", ipAddress, userId);
+
+        Response response;
+
+        // Check if the user is authorized to update the user type
+        if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(sessionToken, loggedId) || !authenticationAndAuthorization.isUserAdmin(sessionToken)) {
+            response = Response.status(401).entity("Unauthorized").build();
+            logger.info("User with SessionToken {} tried to update the user type from user with id {} without authorization", sessionToken, userId);
+            return response;
+        }
+
+        try {
+            String result = userBean.updateUserType(loggedId, userId, type);
+            response = Response.status(200).entity(result).build();
+            logger.info("User with IP address {} updated the user type successfully for user with id {}", ipAddress, userId);
+        } catch (Exception e) {
+            response = Response.status(400).entity("Error updating user type").build();
+            logger.info("User with IP address {} tried to update the user type unsuccessfully, for user with id {}", ipAddress, userId);
+        }
+
+        return response;
+    }
+
 }

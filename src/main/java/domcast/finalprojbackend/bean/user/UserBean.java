@@ -963,4 +963,67 @@ public class UserBean implements Serializable {
 
         return searchedUsers;
     }
+
+    /**
+     * Updates the user type.
+     * @param id The ID of the user.
+     * @param type The new type of the user.
+     * @return A message indicating the result of the operation.
+     */
+    public String updateUserType(int loggedId, int id, int type) {
+        String message = "";
+        logger.info("Updating user type for user with id: {}", id);
+
+        if (loggedId == id) {
+            message = "User cannot change its own type";
+            logger.error(message);
+            return message;
+        }
+
+        try {
+            int actualTypeOfUser = userDao.getUserType(id);
+            if (TypeOfUserEnum.isNotConfirmed(actualTypeOfUser)) {
+                message = "The user is not confirmed, please confirm the user first";
+                logger.error(message);
+                return message;
+            }
+
+            if (actualTypeOfUser == type) {
+                message = "User type is already set to: " + type;
+                logger.info(message);
+                return message;
+            }
+
+        } catch (Exception e) {
+            message = "Error while getting user type for user with id: " + id;
+            logger.error(message);
+            return message;
+        }
+
+        if (!TypeOfUserEnum.isValidId(type)) {
+            message = "Invalid user type: " + type;
+            logger.error(message);
+            return message;
+        }
+
+        if (TypeOfUserEnum.isNotConfirmed(type)) {
+            message = "User type cannot be set to NOT_CONFIRMED";
+            logger.error(message);
+            return message;
+        }
+
+        try {
+            if (userDao.setUserType(id, type)) {
+                message = "User type updated for user with id: " + id;
+                logger.info(message);
+            } else {
+                message = "Error while updating user type for user with id: " + id;
+                logger.error(message);
+            }
+        } catch (Exception e) {
+            message = "Something went wrong while updating user type for user with id: " + id;
+            logger.error(message);
+        }
+        return message;
+    }
 }

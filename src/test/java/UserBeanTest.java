@@ -549,5 +549,116 @@ public class UserBeanTest {
         assertThrows(IllegalArgumentException.class, () -> userBean.updateBasicInfoIfChanged(userEntity, updateUserDto, photoPath));
     }
 
+    @Test
+    public void testUpdateUserType_Success() {
+        // Arrange
+        int loggedId = 1;
+        int id = 2;
+        int type = TypeOfUserEnum.STANDARD.getId();
+
+        when(userDao.getUserType(id)).thenReturn(TypeOfUserEnum.ADMIN.getId());
+        when(userDao.setUserType(id, type)).thenReturn(true);
+
+        // Act
+        String result = userBean.updateUserType(loggedId, id, type);
+
+        // Assert
+        assertEquals("User type updated for user with id: " + id, result);
+    }
+
+    @Test
+    public void testUpdateUserType_Failure_SameId() {
+        // Arrange
+        int loggedId = 1;
+        int id = 1;
+        int type = TypeOfUserEnum.STANDARD.getId();
+
+        // Act
+        String result = userBean.updateUserType(loggedId, id, type);
+
+        // Assert
+        assertEquals("User cannot change its own type", result);
+    }
+
+    @Test
+    public void testUpdateUserType_Failure_NotConfirmed() {
+        // Arrange
+        int loggedId = 1;
+        int id = 2;
+        int type = TypeOfUserEnum.NOT_CONFIRMED.getId();
+
+        when(userDao.getUserType(id)).thenReturn(TypeOfUserEnum.NOT_CONFIRMED.getId());
+
+        // Act
+        String result = userBean.updateUserType(loggedId, id, type);
+
+        // Assert
+        assertEquals("The user is not confirmed, please confirm the user first", result);
+    }
+
+    @Test
+    public void testUpdateUserType_Failure_AlreadySet() {
+        // Arrange
+        int loggedId = 1;
+        int id = 2;
+        int type = TypeOfUserEnum.STANDARD.getId();
+
+        when(userDao.getUserType(id)).thenReturn(type);
+
+        // Act
+        String result = userBean.updateUserType(loggedId, id, type);
+
+        // Assert
+        assertEquals("User type is already set to: " + type, result);
+    }
+
+    @Test
+    public void testUpdateUserType_Failure_InvalidType() {
+        // Arrange
+        int loggedId = 1;
+        int id = 2;
+        int type = -1; // Invalid type
+
+        when(userDao.getUserType(id)).thenReturn(TypeOfUserEnum.STANDARD.getId());
+
+        // Act
+        String result = userBean.updateUserType(loggedId, id, type);
+
+        // Assert
+        assertEquals("Invalid user type: " + type, result);
+    }
+
+    @Test
+    public void testUpdateUserType_Failure_SetToNotConfirmed() {
+        // Arrange
+        int loggedId = 1;
+        int id = 2;
+        int type = TypeOfUserEnum.NOT_CONFIRMED.getId();
+
+        when(userDao.getUserType(id)).thenReturn(TypeOfUserEnum.STANDARD.getId());
+
+        // Act
+        String result = userBean.updateUserType(loggedId, id, type);
+
+        // Assert
+        assertEquals("User type cannot be set to NOT_CONFIRMED", result);
+    }
+
+    @Test
+    public void testUpdateUserType_Failure_UpdateFailed() {
+        // Arrange
+        int loggedId = 1;
+        int id = 2;
+        int type = TypeOfUserEnum.ADMIN.getId();
+
+        when(userDao.getUserType(id)).thenReturn(TypeOfUserEnum.STANDARD.getId());
+        when(userDao.setUserType(id, type)).thenReturn(false);
+
+        // Act
+        String result = userBean.updateUserType(loggedId, id, type);
+
+        // Assert
+        assertEquals("Error while updating user type for user with id: " + id, result);
+    }
 
 }
