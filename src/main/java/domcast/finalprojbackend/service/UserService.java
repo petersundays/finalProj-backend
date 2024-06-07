@@ -3,6 +3,7 @@ package domcast.finalprojbackend.service;
 import domcast.finalprojbackend.bean.InterestBean;
 import domcast.finalprojbackend.bean.SkillBean;
 import domcast.finalprojbackend.bean.user.AuthenticationAndAuthorization;
+import domcast.finalprojbackend.bean.user.PasswordBean;
 import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.dto.UserDto.*;
 import jakarta.inject.Inject;
@@ -38,6 +39,9 @@ public class UserService {
 
     @Inject
     private SkillBean skillBean;
+
+    @Inject
+    private PasswordBean passwordBean;
 
     /**
      * Registers a new user.
@@ -386,4 +390,45 @@ public class UserService {
         return response;
     }
 
+    /**
+     * Updates the password for a user.
+     *
+     * @param sessionToken The session token of the user to update the password.
+     * @param userId       The id of the user to update the password.
+     * @param oldPassword  The old password.
+     * @param newPassword  The new password.
+     * @param request      The HTTP request.
+     * @return A response indicating the result of the operation.
+     */
+    @PUT
+    @Path("/password")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response updatePassword (@HeaderParam("token") String sessionToken,
+                                    @HeaderParam("id") int userId,
+                                    @HeaderParam("oldPassword") String oldPassword,
+                                    @HeaderParam("newPassword") String newPassword,
+                                    @Context HttpServletRequest request) {
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with IP address {} is trying to update password", ipAddress);
+
+        Response response;
+
+        // Check if the user is authorized to update the password
+        if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(sessionToken, userId)) {
+            response = Response.status(401).entity("Unauthorized").build();
+            logger.info("User with IP address {} tried to update the password from user with id {} without authorization", ipAddress, userId);
+            return response;
+        }
+
+        String result = passwordBean.updatePassword(userId, oldPassword, newPassword);
+        if ("Password updated successfully".equals(result)) {
+            response = Response.status(200).entity(result).build();
+            logger.info("User with IP address {} updated the password successfully", ipAddress);
+        } else {
+            response = Response.status(400).entity(result).build();
+            logger.info("User with IP address {} tried to update the password unsuccessfully. Error message: {}", ipAddress, result);
+        }
+
+        return response;
+    }
 }

@@ -1,5 +1,7 @@
 package domcast.finalprojbackend.bean.user;
 
+import domcast.finalprojbackend.dao.UserDao;
+import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -8,11 +10,23 @@ import org.mindrot.jbcrypt.BCrypt;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * PasswordBean is a Stateless Enterprise Java Bean (EJB) class for password operations.
+ * It provides methods to hash and validate passwords, as well as update the password for a user.
+ *
+ * @author José Castro
+ * @author Pedro Domingos
+ *
+ */
 @Stateless
 public class PasswordBean {
 
     private static final Logger logger = LogManager.getLogger(ValidatorAndHasher.class);
 
+    @EJB
+    private UserDao userDao;
+    @EJB
+    private AuthenticationAndAuthorization authenticationAndAuthorization;
 
     /**
      * Checks if the password is valid, according to the following rules:
@@ -27,7 +41,7 @@ public class PasswordBean {
      */
     public boolean isPasswordValid(String password) throws IllegalArgumentException {
         logger.info("Checking if password is valid");
-
+        System.out.println("************** PASSWORD: " + password);
         if (password == null) {
             throw new IllegalArgumentException("Password cannot be null");
         }
@@ -45,6 +59,10 @@ public class PasswordBean {
         Matcher matcher = pattern.matcher(password);
 
         if (!matcher.matches()) {
+            System.out.println("1 ########### " + password);
+            System.out.println("2 ########### " + matcher.matches());
+            System.out.println("3 ########### " + matcher);
+            System.out.println("4 ########### " + pattern);
             throw new IllegalArgumentException("Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character");
         }
 
@@ -66,4 +84,36 @@ public class PasswordBean {
         }
     }
 
+    /**
+     * Updates the password for a user
+     * @param id the id of the user
+     * @param oldPassword the old password
+     * @param newPassword the new password
+     * @return boolean value indicating if the password was updated successfully
+     */
+    public String updatePassword(int id, String oldPassword, String newPassword) {
+        logger.info("Updating password for user id: {}", id);
+        try {
+            String hashedOldPassword = userDao.getUserPassword(id);
+            if (authenticationAndAuthorization.checkPassword(oldPassword, hashedOldPassword)) {
+                try {
+                    if (isPasswordValid(newPassword)) {
+                        String hashedNewPassword = hashPassword(newPassword);
+                        userDao.setUserPassword(id, hashedNewPassword);
+                        return "Password updated successfully";
+                    }
+                } catch (IllegalArgumentException e) {
+                    logger.error("New password is not valid for user id: {}. Error message: {}", id, e.getMessage());
+                    return e.getMessage();
+                }
+            } else {
+                logger.error("Old password is not correct for user id: {}", id);
+                return "Old password is not correct";
+            }
+        } catch (Exception e) {
+            logger.error("Error while updating password for user id: {}. Error message: {}", id, e.getMessage());
+            return "Error while updating password: " + e.getMessage();
+        }
+        return "Error updating password";
+    }
 }
