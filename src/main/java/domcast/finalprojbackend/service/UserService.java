@@ -5,7 +5,8 @@ import domcast.finalprojbackend.bean.SkillBean;
 import domcast.finalprojbackend.bean.user.AuthenticationAndAuthorization;
 import domcast.finalprojbackend.bean.user.PasswordBean;
 import domcast.finalprojbackend.bean.user.UserBean;
-import domcast.finalprojbackend.dto.UserDto.*;
+import domcast.finalprojbackend.bean.user.DataValidator;
+import domcast.finalprojbackend.dto.userDto.*;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
@@ -42,6 +43,9 @@ public class UserService {
 
     @Inject
     private PasswordBean passwordBean;
+
+    @Inject
+    private DataValidator dataValidator;
 
     /**
      * Registers a new user.
@@ -137,37 +141,6 @@ public class UserService {
     }
 
     /**
-     * Uploads a photo for a user.
-     *
-     * @param token The session token of the user.
-     * @param input The photo to upload.
-     * @param request The HTTP request.
-     * @return A response indicating the result of the operation, with the path of the uploaded photo.
-     */
-    @POST
-    @Path("/photo")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response uploadPhoto(@HeaderParam("token") String token, MultipartFormDataInput input, @Context HttpServletRequest request) {
-        String ipAddress = request.getRemoteAddr();
-        logger.info("User with IP address {} is trying to upload a photo", ipAddress);
-
-        Response response;
-
-        try {
-            String photoPath = userBean.uploadPhoto(token, input);
-            response = Response.status(200).entity(photoPath).build();
-            logger.info("User with IP address {} uploaded a photo successfully", ipAddress);
-        } catch (Exception e) {
-            response = Response.status(400).entity("Error uploading photo").build();
-            logger.info("User with IP address {} tried to upload a photo unsuccessfully", ipAddress);
-        }
-
-        return response;
-    }
-
-
-    /**
      * Logs a user in.
      *
      * @param userToLogin The user to log in.
@@ -208,11 +181,25 @@ public class UserService {
     @Path("/logout")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response logout(@HeaderParam("token") String sessionToken, @Context HttpServletRequest request) {
+    public Response logout(@HeaderParam("token") String sessionToken, @HeaderParam("id") int id, @Context HttpServletRequest request) {
         String ipAddress = request.getRemoteAddr();
         logger.info("User with IP address {} is trying to logout", ipAddress);
 
         Response response;
+
+        // Check if the id is valid
+        if (!dataValidator.isIdValid(id)) {
+            response = Response.status(400).entity("Invalid id").build();
+            logger.info("User with session token {} tried to logout unsuccessfully", sessionToken);
+            return response;
+        }
+
+        // Check if the user is authorized to log out
+        if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(sessionToken, id)) {
+            response = Response.status(401).entity("Unauthorized").build();
+            logger.info("User with session token {} tried to logout without authorization", sessionToken);
+            return response;
+        }
 
         if (userBean.logout(sessionToken)) {
             response = Response.status(200).entity("User logged out successfully").build();
@@ -308,6 +295,13 @@ public class UserService {
         Response response;
         LoggedUser updatedUser;
 
+        // Check if the id is valid
+        if (!dataValidator.isIdValid(userId)) {
+            response = Response.status(400).entity("Invalid id").build();
+            logger.info("User with session token {} tried to update the profile unsuccessfully", sessionToken);
+            return response;
+        }
+
         // Check if the user is authorized to update the profile
         if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(sessionToken, userId)) {
             response = Response.status(401).entity("Unauthorized").build();
@@ -371,6 +365,13 @@ public class UserService {
         Response response;
         List<SearchedUser> users;
 
+        // Check if the id is valid
+        if (!dataValidator.isIdValid(userId)) {
+            response = Response.status(400).entity("Invalid id").build();
+            logger.info("User with session token {} tried to get users by criteria unsuccessfully", sessionToken);
+            return response;
+        }
+
         // Check if the user is authorized to get users by criteria
         if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(sessionToken, userId)) {
             response = Response.status(401).entity("Unauthorized").build();
@@ -413,6 +414,13 @@ public class UserService {
 
         Response response;
 
+        // Check if the id is valid
+        if (!dataValidator.isIdValid(userId)) {
+            response = Response.status(400).entity("Invalid id").build();
+            logger.info("User with session token {} tried to update the password unsuccessfully", sessionToken);
+            return response;
+        }
+
         // Check if the user is authorized to update the password
         if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(sessionToken, userId)) {
             response = Response.status(401).entity("Unauthorized").build();
@@ -446,13 +454,20 @@ public class UserService {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response updateUserType (@HeaderParam("token") String sessionToken,
                                     @HeaderParam("loggedId") int loggedId,
-                                    @HeaderParam("id") int userId,
+                                    @QueryParam("id") int userId,
                                     @HeaderParam("type") int type,
                                     @Context HttpServletRequest request) {
         String ipAddress = request.getRemoteAddr();
         logger.info("User with IP address {} is trying to update user type of user with id {}", ipAddress, userId);
 
         Response response;
+
+        // Check if the id is valid
+        if (!dataValidator.isIdValid(userId)) {
+            response = Response.status(400).entity("Invalid id").build();
+            logger.info("User with IP address {} tried to update the user type unsuccessfully, for user with id {}", ipAddress, userId);
+            return response;
+        }
 
         // Check if the user is authorized to update the user type
         if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(sessionToken, loggedId) || !authenticationAndAuthorization.isUserAdmin(sessionToken)) {
@@ -468,6 +483,45 @@ public class UserService {
         } catch (Exception e) {
             response = Response.status(400).entity("Error updating user type").build();
             logger.info("User with IP address {} tried to update the user type unsuccessfully, for user with id {}", ipAddress, userId);
+        }
+
+        return response;
+    }
+
+    @GET
+    @Path("/public-profile")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getPublicProfile(@HeaderParam("token") String sessionToken,
+                                     @HeaderParam("loggedId") int userId,
+                                     @QueryParam("id") int id,
+                                     @Context HttpServletRequest request) {
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with session token {} is trying to get public profile of user with id {}", sessionToken, id);
+
+        Response response;
+        PublicProfileUser publicProfileUser;
+
+        if (!dataValidator.isIdValid(id)) {
+            response = Response.status(400).entity("Invalid id").build();
+            logger.info("User with session token {} tried to get the public profile of user with id {} unsuccessfully", sessionToken, id);
+            return response;
+        }
+
+        // Check if the user is authorized to get the public profile
+        if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(sessionToken, userId)) {
+            response = Response.status(401).entity("Unauthorized").build();
+            logger.info("User with session token {} tried to get the public profile from user with id {} without authorization", sessionToken, id);
+            return response;
+        }
+
+        try {
+            publicProfileUser = userBean.returnPublicProfile(id);
+            response = Response.status(200).entity(publicProfileUser).build();
+            logger.info("User with session token {} got the public profile of user with id {} successfully", sessionToken, id);
+        } catch (Exception e) {
+            response = Response.status(400).entity("Error getting public profile").build();
+            logger.info("User with session token {} tried to get the public profile of user with id {} unsuccessfully", sessionToken, id);
         }
 
         return response;

@@ -1,9 +1,9 @@
 import domcast.finalprojbackend.bean.SkillBean;
-import domcast.finalprojbackend.bean.user.ValidatorAndHasher;
+import domcast.finalprojbackend.bean.user.DataValidator;
 import domcast.finalprojbackend.dao.SkillDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.SkillDto;
-import domcast.finalprojbackend.dto.UserDto.UpdateUserDto;
+import domcast.finalprojbackend.dto.userDto.UpdateUserDto;
 import domcast.finalprojbackend.entity.SkillEntity;
 import domcast.finalprojbackend.entity.UserEntity;
 import domcast.finalprojbackend.enums.SkillTypeEnum;
@@ -36,7 +36,7 @@ public class SkillBeanTest {
     private SkillDao skillDao;
 
     @Mock
-    private ValidatorAndHasher validatorAndHasher;
+    private DataValidator dataValidator;
 
     @BeforeEach
     public void setup() {
@@ -56,7 +56,7 @@ public class SkillBeanTest {
         skillDto.setType(1);
         skillsList.add(skillDto);
 
-        when(validatorAndHasher.validateAndExtractSkillNames(skillsList)).thenReturn(new ArrayList<>());
+        when(dataValidator.validateAndExtractSkillNames(skillsList)).thenReturn(new ArrayList<>());
         when(skillDao.findSkillsByListOfNames(anyList())).thenReturn(new HashSet<>());
 
         // Act
@@ -79,7 +79,7 @@ public class SkillBeanTest {
         skillDto.setType(1);
         skillsList.add(skillDto);
 
-        when(validatorAndHasher.validateAndExtractSkillNames(skillsList)).thenThrow(new RuntimeException());
+        when(dataValidator.validateAndExtractSkillNames(skillsList)).thenThrow(new RuntimeException());
 
         // Act and Assert
         assertThrows(RuntimeException.class, () -> {

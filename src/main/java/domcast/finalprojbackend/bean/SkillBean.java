@@ -1,10 +1,10 @@
 package domcast.finalprojbackend.bean;
 
-import domcast.finalprojbackend.bean.user.ValidatorAndHasher;
+import domcast.finalprojbackend.bean.user.DataValidator;
 import domcast.finalprojbackend.dao.SkillDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.SkillDto;
-import domcast.finalprojbackend.dto.UserDto.UpdateUserDto;
+import domcast.finalprojbackend.dto.userDto.UpdateUserDto;
 import domcast.finalprojbackend.entity.M2MUserSkill;
 import domcast.finalprojbackend.entity.SkillEntity;
 import domcast.finalprojbackend.entity.UserEntity;
@@ -30,7 +30,7 @@ public class SkillBean implements Serializable {
     @EJB
     private SkillDao skillDao;
     @EJB
-    private ValidatorAndHasher validatorAndHasher;
+    private DataValidator dataValidator;
 
 
     /**
@@ -52,7 +52,7 @@ public class SkillBean implements Serializable {
         }
 
         // Check if there are any null or empty skills and create a list with the names of the skills
-        ArrayList<String> skillsNames = validatorAndHasher.validateAndExtractSkillNames(skillsList);
+        ArrayList<String> skillsNames = dataValidator.validateAndExtractSkillNames(skillsList);
 
         logger.info("Creating skills");
 

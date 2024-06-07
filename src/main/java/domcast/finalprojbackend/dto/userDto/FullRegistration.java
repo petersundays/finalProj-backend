@@ -1,4 +1,4 @@
-package domcast.finalprojbackend.dto.UserDto;
+package domcast.finalprojbackend.dto.userDto;
 
 import domcast.finalprojbackend.dto.InterestDto;
 import domcast.finalprojbackend.dto.SkillDto;

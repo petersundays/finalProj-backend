@@ -2,9 +2,9 @@ package domcast.finalprojbackend.bean.user;
 
 import domcast.finalprojbackend.dto.InterestDto;
 import domcast.finalprojbackend.dto.SkillDto;
-import domcast.finalprojbackend.dto.UserDto.FirstRegistration;
-import domcast.finalprojbackend.dto.UserDto.FullRegistration;
-import domcast.finalprojbackend.dto.UserDto.Login;
+import domcast.finalprojbackend.dto.userDto.FirstRegistration;
+import domcast.finalprojbackend.dto.userDto.FullRegistration;
+import domcast.finalprojbackend.dto.userDto.Login;
 import domcast.finalprojbackend.enums.InterestEnum;
 import domcast.finalprojbackend.enums.SkillTypeEnum;
 import jakarta.ejb.EJB;
@@ -19,9 +19,9 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 @Stateless
-public class ValidatorAndHasher {
+public class DataValidator {
 
-    private static final Logger logger = LogManager.getLogger(ValidatorAndHasher.class);
+    private static final Logger logger = LogManager.getLogger(DataValidator.class);
     private static final String EMAIL_PATTERN =
             "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
 
@@ -206,5 +206,22 @@ public class ValidatorAndHasher {
         }
         logger.info("Skill names validated and extracted");
         return skillsNames;
+    }
+
+    /**
+     * Checks if the id is valid
+     * @param id the id to be checked
+     *           throws IllegalArgumentException if the id is not valid
+     * @return boolean value indicating if the id is valid
+     */
+    public boolean isIdValid(int id) {
+        logger.info("Checking if id is valid");
+
+        if (id <= 0) {
+            logger.error("Id must be greater than 0");
+            throw new IllegalArgumentException("Id must be greater than 0");
+        }
+
+        return true;
     }
 }

@@ -11,7 +11,7 @@ import org.mindrot.jbcrypt.BCrypt;
 @Stateless
 public class AuthenticationAndAuthorization {
 
-    private static final Logger logger = LogManager.getLogger(ValidatorAndHasher.class);
+    private static final Logger logger = LogManager.getLogger(DataValidator.class);
 
     @EJB
     private SessionTokenDao sessionTokenDao;
