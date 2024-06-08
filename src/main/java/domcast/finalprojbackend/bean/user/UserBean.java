@@ -1058,7 +1058,7 @@ public class UserBean implements Serializable {
 
             if (!user.isVisible()) {
                 logger.error("User is not visible: {}", id);
-                throw new IllegalArgumentException("User is not visible");
+                throw new IllegalArgumentException("User's profile is private");
             }
 
             logger.info("User found with id: {}", id);

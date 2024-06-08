@@ -520,8 +520,8 @@ public class UserService {
             response = Response.status(200).entity(publicProfileUser).build();
             logger.info("User with session token {} got the public profile of user with id {} successfully", sessionToken, id);
         } catch (Exception e) {
-            response = Response.status(400).entity("Error getting public profile").build();
-            logger.info("User with session token {} tried to get the public profile of user with id {} unsuccessfully", sessionToken, id);
+            response = Response.status(400).entity(e.getMessage()).build();
+            logger.info("User with session token {} tried to get the public profile of user with id {} unsuccessfully. Error: {}", sessionToken, id, e.getMessage());
         }
 
         return response;

@@ -74,29 +74,25 @@ public class TaskEntity implements Serializable {
     @Column(name = "real_end_date")
     private LocalDateTime realEndDate;
 
-    // Id of the user responsible for the task
-    @Column(name = "responsible", nullable = false)
-    private int responsibleId;
+    // User responsible for the task
+    @ManyToOne
+    @JoinColumn(name = "responsible", nullable = false)
+    private UserEntity responsible;
 
-    // Ids of the other users that are executors of the task
+    // Other executors of the task
     @ElementCollection
-    @CollectionTable(name = "task_other_executors", joinColumns = @JoinColumn(name = "task_id"))
-    @Column(name = "user_id")
-    private Set<Integer> otherExecutors = new HashSet<>();
+    @CollectionTable(name = "task_executors", joinColumns = @JoinColumn(name = "task_id"))
+    @Column(name = "executor")
+    private Set<String> otherExecutors = new HashSet<>();
 
     // Project to which the task belongs
     @ManyToOne
     @JoinColumn(name = "project_id", nullable = false)
     private ProjectEntity project_id;
 
-    // Tasks that the task depends on
-    @ManyToMany
-    @JoinTable(
-            name = "dependencies",
-            joinColumns = @JoinColumn(name = "task_id"),
-            inverseJoinColumns = @JoinColumn(name = "dependent_task_id")
-    )
-    private Set<TaskEntity> dependencies = new HashSet<>();
+    // Dependencies of the task
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<M2MTaskDependencies> dependencies = new HashSet<>();
 
     // Records of the task
     @OneToMany(mappedBy = "task")
@@ -180,19 +176,19 @@ public class TaskEntity implements Serializable {
         this.realEndDate = realEndDate;
     }
 
-    public int getResponsibleId() {
-        return responsibleId;
+    public UserEntity getResponsible() {
+        return responsible;
     }
 
-    public void setResponsibleId(int responsibleId) {
-        this.responsibleId = responsibleId;
+    public void setResponsibleId(UserEntity responsible) {
+        this.responsible = responsible;
     }
 
-    public Set<Integer> getOtherExecutors() {
+    public Set<String> getOtherExecutors() {
         return otherExecutors;
     }
 
-    public void setOtherExecutors(Set<Integer> otherExecutors) {
+    public void setOtherExecutors(Set<String> otherExecutors) {
         this.otherExecutors = otherExecutors;
     }
 
@@ -204,11 +200,11 @@ public class TaskEntity implements Serializable {
         this.project_id = project_id;
     }
 
-    public Set<TaskEntity> getDependencies() {
+    public Set<M2MTaskDependencies> getDependencies() {
         return dependencies;
     }
 
-    public void setDependencies(Set<TaskEntity> dependencies) {
+    public void setDependencies(Set<M2MTaskDependencies> dependencies) {
         this.dependencies = dependencies;
     }
 

@@ -101,7 +101,7 @@ public class StartupCreator implements Serializable {
                 user.setLastName(lastNames[i]);
                 user.setNickname(nicknames[i]);
                 user.setBiography("biography" + (i+1));
-                user.setVisible(true);
+                user.setType(TypeOfUserEnum.STANDARD);
 
                 LabEntity lab = labDao.findLabByCity(labs[i].getValue());
                 if (lab != null) {
@@ -116,10 +116,8 @@ public class StartupCreator implements Serializable {
                     user.setType(TypeOfUserEnum.ADMIN);
                     user.setEmail("admin@mail.com");
                     user.setPassword(passwordBean.hashPassword("admin"));
-                } else if (i == 2 || i == 5) {
+                } else if (i == 3 || i == 7 || i == 8) {
                     user.setVisible(true);
-                } else {
-                    user.setType(TypeOfUserEnum.STANDARD);
                 }
 
                 logger.info("Persisting default user " + (i+1));
