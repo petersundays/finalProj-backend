@@ -1,5 +1,6 @@
 package domcast.finalprojbackend.entity;
 
+import domcast.finalprojbackend.enums.TaskStateEnum;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
@@ -52,7 +53,7 @@ public class TaskEntity implements Serializable {
 
     // State of the task
     @Column(name = "state", nullable = false)
-    private String state;
+    private TaskStateEnum state = TaskStateEnum.PLANNED;
 
     // Date in which the task was created
     @Column(name = "creation_date", nullable = false)
@@ -128,11 +129,11 @@ public class TaskEntity implements Serializable {
         this.description = description;
     }
 
-    public String getState() {
+    public TaskStateEnum getState() {
         return state;
     }
 
-    public void setState(String state) {
+    public void setState(TaskStateEnum state) {
         this.state = state;
     }
 

@@ -20,7 +20,7 @@ public enum ProjectStateEnum {
     READY (2, 200),
     APPROVED (3, 300),
     IN_PROGRESS (4, 400),
-    CANCLED (5, 500),
+    CANCELED(5, 500),
     FINISHED (6, 600);
 
     // The id of the state of the project.
