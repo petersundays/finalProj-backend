@@ -1,5 +1,5 @@
 import domcast.finalprojbackend.bean.SkillBean;
-import domcast.finalprojbackend.bean.user.DataValidator;
+import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.dao.SkillDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.SkillDto;

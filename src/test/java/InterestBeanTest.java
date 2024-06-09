@@ -1,5 +1,5 @@
 import domcast.finalprojbackend.bean.InterestBean;
-import domcast.finalprojbackend.bean.user.DataValidator;
+import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.dao.InterestDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.InterestDto;

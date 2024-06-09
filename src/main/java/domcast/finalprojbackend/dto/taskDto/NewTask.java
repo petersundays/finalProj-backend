@@ -24,7 +24,7 @@ import java.util.Set;
  * @author Pedro Domingos
  */
 @XmlRootElement
-public class NewTaskDto {
+public class NewTask {
     @XmlElement
     private String title;
 
@@ -51,7 +51,7 @@ public class NewTaskDto {
 
 
     // Default constructor
-    public NewTaskDto() {
+    public NewTask() {
     }
 
     // Getters and setters

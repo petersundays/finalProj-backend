@@ -4,7 +4,7 @@ package domcast.finalprojbackend.bean.startup;
 import domcast.finalprojbackend.bean.SystemBean;
 import domcast.finalprojbackend.bean.user.PasswordBean;
 import domcast.finalprojbackend.bean.user.TokenBean;
-import domcast.finalprojbackend.bean.user.DataValidator;
+import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.dao.LabDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.entity.LabEntity;

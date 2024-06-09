@@ -5,7 +5,7 @@ import domcast.finalprojbackend.bean.SkillBean;
 import domcast.finalprojbackend.bean.user.AuthenticationAndAuthorization;
 import domcast.finalprojbackend.bean.user.PasswordBean;
 import domcast.finalprojbackend.bean.user.UserBean;
-import domcast.finalprojbackend.bean.user.DataValidator;
+import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.dto.userDto.*;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;

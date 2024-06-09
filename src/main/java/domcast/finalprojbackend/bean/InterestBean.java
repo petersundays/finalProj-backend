@@ -1,9 +1,9 @@
 package domcast.finalprojbackend.bean;
 
-import domcast.finalprojbackend.bean.user.DataValidator;
 import domcast.finalprojbackend.dao.InterestDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.InterestDto;
+import domcast.finalprojbackend.dto.userDto.UpdateUserDto;
 import domcast.finalprojbackend.entity.InterestEntity;
 import domcast.finalprojbackend.entity.M2MUserInterest;
 import domcast.finalprojbackend.entity.UserEntity;

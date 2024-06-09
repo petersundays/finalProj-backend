@@ -1,7 +1,9 @@
-package domcast.finalprojbackend.bean.user;
+package domcast.finalprojbackend.bean;
 
+import domcast.finalprojbackend.bean.user.PasswordBean;
 import domcast.finalprojbackend.dto.InterestDto;
 import domcast.finalprojbackend.dto.SkillDto;
+import domcast.finalprojbackend.dto.taskDto.NewTask;
 import domcast.finalprojbackend.dto.userDto.FirstRegistration;
 import domcast.finalprojbackend.dto.userDto.FullRegistration;
 import domcast.finalprojbackend.dto.userDto.Login;
@@ -67,9 +69,9 @@ public class DataValidator {
         return isEmailValid(firstRegistration.getEmail()) && passwordBean.isPasswordValid(firstRegistration.getPassword());
     }
 
-    public boolean isMandatoryDataValid(FullRegistration fullRegistration) {
+    public boolean isUserMandatoryDataValid(FullRegistration fullRegistration) {
 
-        logger.info("Checking if mandatory data is valid");
+        logger.info("Checking if mandatory data is valid for full registration");
 
         return fullRegistration.getFirstName() != null && !fullRegistration.getFirstName().isBlank() &&
                 fullRegistration.getLastName() != null && !fullRegistration.getLastName().isBlank() &&
@@ -88,58 +90,6 @@ public class DataValidator {
                 login.getPassword() != null && !login.getPassword().isBlank();
     }
 
-    /**
-     * Checks if the password is valid, according to the following rules:
-     * - At least 12 characters long
-     * - At least one uppercase letter
-     * - At least one lowercase letter
-     * - At least one number
-     * - At least one special character
-     * @throws IllegalArgumentException if the password is not valid, null or blank
-     * @param password the password to be checked
-     * @return boolean value indicating if the password is valid
-     *//*
-    public boolean isPasswordValid(String password) throws IllegalArgumentException {
-        logger.info("Checking if password is valid");
-
-        if (password == null) {
-            throw new IllegalArgumentException("Password cannot be null");
-        }
-
-        if (password.isBlank()) {
-            throw new IllegalArgumentException("Password cannot be blank");
-        }
-
-        if (password.length() < 12) {
-            throw new IllegalArgumentException("Password must be at least 12 characters long");
-        }
-
-        String regex = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{12,}$";
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(password);
-
-        if (!matcher.matches()) {
-            throw new IllegalArgumentException("Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character");
-        }
-
-        return true;
-    }
-
-    *//**
-     * Hashes the password
-     * @param password the password to be hashed
-     * @return the hashed password as a string
-     *//*
-    public String hashPassword (String password) {
-        logger.info("Hashing password");
-        try {
-            return BCrypt.hashpw(password, BCrypt.gensalt());
-        } catch (Exception e) {
-            logger.error("Error while hashing password: {}", e.getMessage());
-            return null;
-        }
-    }
-*/
     /**
      * Checks if the image is valid
      * @param bytes the image to be checked
@@ -223,5 +173,16 @@ public class DataValidator {
         }
 
         return true;
+    }
+
+    public boolean isTaskMandatoryDataValid(NewTask newTask) {
+        logger.info("Checking if mandatory data is valid for new task");
+
+        return newTask.getTitle() != null && !newTask.getTitle().isBlank() &&
+                newTask.getDescription() != null && !newTask.getDescription().isBlank() &&
+                newTask.getProjectedStartDate() != null && newTask.getDeadline() != null &&
+                newTask.getDeadline().isAfter(newTask.getProjectedStartDate()) &&
+                newTask.getResponsibleId() > 0 && newTask.getProjectId() > 0;
+
     }
 }

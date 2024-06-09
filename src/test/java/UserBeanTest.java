@@ -1,3 +1,4 @@
+import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.user.*;
 import domcast.finalprojbackend.dao.LabDao;
 import domcast.finalprojbackend.dao.UserDao;
@@ -145,7 +146,7 @@ public class UserBeanTest {
         labEntity.setCity(LabEnum.LISBOA);
         SessionTokenEntity sessionTokenEntity = new SessionTokenEntity(); // Create a SessionTokenEntity
 
-        when(dataValidator.isMandatoryDataValid(fullRegistration)).thenReturn(true);
+        when(dataValidator.isUserMandatoryDataValid(fullRegistration)).thenReturn(true);
         when(userDao.findUserByValidationToken(fullRegistration.getValidationToken())).thenReturn(userEntity);
         when(labDao.findLabByCity(fullRegistration.getWorkplace())).thenReturn(labEntity);
         when(tokenBean.setTokenInactive(fullRegistration.getValidationToken())).thenReturn(true); // Mock the inactivation of the token
@@ -176,7 +177,7 @@ public class UserBeanTest {
         UserEntity userEntity = new UserEntity();
         LabEntity labEntity = new LabEntity();
 
-        when(dataValidator.isMandatoryDataValid(fullRegistration)).thenReturn(true);
+        when(dataValidator.isUserMandatoryDataValid(fullRegistration)).thenReturn(true);
         when(userDao.findUserByValidationToken(fullRegistration.getValidationToken())).thenReturn(userEntity);
         when(labDao.findLabByCity(fullRegistration.getWorkplace())).thenReturn(labEntity);
         when(userDao.merge(any(UserEntity.class))).thenReturn(false); // Simulate failure
