@@ -2,6 +2,7 @@ package domcast.finalprojbackend.bean.user;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.InterestBean;
 import domcast.finalprojbackend.bean.SkillBean;
 import domcast.finalprojbackend.bean.SystemBean;
@@ -154,7 +155,7 @@ public class UserBean implements Serializable {
         logger.info("Completing registration for user with validation token: {}", user.getValidationToken());
 
         // Checks if the mandatory data is valid
-        if (!dataValidator.isMandatoryDataValid(user)) {
+        if (!dataValidator.isUserMandatoryDataValid(user)) {
             logger.error("Mandatory data is invalid");
             return null;
         }

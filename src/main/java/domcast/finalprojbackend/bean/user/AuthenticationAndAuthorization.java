@@ -1,5 +1,6 @@
 package domcast.finalprojbackend.bean.user;
 
+import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.dao.SessionTokenDao;
 import domcast.finalprojbackend.dao.UserDao;
 import jakarta.ejb.EJB;

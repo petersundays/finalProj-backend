@@ -36,6 +36,8 @@ import java.util.Set;
 @Entity
 @Table(name = "project")
 
+@NamedQuery(name = "Project.findProjectById", query = "SELECT p FROM ProjectEntity p WHERE p.id = :id")
+
 public class ProjectEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -109,7 +111,7 @@ public class ProjectEntity implements Serializable {
     private Set<M2MComponentProject> componentResources = new HashSet<>();
 
     // Tasks take part of the execution plan of the project
-    @OneToMany(mappedBy = "project_id", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "projectId", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<TaskEntity> tasks = new HashSet<>();
 
     // Default constructor

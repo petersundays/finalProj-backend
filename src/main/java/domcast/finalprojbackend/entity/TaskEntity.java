@@ -1,5 +1,6 @@
 package domcast.finalprojbackend.entity;
 
+import domcast.finalprojbackend.enums.TaskStateEnum;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
@@ -22,7 +23,7 @@ import java.util.Set;
  * - realEndDate: the real end date of the task.
  * - responsibleId: the responsible for the task.
  * - otherExecutors: the other executors of the task.
- * - project_id: the project of the task.
+ * - projectId: the project of the task.
  * - dependencies: the dependencies of the task.
  * - records: the records of the task.
  * The class also contains the necessary annotations to work with the database.
@@ -32,6 +33,10 @@ import java.util.Set;
 
 @Entity
 @Table(name = "task")
+
+@NamedQuery(name = "Task.findTaskById", query = "SELECT t FROM TaskEntity t WHERE t.id = :id")
+@NamedQuery(name = "Task.findTaskByTitleResponsibleProject",
+        query = "SELECT t FROM TaskEntity t WHERE t.title = :title AND t.responsible.id = :responsibleId AND t.projectId.id = :projectId")
 
 public class TaskEntity implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -52,11 +57,11 @@ public class TaskEntity implements Serializable {
 
     // State of the task
     @Column(name = "state", nullable = false)
-    private String state;
+    private TaskStateEnum state = TaskStateEnum.PLANNED;
 
     // Date in which the task was created
     @Column(name = "creation_date", nullable = false)
-    private LocalDateTime creationDate;
+    private LocalDateTime creationDate = LocalDateTime.now();
 
     // Projected date in which the task should start
     @Column(name = "projected_start_date", nullable = false)
@@ -88,11 +93,15 @@ public class TaskEntity implements Serializable {
     // Project to which the task belongs
     @ManyToOne
     @JoinColumn(name = "project_id", nullable = false)
-    private ProjectEntity project_id;
+    private ProjectEntity projectId;
 
-    // Dependencies of the task
+    // Tasks that this task depends on
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<M2MTaskDependencies> dependencies = new HashSet<>();
+
+    // Tasks that depend on this task
+    @OneToMany(mappedBy = "dependentTask", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<M2MTaskDependencies> dependentTasks = new HashSet<>();
 
     // Records of the task
     @OneToMany(mappedBy = "task")
@@ -128,20 +137,16 @@ public class TaskEntity implements Serializable {
         this.description = description;
     }
 
-    public String getState() {
+    public TaskStateEnum getState() {
         return state;
     }
 
-    public void setState(String state) {
+    public void setState(TaskStateEnum state) {
         this.state = state;
     }
 
     public LocalDateTime getCreationDate() {
         return creationDate;
-    }
-
-    public void setCreationDate(LocalDateTime creationDate) {
-        this.creationDate = creationDate;
     }
 
     public LocalDateTime getProjectedStartDate() {
@@ -172,15 +177,11 @@ public class TaskEntity implements Serializable {
         return realEndDate;
     }
 
-    public void setRealEndDate(LocalDateTime realEndDate) {
-        this.realEndDate = realEndDate;
-    }
-
     public UserEntity getResponsible() {
         return responsible;
     }
 
-    public void setResponsibleId(UserEntity responsible) {
+    public void setResponsible(UserEntity responsible) {
         this.responsible = responsible;
     }
 
@@ -192,12 +193,12 @@ public class TaskEntity implements Serializable {
         this.otherExecutors = otherExecutors;
     }
 
-    public ProjectEntity getProject_id() {
-        return project_id;
+    public ProjectEntity getProjectId() {
+        return projectId;
     }
 
-    public void setProject_id(ProjectEntity project_id) {
-        this.project_id = project_id;
+    public void setProjectId(ProjectEntity project_id) {
+        this.projectId = project_id;
     }
 
     public Set<M2MTaskDependencies> getDependencies() {
@@ -206,6 +207,14 @@ public class TaskEntity implements Serializable {
 
     public void setDependencies(Set<M2MTaskDependencies> dependencies) {
         this.dependencies = dependencies;
+    }
+
+    public Set<M2MTaskDependencies> getDependentTasks() {
+        return dependentTasks;
+    }
+
+    public void setDependentTasks(Set<M2MTaskDependencies> dependentTasks) {
+        this.dependentTasks = dependentTasks;
     }
 
     public Set<RecordEntity> getRecords() {
