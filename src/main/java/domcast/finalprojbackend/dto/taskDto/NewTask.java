@@ -49,6 +49,9 @@ public class NewTask {
     @XmlElement
     private Set<Integer> dependencies;
 
+    @XmlElement
+    private Set<Integer> dependentTasks;
+
 
     // Default constructor
     public NewTask() {
@@ -118,5 +121,13 @@ public class NewTask {
 
     public void setDependencies(Set<Integer> dependencies) {
         this.dependencies = dependencies;
+    }
+
+    public Set<Integer> getDependentTasks() {
+        return dependentTasks;
+    }
+
+    public void setDependentTasks(Set<Integer> dependentTasks) {
+        this.dependentTasks = dependentTasks;
     }
 }

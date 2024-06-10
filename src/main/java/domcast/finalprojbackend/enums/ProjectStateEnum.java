@@ -4,11 +4,11 @@ package domcast.finalprojbackend.enums;
  * Enum class for the project state.
  * Contains the possible states of a project.
  * The values are the possible states of a project.
- * The id of the state of the project.
- * The value of the state of the project.
+ * The project's state id.
+ * The project's state value.
  * The constructor of the enum class.
- * The getter of the id of the state of the project.
- * The getter of the value of the state of the project.
+ * The getter of the project's state id.
+ * The getter of the project's state value.
  * The method that returns the state of the project by its id.
  * @author José Castro
  * @author Pedro Domingos
@@ -23,28 +23,36 @@ public enum ProjectStateEnum {
     CANCELED(5, 500),
     FINISHED (6, 600);
 
-    // The id of the state of the project.
+    // The id of the project's state.
     private final int id;
-    // The value of the state of the project.
+    // The value of the project's state.
     private final int value;
 
-    // Constructor of the enum class.
+    /**
+     * Constructor of the enum class.
+     * @param id the project's state id
+     * @param value the project's state value
+     */
     ProjectStateEnum(int id, int value) {
         this.id = id;
         this.value = value;
     }
 
-    // Getter of the id of the state of the project.
+    // Getter of the project's state id.
     public int getId() {
         return id;
     }
 
-    // Getter of the value of the state of the project.
+    // Getter of the project's state value.
     public int getValue() {
         return value;
     }
 
-    // Method that returns the state of the project by its id.
+    /**
+     * Method that returns the state of the project by its id.
+     * @param id the project's state id
+     * @return the state of the project
+     */
     public static ProjectStateEnum fromId(int id) {
         for (ProjectStateEnum state : ProjectStateEnum.values()) {
             if (state.getId() == id) {
@@ -54,7 +62,11 @@ public enum ProjectStateEnum {
         throw new IllegalArgumentException("Invalid ProjectStateEnum id: " + id);
     }
 
-    // Method that returns the state of the project by its value.
+    /**
+     * Method that returns the state of the project by its value.
+     * @param value the project's state value
+     * @return the state of the project
+     */
     public static ProjectStateEnum fromValue(int value) {
         for (ProjectStateEnum state : ProjectStateEnum.values()) {
             if (state.getValue() == value) {
@@ -62,5 +74,14 @@ public enum ProjectStateEnum {
             }
         }
         throw new IllegalArgumentException("Invalid ProjectStateEnum value: " + value);
+    }
+
+    /**
+     * Method that returns the id of the project's state.
+     * @param state the project's state
+     * @return the id of the project's state
+     */
+    public int getIdFromState(TaskStateEnum state) {
+        return state.getId();
     }
 }

@@ -41,6 +41,15 @@ public class ChartTask implements Serializable {
     public ChartTask() {
     }
 
+    // Constructor with all the attributes
+    public ChartTask(int id, String title, int state, LocalDateTime projectedStartDate, LocalDateTime deadline) {
+        this.id = id;
+        this.title = title;
+        this.state = state;
+        this.projectedStartDate = projectedStartDate;
+        this.deadline = deadline;
+    }
+
     // Getters and setters
 
     public int getId() {
