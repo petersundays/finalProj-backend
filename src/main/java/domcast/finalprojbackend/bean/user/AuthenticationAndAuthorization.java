@@ -1,6 +1,7 @@
 package domcast.finalprojbackend.bean.user;
 
 import domcast.finalprojbackend.bean.DataValidator;
+import domcast.finalprojbackend.bean.project.ProjectBean;
 import domcast.finalprojbackend.dao.SessionTokenDao;
 import domcast.finalprojbackend.dao.UserDao;
 import jakarta.ejb.EJB;
@@ -18,6 +19,8 @@ public class AuthenticationAndAuthorization {
     private SessionTokenDao sessionTokenDao;
     @EJB
     private UserDao userDao;
+    @EJB
+    private ProjectBean projectBean;
 
     /**
      * Checks if the password is correct
@@ -64,4 +67,26 @@ public class AuthenticationAndAuthorization {
             logger.error("Error while checking if user is admin: {}", e.getMessage());
             return false;
         }
-    }}
+    }
+
+    /**
+     * Checks if the user is a member of the project
+     * @param userId the id of the user
+     * @param projectId the id of the project
+     * @return boolean value indicating if the user is a member of the project
+     */
+    public boolean isUserMemberOfTheProject(int userId, int projectId) {
+        logger.info("Checking if user with ID {} is a member of project with ID {}", userId, projectId);
+
+        boolean isMember;
+        try {
+            isMember = projectBean.isUserActiveInProject(userId, projectId);
+        } catch (Exception e) {
+            logger.error("Error checking if user with ID {} is a member of project with ID {}", userId, projectId, e);
+            throw new RuntimeException(e);
+        }
+
+        logger.info("User with ID {} is a member of project with ID {}: {}", userId, projectId, isMember);
+        return isMember;
+    }
+}

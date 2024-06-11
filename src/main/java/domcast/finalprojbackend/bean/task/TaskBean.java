@@ -50,35 +50,38 @@ public class TaskBean implements Serializable {
         logger.info("Creating new task");
 
         if (newTask == null) {
-            logger.error("The new task is null");
-            return null;
+            throw new IllegalArgumentException("The input for the new task is null");
         }
 
         if (!dataValidator.isTaskMandatoryDataValid(newTask)) {
-            logger.error("The new task does not have all the mandatory data");
-            return null;
+            throw new IllegalArgumentException("The new task does not have all the mandatory data");
         }
 
         // Create the new task and persist it in the database
-        TaskEntity taskEntity = registerNewTaskInfo(newTask);
+        TaskEntity taskEntity;
+
+        try {
+            taskEntity = registerNewTaskInfo(newTask);
+        } catch (IllegalArgumentException e) {
+            logger.error("Error registering new task info", e);
+            throw new RuntimeException("Error registering new task info: " + e.getMessage(), e);
+        }
 
         if (taskEntity == null) {
-            logger.error("Error registering new task info");
-            return null;
+            throw new RuntimeException("Error registering new task info");
         }
 
         try {
             taskDao.persist(taskEntity);
         } catch (Exception e) {
             logger.error("Error persisting new task", e);
-            return null;
+            throw new RuntimeException("Error persisting new task: " + e.getMessage(), e);
         }
 
         TaskEntity taskEntityFromDB = taskDao.findTaskByTitleResponsibleProject(newTask.getTitle(), newTask.getResponsibleId(), newTask.getProjectId());
 
         if (taskEntityFromDB == null) {
-            logger.error("Error finding task by title, responsible id and project id");
-            return null;
+            throw new RuntimeException("Error finding task by title, responsible id and project id");
         }
 
         int state = projectStateEnum.getIdFromState(taskEntityFromDB.getState());
@@ -135,10 +138,14 @@ public class TaskBean implements Serializable {
             return null;
         }
 
-        updateDependentTasksStartDate(newTask.getDeadline(), dependentTasks);
+        try {
+            updateDependentTasksStartDate(newTask.getDeadline(), dependentTasks);
+        } catch (IllegalArgumentException e) {
+            logger.error("Error updating dependent tasks start date", e);
+            throw e;
+        }
 
         Set<M2MTaskDependencies> dependentRelationship = createTaskDependenciesRelationship(taskEntity, dependentTasks);
-
 
         ProjectEntity project;
         try {
@@ -242,9 +249,12 @@ public class TaskBean implements Serializable {
     }
 
     /**
-     * Updates the start date of the dependent tasks
+     * Updates the start date of the dependent tasks.
+     * The start date of the dependent task is updated to the deadline of the new task
+     * if it is earlier than the current start date.
      * @param newTaskDeadline the deadline of the new task
-     * @param dependentTasks the dependent tasks of the new task
+     * @param dependentTasks the dependent tasks of the new task.
+     *                       Throws IllegalArgumentException if the projected start date of a dependent task is after its deadline
      */
     public void updateDependentTasksStartDate(LocalDateTime newTaskDeadline, Set<TaskEntity> dependentTasks) {
         logger.info("Updating the start date of the dependent tasks");
@@ -264,6 +274,8 @@ public class TaskBean implements Serializable {
                 dependentTask.setProjectedStartDate(newTaskDeadline);
                 taskDao.merge(dependentTask);
                 logger.info("Updated the start date of dependent task {} to {}", dependentTask.getId(), newTaskDeadline);
+            } else if (dependentTask.getProjectedStartDate().isAfter(dependentTask.getDeadline())) {
+                throw new IllegalArgumentException("The projected start date of dependent task " + dependentTask.getTitle() + " is being set after its deadline");
             }
         }
     }
