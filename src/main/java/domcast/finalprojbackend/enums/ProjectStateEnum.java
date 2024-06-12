@@ -75,13 +75,4 @@ public enum ProjectStateEnum {
         }
         throw new IllegalArgumentException("Invalid ProjectStateEnum value: " + value);
     }
-
-    /**
-     * Method that returns the id of the project's state.
-     * @param state the project's state
-     * @return the id of the project's state
-     */
-    public int getIdFromState(TaskStateEnum state) {
-        return state.getId();
-    }
 }

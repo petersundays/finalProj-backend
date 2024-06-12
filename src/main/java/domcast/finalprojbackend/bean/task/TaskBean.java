@@ -5,12 +5,12 @@ import domcast.finalprojbackend.dao.ProjectDao;
 import domcast.finalprojbackend.dao.TaskDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.taskDto.ChartTask;
+import domcast.finalprojbackend.dto.taskDto.DetailedTask;
 import domcast.finalprojbackend.dto.taskDto.NewTask;
 import domcast.finalprojbackend.entity.M2MTaskDependencies;
 import domcast.finalprojbackend.entity.ProjectEntity;
 import domcast.finalprojbackend.entity.TaskEntity;
 import domcast.finalprojbackend.entity.UserEntity;
-import domcast.finalprojbackend.enums.ProjectStateEnum;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import org.apache.logging.log4j.LogManager;
@@ -18,8 +18,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 @Stateless
 public class TaskBean implements Serializable {
@@ -38,9 +37,6 @@ public class TaskBean implements Serializable {
 
     @EJB
     private ProjectDao projectDao;
-
-    @EJB
-    private ProjectStateEnum projectStateEnum;
 
     // Default constructor
     public TaskBean() {
@@ -84,11 +80,9 @@ public class TaskBean implements Serializable {
             throw new RuntimeException("Error finding task by title, responsible id and project id");
         }
 
-        int state = projectStateEnum.getIdFromState(taskEntityFromDB.getState());
-
         return new ChartTask(taskEntityFromDB.getId(),
                 taskEntityFromDB.getTitle(),
-                state,
+                taskEntityFromDB.getState().getId(),
                 taskEntityFromDB.getProjectedStartDate(),
                 taskEntityFromDB.getDeadline());
     }
@@ -115,7 +109,7 @@ public class TaskBean implements Serializable {
             otherExecutors = newTask.getOtherExecutors();
         }
 
-        Set<TaskEntity> dependencies = getSetOfDependencies(newTask.getDependencies());
+        Set<TaskEntity> dependencies = getSetOfDependencies(newTask.getDependencies(), newTask.getProjectId());
 
         if (dependencies == null) {
             logger.error("The task's dependencies are invalid");
@@ -131,7 +125,7 @@ public class TaskBean implements Serializable {
 
         Set<M2MTaskDependencies> dependenciesRelationship = createTaskDependenciesRelationship(taskEntity, dependencies);
 
-        Set<TaskEntity> dependentTasks = getSetOfDependencies(newTask.getDependentTasks());
+        Set<TaskEntity> dependentTasks = getSetOfDependencies(newTask.getDependentTasks(), newTask.getProjectId());
 
         if (dependentTasks == null) {
             logger.error("The task's dependencies are invalid");
@@ -165,7 +159,6 @@ public class TaskBean implements Serializable {
         taskEntity.setDependencies(dependenciesRelationship);
         taskEntity.setDependentTasks(dependentRelationship);
         taskEntity.setProjectId(project);
-
         return taskEntity;
     }
 
@@ -174,7 +167,7 @@ public class TaskBean implements Serializable {
      * @param taskDependencies the set of task's dependencies
      * @return the set of task's dependencies
      */
-    public Set<TaskEntity> getSetOfDependencies(Set<Integer> taskDependencies) {
+    public Set<TaskEntity> getSetOfDependencies(Set<Integer> taskDependencies, int projectId) {
         Set<TaskEntity> dependencies = new HashSet<>();
 
         if (taskDependencies != null && !taskDependencies.isEmpty()) {
@@ -183,7 +176,7 @@ public class TaskBean implements Serializable {
                     logger.warn("The task's dependency id is invalid: {}", dependencyId);
                     continue;
                 }
-                TaskEntity dependency = taskDao.findTaskById(dependencyId);
+                TaskEntity dependency = taskDao.findTaskByIdAndProjectId(dependencyId, projectId);
                 if (dependency == null) {
                     logger.warn("The task's dependency does not exist: {}", dependencyId);
                     continue;
@@ -229,8 +222,8 @@ public class TaskBean implements Serializable {
         logger.info("Checking if the start date of the new task is not before the deadline of its dependencies");
 
         if (dependencies == null || dependencies.isEmpty()) {
-            logger.error("The task has no dependencies, so its start date cannot be valid");
-            return false;
+            logger.info("The task has no dependencies, so its start date is always valid");
+            return true;
         }
 
         int countInvalid = 0;
@@ -265,7 +258,7 @@ public class TaskBean implements Serializable {
         }
 
         if (dependentTasks == null || dependentTasks.isEmpty()) {
-            logger.info("The new task has no dependent tasks");
+            logger.info("The new task has no dependent tasks, so no start dates to update");
             return;
         }
 
@@ -278,5 +271,137 @@ public class TaskBean implements Serializable {
                 throw new IllegalArgumentException("The projected start date of dependent task " + dependentTask.getTitle() + " is being set after its deadline");
             }
         }
+    }
+
+    /**
+     * Creates a detailed task, from an id passed as a parameter, that belongs to a ChartTask.
+     * This task is used to display the detailed information of a task.
+     * @param id the id of the task
+     * @return the detailed task
+     */
+    public DetailedTask createDetailedTask (int id) {
+        logger.info("Creating detailed task");
+
+        // Find the task by its id
+        TaskEntity taskEntity;
+        try {
+            taskEntity = taskDao.findTaskById(id);
+        } catch (Exception e) {
+            logger.error("Error finding task by id", e);
+            throw new RuntimeException("Error finding task by id: " + e.getMessage(), e);
+        }
+
+        if (taskEntity == null) {
+            throw new IllegalArgumentException("Task with id " + id + " not found");
+        }
+
+        Map<String, Set<String>> executors = setTaskExecutors(taskEntity.getOtherExecutors());
+
+        Set<String> users = executors.get("users");
+        Set<String> externalExecutors = executors.get("externalExecutors");
+
+// Now you can use users and externalExecutors to set your variables
+        Set<ChartTask> dependencies = createChartTaskFromRelationships(taskEntity.getDependencies());
+        Set<ChartTask> dependentTasks = createChartTaskFromRelationships(taskEntity.getDependentTasks());
+
+        return new DetailedTask(taskEntity.getTitle(),
+                taskEntity.getDescription(),
+                taskEntity.getProjectedStartDate(),
+                taskEntity.getDeadline(),
+                taskEntity.getResponsible().getId(),
+                taskEntity.getProjectId().getId(),
+                users,
+                dependencies,
+                dependentTasks,
+                taskEntity.getId(),
+                taskEntity.getState().getId(),
+                externalExecutors);
+
+    }
+
+    /**
+     * Sets the task executors
+     * @param executors the set of executors
+     * @return a map with the users and the external executors
+     */
+    public Map<String, Set<String>> setTaskExecutors(Set<String> executors) {
+        logger.info("Setting task executors");
+
+        Set<String> users = new HashSet<>();
+        Set<String> externalExecutors = new HashSet<>();
+        boolean userExists;
+        String firstName;
+        String lastName;
+
+        // Check if the task has executors
+        // If it does not have executors, return an empty map
+        if (executors == null || executors.isEmpty()) {
+            logger.info("The task has no executors");
+            return new HashMap<>();
+        }
+
+        // Check if the executors are users or external collaborators
+        for (String executor : executors) {
+            if (executor == null || executor.isBlank()) {
+                logger.warn("The executor is null or blank");
+                continue;
+            }
+
+            String[] names = executor.split(" ");
+
+            firstName = names[0];
+            lastName = names[names.length - 1];
+
+            try {
+                userExists = userDao.existsByFirstAndLastName(firstName, lastName);
+            } catch (Exception e) {
+                logger.error("Error checking if user exists by first and last name", e);
+                throw new RuntimeException("Error checking if user exists by first and last name: " + e.getMessage(), e);
+            }
+
+            if (userExists) {
+                users.add(executor);
+            } else {
+                externalExecutors.add(executor);
+            }
+        }
+
+        // Combine users and externalExecutors into a map
+        Map<String, Set<String>> allExecutors = new HashMap<>();
+        allExecutors.put("users", users);
+        allExecutors.put("externalExecutors", externalExecutors);
+
+        return allExecutors;
+    }
+
+    /**
+     * Creates chart tasks from the relationships between tasks
+     * @param taskDependencies the set of task dependencies
+     * @return the set of chart tasks
+     */
+    public Set<ChartTask> createChartTaskFromRelationships(Set<M2MTaskDependencies> taskDependencies) {
+        logger.info("Creating chart tasks from relationships");
+
+        Set<ChartTask> chartTasks = new HashSet<>();
+
+        if (taskDependencies == null || taskDependencies.isEmpty()) {
+            logger.info("The task dependencies are null or empty");
+            return chartTasks;
+        }
+
+        for (M2MTaskDependencies taskDependency : taskDependencies) {
+            TaskEntity dependentTask = taskDependency.getDependentTask();
+            if (dependentTask != null) {
+                chartTasks.add(new ChartTask(dependentTask.getId(),
+                        dependentTask.getTitle(),
+                        dependentTask.getState().getId(),
+                        dependentTask.getProjectedStartDate(),
+                        dependentTask.getDeadline()));
+            } else {
+                logger.warn("Dependent task is null for taskDependency with id: {}", taskDependency.getId());
+            }
+        }
+
+        return chartTasks;
     }
 }

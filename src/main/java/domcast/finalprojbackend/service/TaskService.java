@@ -4,6 +4,7 @@ import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.task.TaskBean;
 import domcast.finalprojbackend.bean.user.AuthenticationAndAuthorization;
 import domcast.finalprojbackend.dto.taskDto.ChartTask;
+import domcast.finalprojbackend.dto.taskDto.DetailedTask;
 import domcast.finalprojbackend.dto.taskDto.NewTask;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
@@ -68,5 +69,43 @@ public class TaskService  {
         return response;
     }
 
+    @GET
+    @Path("/detail")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getDetailedTask(@HeaderParam("token") String token, @HeaderParam("id") int userId, @QueryParam("id") int taskId, @Context HttpServletRequest request) {
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with token {} is getting the detailed information of the task with id {} from IP address {}", token, taskId, ipAddress);
+
+        // Check if the id is valid
+        if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(taskId)) {
+            logger.info("User with session token {} tried to get the detailed information of a task unsuccessfully", token);
+            return Response.status(400).entity("Invalid id").build();
+        }
+
+        // Check if the user is authorized to get the task
+        if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, userId) &&
+                !authenticationAndAuthorization.isUserMemberOfTheProject(userId, taskId)) {
+            logger.info("User with session token {} tried to get the detailed information of a task unsuccessfully", token);
+            return Response.status(401).entity("Unauthorized").build();
+        }
+
+        Response response;
+        DetailedTask detailedTask;
+
+        // Get the task
+        try {
+            detailedTask = taskBean.createDetailedTask(taskId);
+            logger.info("User with session token {} got the detailed information of the task with id {} from IP address {}", token, taskId, ipAddress);
+            response = Response.status(200).entity(detailedTask).build();
+        } catch (IllegalArgumentException e) {
+            logger.error("Error getting task", e);
+            response = Response.status(400).entity(e.getMessage()).build();
+        } catch (RuntimeException e) {
+            logger.error("Error getting task", e);
+            response = Response.status(500).entity(e.getMessage()).build();
+        }
+
+        return response;
+    }
 
 }

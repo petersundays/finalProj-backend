@@ -34,9 +34,12 @@ import java.util.Set;
 @Entity
 @Table(name = "task")
 
-@NamedQuery(name = "Task.findTaskById", query = "SELECT t FROM TaskEntity t WHERE t.id = :id")
+@NamedQuery(name = "Task.findTaskByIdAndProjectId",
+        query = "SELECT t FROM TaskEntity t WHERE t.id = :id AND t.projectId.id = :projectId")
 @NamedQuery(name = "Task.findTaskByTitleResponsibleProject",
         query = "SELECT t FROM TaskEntity t WHERE t.title = :title AND t.responsible.id = :responsibleId AND t.projectId.id = :projectId")
+@NamedQuery(name = "Task.findTaskById",
+        query = "SELECT t FROM TaskEntity t WHERE t.id = :id")
 
 public class TaskEntity implements Serializable {
     private static final long serialVersionUID = 1L;

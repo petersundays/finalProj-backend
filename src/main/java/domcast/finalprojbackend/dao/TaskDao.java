@@ -33,13 +33,15 @@ public class TaskDao extends AbstractDao<TaskEntity> {
      * @param id the id of the task
      * @return the TaskEntity object if found, null otherwise
      */
-    public TaskEntity findTaskById(int id) {
-        logger.info("Finding task by id {}", id);
+    public TaskEntity findTaskByIdAndProjectId(int id, int projectId) {
+        logger.info("Finding task by id {} and project id {}", id, projectId);
         try {
-            return (TaskEntity) em.createNamedQuery("Task.findTaskById").setParameter("id", id)
+            return em.createNamedQuery("Task.findTaskByIdAndProjectId", TaskEntity.class)
+                    .setParameter("id", id)
+                    .setParameter("projectId", projectId)
                     .getSingleResult();
         } catch (NoResultException e) {
-            logger.error("Task with id {} not found", id);
+            logger.error("Task with id {} and project id {} not found", id, projectId);
             return null;
         }
     }
@@ -61,6 +63,24 @@ public class TaskDao extends AbstractDao<TaskEntity> {
                     .setParameter("projectId", projectId)
                     .getSingleResult();
         } catch (NoResultException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Finds a task by its id.
+     *
+     * @param id the id of the task
+     * @return the TaskEntity object if found, null otherwise
+     */
+    public TaskEntity findTaskById(int id) {
+        logger.info("Finding task by id {}", id);
+        try {
+            return em.createNamedQuery("Task.findTaskById", TaskEntity.class)
+                    .setParameter("id", id)
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            logger.error("Task with id {} not found", id);
             return null;
         }
     }
