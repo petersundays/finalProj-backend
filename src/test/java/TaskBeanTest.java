@@ -3,6 +3,8 @@ import domcast.finalprojbackend.bean.task.TaskBean;
 import domcast.finalprojbackend.dao.ProjectDao;
 import domcast.finalprojbackend.dao.TaskDao;
 import domcast.finalprojbackend.dao.UserDao;
+import domcast.finalprojbackend.dto.taskDto.ChartTask;
+import domcast.finalprojbackend.dto.taskDto.DetailedTask;
 import domcast.finalprojbackend.dto.taskDto.NewTask;
 import domcast.finalprojbackend.entity.M2MTaskDependencies;
 import domcast.finalprojbackend.entity.ProjectEntity;
@@ -16,6 +18,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -47,7 +50,11 @@ public class TaskBeanTest {
     }
 
     /**
-     * Test the newTask method for a success scenario
+     * Test the newTask method for a success scenario.
+     * This test will throw an exception because the task already exists
+     * and the method is not supposed to create a new task if it already exists
+     * in the database.
+     * The method should return a RuntimeException.
      */
     @Test
     public void testNewTask_Success() {
@@ -67,7 +74,10 @@ public class TaskBeanTest {
     }
 
     /**
-     * Test the newTask method for a failure scenario
+     * Test the newTask method for a failure scenario.
+     * This test will throw an exception because the responsible user does not exist
+     * in the database.
+     * The method should return a RuntimeException.
      */
     @Test
     public void testNewTask_Failure() {
@@ -84,7 +94,9 @@ public class TaskBeanTest {
     }
 
     /**
-     * Test the registerNewTaskInfo method for a success scenario
+     * Test the registerNewTaskInfo method for a success scenario.
+     * The method should return a TaskEntity object.
+     *
      */
     @Test
     public void testRegisterNewTaskInfo_Success() {
@@ -105,7 +117,9 @@ public class TaskBeanTest {
     }
 
     /**
-     * Test the registerNewTaskInfo method for a failure scenario
+     * Test the registerNewTaskInfo method for a failure scenario.
+     * The method should return null because the responsible user does not exist
+     * in the database.
      */
     @Test
     public void testRegisterNewTaskInfo_Failure() {
@@ -122,7 +136,8 @@ public class TaskBeanTest {
     }
 
     /**
-     * Test the getSetOfDependencies method for a success scenario
+     * Test the getSetOfDependencies method for a success scenario.
+     * The method should return a set of TaskEntity objects.
      */
     @Test
     public void testGetSetOfDependencies_Success() {
@@ -138,7 +153,9 @@ public class TaskBeanTest {
     }
 
     /**
-     * Test the getSetOfDependencies method for a failure scenario
+     * Test the getSetOfDependencies method for a failure scenario.
+     * The method should return an empty set because the task does not exist
+     * in the database.
      */
     @Test
     public void testGetSetOfDependencies_Failure() {
@@ -154,7 +171,8 @@ public class TaskBeanTest {
     }
 
     /**
-     * Test the createTaskDependenciesRelationship method for a success scenario
+     * Test the createTaskDependenciesRelationship method for a success scenario.
+     * The method should return a set of M2MTaskDependencies objects.
      */
     @Test
     public void testCreateTaskDependenciesRelationship_Success() {
@@ -170,7 +188,9 @@ public class TaskBeanTest {
     }
 
     /**
-     * Test the createTaskDependenciesRelationship method for a failure scenario
+     * Test the createTaskDependenciesRelationship method for a failure scenario.
+     * The method should return an empty set because the related task does not have
+     * any dependencies.
      */
     @Test
     public void testCreateTaskDependenciesRelationship_Failure() {
@@ -187,7 +207,8 @@ public class TaskBeanTest {
     }
 
     /**
-     * Test the isStartDateValid method for a success scenario
+     * Test the isStartDateValid method for a success scenario.
+     * The method should return true because the start date is valid.
      */
     @Test
     public void testIsStartDateValid_Success() {
@@ -202,7 +223,8 @@ public class TaskBeanTest {
     }
 
     /**
-     * Test the isStartDateValid method for a failure scenario
+     * Test the isStartDateValid method for a failure scenario.
+     * The method should return false because the start date is not valid.
      */
     @Test
     public void testIsStartDateValid_Failure() {
@@ -217,7 +239,8 @@ public class TaskBeanTest {
     }
 
     /**
-     * Test the updateDependentTasksStartDate method for a success scenario
+     * Test the updateDependentTasksStartDate method for a success scenario.
+     * The method should call the merge method from the taskDao.
      */
     @Test
     public void testUpdateDependentTasksStartDate_Success() {
@@ -233,7 +256,8 @@ public class TaskBeanTest {
     }
 
     /**
-     * Test the updateDependentTasksStartDate method for a failure scenario
+     * Test the updateDependentTasksStartDate method for a failure scenario.
+     * The method should not throw any exception.
      */
     @Test
     public void testUpdateDependentTasksStartDate_Failure() {
@@ -245,5 +269,116 @@ public class TaskBeanTest {
 
         // No exception should be thrown
         taskBean.updateDependentTasksStartDate(LocalDateTime.now().plusDays(3), dependentTasks);
+    }
+
+    /**
+     * Test the createDetailedTask method for a success scenario.
+     * The method should return a DetailedTask object.
+     */
+    @Test
+    public void testCreateDetailedTask_Success() {
+        int taskId = 1;
+        TaskEntity taskEntity = new TaskEntity();
+        taskEntity.setTitle("Test Task");
+        taskEntity.setDescription("Test Description");
+        taskEntity.setProjectedStartDate(LocalDateTime.now());
+        taskEntity.setDeadline(LocalDateTime.now().plusDays(1));
+        taskEntity.setResponsible(new UserEntity());
+        taskEntity.setProjectId(new ProjectEntity());
+        taskEntity.setOtherExecutors(new HashSet<>());
+        taskEntity.setDependencies(new HashSet<>());
+        taskEntity.setDependentTasks(new HashSet<>());
+
+        when(taskDao.findTaskById(taskId)).thenReturn(taskEntity);
+
+        DetailedTask result = taskBean.createDetailedTask(taskId);
+
+        assertNotNull(result);
+    }
+
+    /**
+     * Test the createDetailedTask method for a failure scenario.
+     * The method should throw an exception because the task does not exist
+     * in the database.
+     */
+    @Test
+    public void testCreateDetailedTask_Failure() {
+        int taskId = 1;
+
+        when(taskDao.findTaskById(taskId)).thenReturn(null);
+
+        assertThrows(IllegalArgumentException.class, () -> taskBean.createDetailedTask(taskId));
+    }
+
+    /**
+     * Test the setTaskExecutors method for a success scenario.
+     * The method should return a map with a set of users.
+     */
+    @Test
+    public void testSetTaskExecutors_Success() {
+        Set<String> executors = new HashSet<>();
+        executors.add("John Doe");
+
+        when(userDao.existsByFirstAndLastName(anyString(), anyString())).thenReturn(true);
+
+        Map<String, Set<String>> result = taskBean.setTaskExecutors(executors);
+
+        assertNotNull(result);
+        assertFalse(result.get("users").isEmpty());
+    }
+
+    /**
+     * Test the setTaskExecutors method for a failure scenario.
+     * The method should return a map with an empty set of users.
+     */
+    @Test
+    public void testSetTaskExecutors_Failure() {
+        Set<String> executors = new HashSet<>();
+        executors.add("");
+
+        Map<String, Set<String>> result = taskBean.setTaskExecutors(executors);
+
+        assertNotNull(result);
+        assertTrue(result.get("users").isEmpty());
+    }
+
+    /**
+     * Test the createChartTaskFromRelationships method for a success scenario.
+     * The method should return a set of ChartTask objects.
+     */
+    @Test
+    public void testCreateChartTaskFromRelationships_Success() {
+        Set<M2MTaskDependencies> taskDependencies = new HashSet<>();
+        M2MTaskDependencies taskDependency = new M2MTaskDependencies();
+        TaskEntity dependentTask = new TaskEntity();
+        dependentTask.setId(1);
+        dependentTask.setTitle("Test Task");
+        dependentTask.setProjectedStartDate(LocalDateTime.now());
+        dependentTask.setDeadline(LocalDateTime.now().plusDays(1));
+        taskDependency.setDependentTask(dependentTask);
+        taskDependencies.add(taskDependency);
+
+        Set<ChartTask> result = taskBean.createChartTaskFromRelationships(taskDependencies);
+
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+    }
+
+    /**
+     * Test the createChartTaskFromRelationships method for a failure scenario.
+     * The method should return an empty set because the dependent task does not exist
+     * in the database.
+     */
+    @Test
+    public void testCreateChartTaskFromRelationships_Failure() {
+        Set<M2MTaskDependencies> taskDependencies = new HashSet<>();
+        M2MTaskDependencies taskDependency = new M2MTaskDependencies();
+        taskDependency.setDependentTask(null);
+        taskDependencies.add(taskDependency);
+
+        Set<ChartTask> result = taskBean.createChartTaskFromRelationships(taskDependencies);
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
     }
 }

@@ -83,4 +83,5 @@ public class TaskDao extends AbstractDao<TaskEntity> {
             logger.error("Task with id {} not found", id);
             return null;
         }
+    }
 }
