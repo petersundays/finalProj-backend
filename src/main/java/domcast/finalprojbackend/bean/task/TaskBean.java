@@ -1,6 +1,7 @@
 package domcast.finalprojbackend.bean.task;
 
 import domcast.finalprojbackend.bean.DataValidator;
+import domcast.finalprojbackend.bean.project.ProjectBean;
 import domcast.finalprojbackend.dao.ProjectDao;
 import domcast.finalprojbackend.dao.TaskDao;
 import domcast.finalprojbackend.dao.UserDao;
@@ -11,6 +12,7 @@ import domcast.finalprojbackend.entity.M2MTaskDependencies;
 import domcast.finalprojbackend.entity.ProjectEntity;
 import domcast.finalprojbackend.entity.TaskEntity;
 import domcast.finalprojbackend.entity.UserEntity;
+import domcast.finalprojbackend.enums.TaskStateEnum;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import org.apache.logging.log4j.LogManager;
@@ -18,7 +20,10 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 @Stateless
 public class TaskBean implements Serializable {
@@ -38,11 +43,14 @@ public class TaskBean implements Serializable {
     @EJB
     private ProjectDao projectDao;
 
+    @EJB
+    private ProjectBean projectBean;
+
     // Default constructor
     public TaskBean() {
     }
 
-    public ChartTask newTask(NewTask newTask) {
+    public ChartTask newTask(NewTask<Integer> newTask) {
         logger.info("Creating new task");
 
         if (newTask == null) {
@@ -87,7 +95,7 @@ public class TaskBean implements Serializable {
                 taskEntityFromDB.getDeadline());
     }
 
-    public TaskEntity registerNewTaskInfo (NewTask newTask) {
+    public TaskEntity registerNewTaskInfo (NewTask<Integer> newTask) {
 
         if (newTask == null) {
             logger.error("When registering new task info, the new task is null");
@@ -100,6 +108,11 @@ public class TaskBean implements Serializable {
 
         if (responsible == null) {
             logger.error("The responsible user does not exist");
+            return null;
+        }
+
+        if (!projectBean.isUserActiveInProject(newTask.getResponsibleId(), newTask.getProjectId())) {
+            logger.error("The responsible user is not a member of the project");
             return null;
         }
 
@@ -234,7 +247,7 @@ public class TaskBean implements Serializable {
         }
 
         if (countInvalid > 0) {
-            logger.error("The projected start date of the new task is earlier than the deadline of " + countInvalid + " of its dependencies");
+            logger.error("The projected start date of the new task is earlier than the deadline of {} of its dependencies", countInvalid);
             return false;
         }
 
@@ -283,17 +296,7 @@ public class TaskBean implements Serializable {
         logger.info("Creating detailed task");
 
         // Find the task by its id
-        TaskEntity taskEntity;
-        try {
-            taskEntity = taskDao.findTaskById(id);
-        } catch (Exception e) {
-            logger.error("Error finding task by id", e);
-            throw new RuntimeException("Error finding task by id: " + e.getMessage(), e);
-        }
-
-        if (taskEntity == null) {
-            throw new IllegalArgumentException("Task with id " + id + " not found");
-        }
+        TaskEntity taskEntity = findTaskById(id);
 
         Map<String, Set<String>> executors = setTaskExecutors(taskEntity.getOtherExecutors());
 
@@ -317,6 +320,26 @@ public class TaskBean implements Serializable {
                 taskEntity.getState().getId(),
                 externalExecutors);
 
+    }
+
+    /**
+     * Finds a task by its id
+     * @param id the id of the task
+     * @return the task entity
+     */
+    public TaskEntity findTaskById(int id) {
+        TaskEntity taskEntity;
+        try {
+            taskEntity = taskDao.findTaskById(id);
+        } catch (Exception e) {
+            logger.error("Error finding task by id", e);
+            throw new RuntimeException("Error finding task by id: " + e.getMessage(), e);
+        }
+
+        if (taskEntity == null) {
+            throw new IllegalArgumentException("Task with id " + id + " not found");
+        }
+        return taskEntity;
     }
 
     /**
@@ -384,11 +407,13 @@ public class TaskBean implements Serializable {
 
         Set<ChartTask> chartTasks = new HashSet<>();
 
+        // Check if the task dependencies are null or empty
         if (taskDependencies == null || taskDependencies.isEmpty()) {
             logger.info("The task dependencies are null or empty");
             return chartTasks;
         }
 
+        // Create chart tasks from the task dependencies
         for (M2MTaskDependencies taskDependency : taskDependencies) {
             TaskEntity dependentTask = taskDependency.getDependentTask();
             if (dependentTask != null) {
@@ -403,5 +428,43 @@ public class TaskBean implements Serializable {
         }
 
         return chartTasks;
+    }
+
+    public DetailedTask updateTaskState(Integer taskId, Integer stateId) {
+        logger.info("Updating task state");
+
+        // Check if the task id and the state id are valid
+        if (taskId == null || taskId <= 0) {
+            throw new IllegalArgumentException("Invalid task id: " + taskId);
+        }
+
+        logger.info("Task id: {}", taskId);
+
+        // Check if the state id is valid
+        if (stateId == null || !TaskStateEnum.isValidId(stateId)) {
+            throw new IllegalArgumentException("Invalid state id: " + stateId);
+        }
+
+        logger.info("State id: {}", stateId);
+
+        // Find the task by its id
+        TaskEntity taskEntity = findTaskById(taskId);
+
+        logger.info("Task entity: {}", taskEntity);
+
+        // Check if the task entity is null
+        if (taskEntity == null) {
+            throw new IllegalArgumentException("Task with id " + taskId + " not found");
+        }
+
+        logger.info("Task entity state: {}", taskEntity.getState());
+
+        // Update the task state
+        taskEntity.setState(TaskStateEnum.fromId(stateId));
+
+        // Merge the task entity
+        taskDao.merge(taskEntity);
+
+        return createDetailedTask(taskId);
     }
 }

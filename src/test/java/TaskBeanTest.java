@@ -1,4 +1,5 @@
 import domcast.finalprojbackend.bean.DataValidator;
+import domcast.finalprojbackend.bean.project.ProjectBean;
 import domcast.finalprojbackend.bean.task.TaskBean;
 import domcast.finalprojbackend.dao.ProjectDao;
 import domcast.finalprojbackend.dao.TaskDao;
@@ -44,9 +45,13 @@ public class TaskBeanTest {
     @Mock
     private DataValidator dataValidator;
 
+    @Mock
+    private ProjectBean projectBean;
+
     @BeforeEach
     public void setup() {
         MockitoAnnotations.openMocks(this);
+        when(projectBean.isUserActiveInProject(anyInt(), anyInt())).thenReturn(true);
     }
 
     /**
@@ -58,7 +63,7 @@ public class TaskBeanTest {
      */
     @Test
     public void testNewTask_Success() {
-        NewTask newTask = new NewTask();
+        NewTask<Integer> newTask = new NewTask<Integer>();
         newTask.setTitle("Test Task");
         newTask.setResponsibleId(1);
         newTask.setProjectId(1);
@@ -81,7 +86,7 @@ public class TaskBeanTest {
      */
     @Test
     public void testNewTask_Failure() {
-        NewTask newTask = new NewTask();
+        NewTask<Integer> newTask = new NewTask<Integer>();
         newTask.setTitle("Test Task");
         newTask.setResponsibleId(1);
         newTask.setProjectId(1);
@@ -100,7 +105,7 @@ public class TaskBeanTest {
      */
     @Test
     public void testRegisterNewTaskInfo_Success() {
-        NewTask newTask = new NewTask();
+        NewTask<Integer> newTask = new NewTask<Integer>();
         newTask.setTitle("Test Task");
         newTask.setResponsibleId(1);
         newTask.setProjectId(1);
@@ -123,7 +128,7 @@ public class TaskBeanTest {
      */
     @Test
     public void testRegisterNewTaskInfo_Failure() {
-        NewTask newTask = new NewTask();
+        NewTask<Integer> newTask = new NewTask<Integer>();
         newTask.setTitle("Test Task");
         newTask.setResponsibleId(1);
         newTask.setProjectId(1);
@@ -380,5 +385,51 @@ public class TaskBeanTest {
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
+    }
+
+    /**
+     * Test the findTaskById method for a success scenario.
+     * The method should return a TaskEntity object.
+     */
+    @Test
+    public void testFindTaskById_Success() {
+        int taskId = 1;
+        TaskEntity taskEntity = new TaskEntity();
+        taskEntity.setTitle("Test Task");
+
+        when(taskDao.findTaskById(taskId)).thenReturn(taskEntity);
+
+        TaskEntity result = taskBean.findTaskById(taskId);
+
+        assertNotNull(result);
+        assertEquals(taskEntity, result);
+    }
+
+    /**
+     * Test the findTaskById method for a failure scenario.
+     * The method should throw an IllegalArgumentException because the task does not exist
+     * in the database.
+     */
+    @Test
+    public void testFindTaskById_Failure() {
+        int taskId = 1;
+
+        when(taskDao.findTaskById(taskId)).thenReturn(null);
+
+        assertThrows(IllegalArgumentException.class, () -> taskBean.findTaskById(taskId));
+    }
+
+    /**
+     * Test the findTaskById method for a failure scenario.
+     * The method should throw a RuntimeException because an exception occurred
+     * while finding the task by id in the database.
+     */
+    @Test
+    public void testFindTaskById_Exception() {
+        int taskId = 1;
+
+        when(taskDao.findTaskById(taskId)).thenThrow(new RuntimeException("Database error"));
+
+        assertThrows(RuntimeException.class, () -> taskBean.findTaskById(taskId));
     }
 }

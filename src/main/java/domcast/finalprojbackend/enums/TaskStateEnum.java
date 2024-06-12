@@ -60,4 +60,18 @@ public enum TaskStateEnum {
         }
         throw new IllegalArgumentException("Invalid TaskStateEnum value: " + value);
     }
+
+    /**
+     * Method that checks if the id is valid.
+     * @param id the id of the Enum
+     * @return true if the id is valid, false otherwise
+     */
+    public static boolean isValidId(int id) {
+        for (TaskStateEnum state : TaskStateEnum.values()) {
+            if (state.getId() == id) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

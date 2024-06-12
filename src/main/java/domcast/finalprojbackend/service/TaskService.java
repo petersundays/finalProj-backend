@@ -33,7 +33,7 @@ public class TaskService  {
     @Path("")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response createTask(@HeaderParam("token") String token, @HeaderParam("id") int userId, NewTask newTask, @Context HttpServletRequest request) {
+    public Response createTask(@HeaderParam("token") String token, @HeaderParam("id") int userId, NewTask<Integer> newTask, @Context HttpServletRequest request) {
         String ipAddress = request.getRemoteAddr();
         logger.info("User with token {} is creating a new task from IP address {}", token, ipAddress);
 
@@ -102,6 +102,46 @@ public class TaskService  {
             response = Response.status(400).entity(e.getMessage()).build();
         } catch (RuntimeException e) {
             logger.error("Error getting task", e);
+            response = Response.status(500).entity(e.getMessage()).build();
+        }
+
+        return response;
+    }
+
+    @PUT
+    @Path("/state")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response changeTaskState(@HeaderParam("token") String token, @HeaderParam("id") int userId, @QueryParam("id") int taskId, int state, @Context HttpServletRequest request) {
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with token {} is changing the state of the task with id {} to {} from IP address {}", token, taskId, state, ipAddress);
+
+        // Check if the id is valid
+        if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(taskId)) {
+            logger.info("User with session token {} tried to change the state of a task unsuccessfully", token);
+            return Response.status(400).entity("Invalid id").build();
+        }
+
+        // Check if the user is authorized to change the state of the task
+        if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, userId) &&
+                !authenticationAndAuthorization.isUserMemberOfTheProject(userId, taskId)) {
+            logger.info("User with session token {} tried to change the state of a task unsuccessfully", token);
+            return Response.status(401).entity("Unauthorized").build();
+        }
+
+        Response response;
+        DetailedTask detailedTask;
+
+        // Change the state of the task
+        try {
+            detailedTask = taskBean.updateTaskState(taskId, state);
+            logger.info("User with session token {} changed the state of the task with id {} to {} from IP address {}", token, taskId, state, ipAddress);
+            response = Response.status(200).entity(detailedTask).build();
+        } catch (IllegalArgumentException e) {
+            logger.error("Error changing task state", e);
+            response = Response.status(400).entity(e.getMessage()).build();
+        } catch (RuntimeException e) {
+            logger.error("Error changing task state", e);
             response = Response.status(500).entity(e.getMessage()).build();
         }
 
