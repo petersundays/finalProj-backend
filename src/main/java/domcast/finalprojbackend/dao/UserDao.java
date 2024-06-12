@@ -234,4 +234,18 @@ public class UserDao extends AbstractDao<UserEntity> {
             return false;
         }
     }
+
+    /**
+     * Checks if the user exists by first and last name.
+     * @param firstName the first name of the user
+     * @param lastName the last name of the user
+     * @return true if the user exists, false otherwise
+     */
+    public boolean existsByFirstAndLastName(String firstName, String lastName) {
+        Long count = (Long) em.createNamedQuery("User.existsByFirstAndLastName")
+                .setParameter("firstName", firstName)
+                .setParameter("lastName", lastName)
+                .getSingleResult();
+        return count > 0;
+    }
 }

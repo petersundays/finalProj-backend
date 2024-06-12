@@ -183,6 +183,5 @@ public class DataValidator {
                 newTask.getProjectedStartDate() != null && newTask.getDeadline() != null &&
                 newTask.getDeadline().isAfter(newTask.getProjectedStartDate()) &&
                 newTask.getResponsibleId() > 0 && newTask.getProjectId() > 0;
-
     }
 }

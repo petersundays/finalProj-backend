@@ -24,7 +24,7 @@ import java.util.Set;
  * @author Pedro Domingos
  */
 @XmlRootElement
-public class NewTask {
+public class NewTask<T> {
     @XmlElement
     private String title;
 
@@ -47,14 +47,27 @@ public class NewTask {
     private Set<String> otherExecutors;
 
     @XmlElement
-    private Set<Integer> dependencies;
+    private Set<T> dependencies;
 
     @XmlElement
-    private Set<Integer> dependentTasks;
+    private Set<T> dependentTasks;
 
 
     // Default constructor
     public NewTask() {
+    }
+
+    // Constructor with all parameters
+    public NewTask(String title, String description, LocalDateTime projectedStartDate, LocalDateTime deadline, int responsibleId, int projectId, Set<String> otherExecutors, Set<T> dependencies, Set<T> dependentTasks) {
+        this.title = title;
+        this.description = description;
+        this.projectedStartDate = projectedStartDate;
+        this.deadline = deadline;
+        this.responsibleId = responsibleId;
+        this.projectId = projectId;
+        this.otherExecutors = otherExecutors;
+        this.dependencies = dependencies;
+        this.dependentTasks = dependentTasks;
     }
 
     // Getters and setters
@@ -115,19 +128,19 @@ public class NewTask {
         this.otherExecutors = otherExecutors;
     }
 
-    public Set<Integer> getDependencies() {
+    public Set<T> getDependencies() {
         return dependencies;
     }
 
-    public void setDependencies(Set<Integer> dependencies) {
+    public void setDependencies(Set<T> dependencies) {
         this.dependencies = dependencies;
     }
 
-    public Set<Integer> getDependentTasks() {
+    public Set<T> getDependentTasks() {
         return dependentTasks;
     }
 
-    public void setDependentTasks(Set<Integer> dependentTasks) {
+    public void setDependentTasks(Set<T> dependentTasks) {
         this.dependentTasks = dependentTasks;
     }
 }
