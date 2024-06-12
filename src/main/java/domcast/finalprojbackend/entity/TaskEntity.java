@@ -145,6 +145,11 @@ public class TaskEntity implements Serializable {
     }
 
     public void setState(TaskStateEnum state) {
+        if (state == TaskStateEnum.FINISHED) {
+            this.realEndDate = LocalDateTime.now();
+        } else if (state == TaskStateEnum.IN_PROGRESS) {
+            this.realStartDate = LocalDateTime.now();
+        }
         this.state = state;
     }
 
