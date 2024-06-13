@@ -1,8 +1,6 @@
 package domcast.finalprojbackend.dao;
 
-import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.entity.InterestEntity;
-import domcast.finalprojbackend.entity.LabEntity;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.NoResultException;
 import org.apache.logging.log4j.LogManager;
@@ -40,7 +38,6 @@ public class InterestDao extends AbstractDao<InterestEntity> {
      * @param name the name of the interest
      * @return the InterestEntity object if found, null otherwise
      */
-
     public InterestEntity findInterestByName(String name) {
         logger.info("Finding interest by name {}", name);
         try {

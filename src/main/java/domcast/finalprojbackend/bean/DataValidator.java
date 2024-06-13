@@ -3,10 +3,12 @@ package domcast.finalprojbackend.bean;
 import domcast.finalprojbackend.bean.user.PasswordBean;
 import domcast.finalprojbackend.dto.InterestDto;
 import domcast.finalprojbackend.dto.SkillDto;
+import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
 import domcast.finalprojbackend.dto.taskDto.NewTask;
 import domcast.finalprojbackend.dto.userDto.FirstRegistration;
 import domcast.finalprojbackend.dto.userDto.FullRegistration;
 import domcast.finalprojbackend.dto.userDto.Login;
+import domcast.finalprojbackend.enums.ComponentResourceEnum;
 import domcast.finalprojbackend.enums.InterestEnum;
 import domcast.finalprojbackend.enums.SkillTypeEnum;
 import jakarta.ejb.EJB;
@@ -175,7 +177,7 @@ public class DataValidator {
         return true;
     }
 
-    public boolean isTaskMandatoryDataValid(NewTask newTask) {
+    public boolean isTaskMandatoryDataValid(NewTask<Integer> newTask) {
         logger.info("Checking if mandatory data is valid for new task");
 
         return newTask.getTitle() != null && !newTask.getTitle().isBlank() &&
@@ -183,5 +185,19 @@ public class DataValidator {
                 newTask.getProjectedStartDate() != null && newTask.getDeadline() != null &&
                 newTask.getDeadline().isAfter(newTask.getProjectedStartDate()) &&
                 newTask.getResponsibleId() > 0 && newTask.getProjectId() > 0;
+    }
+
+    public boolean isCRMandatoryDataValid(DetailedCR detailedCR) {
+        logger.info("Checking if mandatory data is valid for detailed CR");
+
+        return detailedCR.getName() != null && !detailedCR.getName().isBlank() &&
+                detailedCR.getDescription() != null && !detailedCR.getDescription().isBlank() &&
+                detailedCR.getProjectId() > 0 &&
+                detailedCR.getBrand() != null && !detailedCR.getBrand().isBlank() &&
+                detailedCR.getPartNumber() != null && detailedCR.getPartNumber() > 0 &&
+                ComponentResourceEnum.isValidId(detailedCR.getType()) &&
+                detailedCR.getQuantity() > 0 &&
+                detailedCR.getSupplier() != null && !detailedCR.getSupplier().isBlank() &&
+                detailedCR.getSupplierContact() > 0;
     }
 }

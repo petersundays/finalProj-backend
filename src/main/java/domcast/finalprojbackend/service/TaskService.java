@@ -29,6 +29,14 @@ public class TaskService  {
     @Inject
     private AuthenticationAndAuthorization authenticationAndAuthorization;
 
+    /**
+     * Creates a new task based on the new task passed as parameter.
+     * The method validates the data, registers the data in the database and returns the created task.
+     * @param token the token of the user creating the task.
+     * @param userId the id of the user creating the task.
+     * @param newTask the new task to be created.
+     * @return the created task if created successfully, null otherwise.
+     */
     @POST
     @Path("")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -38,7 +46,7 @@ public class TaskService  {
         logger.info("User with token {} is creating a new task from IP address {}", token, ipAddress);
 
         // Check if the id is valid
-        if (!dataValidator.isIdValid(userId)) {
+        if (!dataValidator.isIdValid(userId) && !dataValidator.isIdValid(newTask.getProjectId())) {
             logger.info("User with session token {} tried to create a task unsuccessfully", token);
             return Response.status(400).entity("Invalid id").build();
         }
@@ -69,22 +77,31 @@ public class TaskService  {
         return response;
     }
 
+    /**
+     * Gets the detailed information of a task based on the task id passed as parameter.
+     * The method validates the data, gets the task from the database and returns the detailed task.
+     * @param token the token of the user getting the task.
+     * @param userId the id of the user getting the task.
+     * @param taskId the id of the task to get the detailed information.
+     * @param projectId the id of the project the task belongs to.
+     * @return the detailed task if found, null otherwise.
+     */
     @GET
     @Path("/detail")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getDetailedTask(@HeaderParam("token") String token, @HeaderParam("id") int userId, @QueryParam("id") int taskId, @Context HttpServletRequest request) {
+    public Response getDetailedTask(@HeaderParam("token") String token, @HeaderParam("id") int userId, @QueryParam("id") int taskId, @QueryParam("projectId") int projectId, @Context HttpServletRequest request) {
         String ipAddress = request.getRemoteAddr();
         logger.info("User with token {} is getting the detailed information of the task with id {} from IP address {}", token, taskId, ipAddress);
 
         // Check if the id is valid
-        if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(taskId)) {
+        if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(taskId) || !dataValidator.isIdValid(projectId)) {
             logger.info("User with session token {} tried to get the detailed information of a task unsuccessfully", token);
             return Response.status(400).entity("Invalid id").build();
         }
 
         // Check if the user is authorized to get the task
         if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, userId) &&
-                !authenticationAndAuthorization.isUserMemberOfTheProject(userId, taskId)) {
+                !authenticationAndAuthorization.isUserMemberOfTheProject(userId, projectId)) {
             logger.info("User with session token {} tried to get the detailed information of a task unsuccessfully", token);
             return Response.status(401).entity("Unauthorized").build();
         }
@@ -108,23 +125,33 @@ public class TaskService  {
         return response;
     }
 
+    /**
+     * Changes the state of a task based on the task id and the new state passed as parameter.
+     * The method validates the data, changes the state of the task in the database and returns the detailed task.
+     * @param token the token of the user changing the state of the task.
+     * @param userId the id of the user changing the state of the task.
+     * @param taskId the id of the task to change the state.
+     * @param projectId the id of the project the task belongs to.
+     * @param state the new state of the task.
+     * @return the detailed task if the state was changed successfully, null otherwise.
+     */
     @PUT
     @Path("/state")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response changeTaskState(@HeaderParam("token") String token, @HeaderParam("id") int userId, @QueryParam("id") int taskId, int state, @Context HttpServletRequest request) {
+    public Response changeTaskState(@HeaderParam("token") String token, @HeaderParam("id") int userId, @QueryParam("id") int taskId, @QueryParam("projectId") int projectId, int state, @Context HttpServletRequest request) {
         String ipAddress = request.getRemoteAddr();
         logger.info("User with token {} is changing the state of the task with id {} to {} from IP address {}", token, taskId, state, ipAddress);
 
         // Check if the id is valid
-        if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(taskId)) {
+        if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(taskId) || !dataValidator.isIdValid(projectId)) {
             logger.info("User with session token {} tried to change the state of a task unsuccessfully", token);
             return Response.status(400).entity("Invalid id").build();
         }
 
         // Check if the user is authorized to change the state of the task
         if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, userId) &&
-                !authenticationAndAuthorization.isUserMemberOfTheProject(userId, taskId)) {
+                !authenticationAndAuthorization.isUserMemberOfTheProject(userId, projectId)) {
             logger.info("User with session token {} tried to change the state of a task unsuccessfully", token);
             return Response.status(401).entity("Unauthorized").build();
         }

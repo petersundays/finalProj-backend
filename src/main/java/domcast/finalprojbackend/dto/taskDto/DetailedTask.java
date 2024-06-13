@@ -3,11 +3,12 @@ package domcast.finalprojbackend.dto.taskDto;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Set;
 
 @XmlRootElement
-public class DetailedTask extends NewTask<ChartTask> {
+public class DetailedTask extends NewTask<ChartTask> implements Serializable {
     @XmlElement
     private int id;
 
