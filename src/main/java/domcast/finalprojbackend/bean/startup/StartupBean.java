@@ -24,5 +24,6 @@ public class StartupBean implements Serializable {
         startupCreator.createDefaultLabs();
         startupCreator.createDefaultUsers();
         startupCreator.setDefaultSystemVariables();
+        startupCreator.createDefaultProjects();
     }
 }

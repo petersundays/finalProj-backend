@@ -171,13 +171,18 @@ public class ComponentResourceBean implements Serializable {
             return;
         }
 
+        if (projectEntity == null) {
+            logger.error("Project not found");
+            return;
+        }
+
         try {
             M2MComponentProject m2MComponentProject = new M2MComponentProject();
             m2MComponentProject.setProject(projectEntity);
             m2MComponentProject.setComponentResource(componentResource);
             m2MComponentProject.setQuantity(quantity);
-            componentResource.addProject(m2MComponentProject);
             projectEntity.addComponentResource(m2MComponentProject);
+            componentResource.addProject(m2MComponentProject);
             projectDao.merge(projectEntity);
             componentResourceDao.merge(componentResource);
         } catch (PersistenceException e) {
