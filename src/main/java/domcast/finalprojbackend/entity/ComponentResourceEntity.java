@@ -4,6 +4,7 @@ import domcast.finalprojbackend.enums.ComponentResourceEnum;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -78,7 +79,7 @@ public class ComponentResourceEntity implements Serializable {
 
     // Projects that use the component or resource
     @OneToMany(mappedBy = "componentResource", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Set<M2MComponentProject> projects;
+    private Set<M2MComponentProject> projects = new HashSet<>();
 
     // Default constructor
     public ComponentResourceEntity() {

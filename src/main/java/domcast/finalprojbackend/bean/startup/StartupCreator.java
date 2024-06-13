@@ -1,17 +1,16 @@
 package domcast.finalprojbackend.bean.startup;
 
 
+import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.SystemBean;
 import domcast.finalprojbackend.bean.user.PasswordBean;
 import domcast.finalprojbackend.bean.user.TokenBean;
-import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.dao.LabDao;
+import domcast.finalprojbackend.dao.ProjectDao;
 import domcast.finalprojbackend.dao.UserDao;
-import domcast.finalprojbackend.entity.LabEntity;
-import domcast.finalprojbackend.entity.SystemEntity;
-import domcast.finalprojbackend.entity.UserEntity;
-import domcast.finalprojbackend.entity.ValidationTokenEntity;
+import domcast.finalprojbackend.entity.*;
 import domcast.finalprojbackend.enums.LabEnum;
+import domcast.finalprojbackend.enums.ProjectStateEnum;
 import domcast.finalprojbackend.enums.TypeOfUserEnum;
 import jakarta.ejb.Stateless;
 import jakarta.ejb.TransactionAttribute;
@@ -24,6 +23,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 
 /**
@@ -56,6 +56,9 @@ public class StartupCreator implements Serializable {
 
     @Inject
     private PasswordBean passwordBean;
+
+    @Inject
+    ProjectDao projectDao;
 
     /**
      * Creates default labs in the database.
@@ -125,6 +128,30 @@ public class StartupCreator implements Serializable {
                 logger.info("Default user " + (i+1) + " created");
             }
         }
+    }
+
+    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
+    public void createDefaultProjects() {
+        logger.info("Creating default projects");
+
+        // Assuming LabEntity instances are already created
+        LabEntity lab = em.find(LabEntity.class, 1);
+
+        for (int i = 1; i <= 5; i++) {
+            ProjectEntity project = new ProjectEntity();
+            project.setName("Project " + i);
+            project.setDescription("Description for Project " + i);
+            project.setLab(lab);
+            project.setState(ProjectStateEnum.IN_PROGRESS);
+            project.setMaxMembers(10);
+            project.setCreationDate(LocalDateTime.now());
+            project.setProjectedStartDate(LocalDateTime.now().plusDays(1));
+            project.setDeadline(LocalDateTime.now().plusDays(30));
+
+            projectDao.persist(project);
+        }
+
+        logger.info("Default projects created");
     }
 
     /**

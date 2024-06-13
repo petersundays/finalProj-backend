@@ -70,10 +70,10 @@ public class ComponentResourceService {
             response = Response.status(201).entity(crPreview).build();
         } catch (PersistenceException e) {
             logger.error("Error creating component resource due to persistence issue", e);
-            response = Response.status(500).entity("Error creating component resource due to persistence issue: " + e.getMessage()).build();
+            response = Response.status(500).entity("Error creating component resource. Please try again later").build();
         } catch (Exception e) {
             logger.error("Error creating component resource", e);
-            response = Response.status(500).entity("Error creating component resource: " + e.getMessage()).build();
+            response = Response.status(500).entity("Error creating component resource. Please try again later").build();
         }
 
         return response;
