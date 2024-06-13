@@ -3,6 +3,7 @@ package domcast.finalprojbackend.dto.taskDto;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Set;
 
@@ -24,7 +25,7 @@ import java.util.Set;
  * @author Pedro Domingos
  */
 @XmlRootElement
-public class NewTask<T> {
+public class NewTask<T> implements Serializable {
     @XmlElement
     private String title;
 

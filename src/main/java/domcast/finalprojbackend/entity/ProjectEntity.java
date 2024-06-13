@@ -255,4 +255,8 @@ public class ProjectEntity implements Serializable {
     public void setComponentResources(Set<M2MComponentProject> componentResources) {
         this.componentResources = componentResources;
     }
+
+    public void addComponentResource(M2MComponentProject componentResource) {
+        this.componentResources.add(componentResource);
+    }
 }
