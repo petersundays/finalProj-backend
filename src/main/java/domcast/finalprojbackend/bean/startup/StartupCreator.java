@@ -198,6 +198,14 @@ public class StartupCreator implements Serializable {
         String[] componentResourceNames = { "Climate Data Analyzer", "AI Training Module", "Quantum Computer", "Cancer Cell Detector","Spacecraft", "Solar Panel", "Self-driving Car", "Blockchain Node", "Firewall", "DNA Sequencer"};
         String[] componentResourceBrands = { "BrandA", "BrandB", "BrandC", "BrandD", "BrandE", "BrandF", "BrandG", "BrandH", "BrandI", "BrandJ" };
         String[] componentResourceSuppliers = { "SupplierA", "SupplierB", "SupplierC", "SupplierD", "SupplierE", "SupplierF", "SupplierG", "SupplierH", "SupplierI", "SupplierJ" };
+        String[] taskNames = {"Design Phase", "Development Phase", "Testing Phase", "Deployment Phase", "Maintenance Phase"};
+        String[] taskDescriptions = {
+                "Design the architecture of the project",
+                "Develop the core features of the project",
+                "Test the project for any bugs or issues",
+                "Deploy the project in the production environment",
+                "Maintain the project after deployment"
+        };
 
         // Shuffle the skills, interests, labs, and users list
         Collections.shuffle(skills);
@@ -283,6 +291,65 @@ public class StartupCreator implements Serializable {
             project.setProjectUsers(projectUsers);
 
             em.persist(project);
+
+            // Create a list to hold the tasks of the current project
+            List<TaskEntity> projectTasks = new ArrayList<>();
+
+            // Generate a random number of tasks between 2 and 6 for each project
+            int numTasks = 2 + random.nextInt(5);
+            for (int j = 0; j < numTasks; j++) {
+                // Create a task
+                TaskEntity task = new TaskEntity();
+                // Set the task title and description based on the predefined task names and descriptions
+                task.setTitle(taskNames[j % taskNames.length]);
+                task.setDescription(taskDescriptions[j % taskDescriptions.length]);
+                task.setProjectedStartDate(project.getDeadline().minusDays(numTasks - j));
+                task.setDeadline(project.getDeadline().minusDays(numTasks - j - 1));
+                task.setResponsible(users.get(0)); // Set the first user as the responsible
+                task.setProjectId(project);
+
+                // Set the state of the task based on the project's state
+                if (projectStates[i] == ProjectStateEnum.IN_PROGRESS || projectStates[i] == ProjectStateEnum.FINISHED) {
+                    task.setState(TaskStateEnum.IN_PROGRESS);
+                    task.setRealStartDate(task.getProjectedStartDate());
+                } else {
+                    task.setState(TaskStateEnum.PLANNED);
+                }
+
+                // Set the task executors
+                Set<String> executors = new HashSet<>();
+                for (M2MProjectUser projectUser : project.getProjectUsers()) {
+                    executors.add(projectUser.getUser().getFirstName() + " " + projectUser.getUser().getLastName());
+                }
+                task.setOtherExecutors(executors);
+
+                // If it's the last task, it's the final presentation of the project
+                if (j == numTasks - 1) {
+                    task.setTitle("Final Presentation");
+                    task.setDescription("Final presentation of the project " + projectNames[i]);
+                    task.setRealStartDate(project.getDeadline());
+                }
+
+                em.persist(task);
+
+                // Add the task to the project's tasks set
+                project.getTasks().add(task);
+
+                // Randomly decide if the current task depends on any of the previous tasks in the same project
+                if (!projectTasks.isEmpty() && random.nextBoolean()) {
+                    TaskEntity dependentTask = projectTasks.get(random.nextInt(projectTasks.size()));
+                    M2MTaskDependencies taskDependency = new M2MTaskDependencies();
+                    taskDependency.setTask(task);
+                    taskDependency.setDependentTask(dependentTask);
+                    task.getDependencies().add(taskDependency);
+                    dependentTask.getDependentTasks().add(taskDependency);
+                }
+
+                // Add the task to the list of tasks of the current project
+                projectTasks.add(task);
+            }
+
+            em.merge(project);
         }
 
         logger.info("Default projects created");
