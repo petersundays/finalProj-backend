@@ -22,6 +22,8 @@ public class StartupBean implements Serializable {
     @PostConstruct
     public void init() {
         startupCreator.createDefaultLabs();
+        startupCreator.createDefaultSkills();
+        startupCreator.createDefaultInterests();
         startupCreator.createDefaultUsers();
         startupCreator.setDefaultSystemVariables();
         startupCreator.createDefaultProjects();
