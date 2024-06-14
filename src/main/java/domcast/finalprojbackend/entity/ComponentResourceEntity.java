@@ -45,7 +45,6 @@ public class ComponentResourceEntity implements Serializable {
     private int id;
 
     // Type of the object (component or resource)
-    @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
     private ComponentResourceEnum type;
 

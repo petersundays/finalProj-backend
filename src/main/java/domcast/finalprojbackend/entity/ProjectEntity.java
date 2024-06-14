@@ -70,10 +70,6 @@ public class ProjectEntity implements Serializable {
     @Column(name = "state", nullable = false)
     private ProjectStateEnum state;
 
-    // Maximum number of members of the project
-    @Column(name = "max_members", nullable = false)
-    private int maxMembers;
-
     // Users associated with the project
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<M2MProjectUser> projectUsers = new HashSet<>();
@@ -165,15 +161,13 @@ public class ProjectEntity implements Serializable {
     }
 
     public void setState(ProjectStateEnum state) {
+        if (state == ProjectStateEnum.IN_PROGRESS) {
+            this.realStartDate = LocalDateTime.now();
+        } else if (state == ProjectStateEnum.FINISHED) {
+            this.realEndDate = LocalDateTime.now();
+        }
+
         this.state = state;
-    }
-
-    public int getMaxMembers() {
-        return maxMembers;
-    }
-
-    public void setMaxMembers(int maxMembers) {
-        this.maxMembers = maxMembers;
     }
 
     public Set<M2MProjectUser> getProjectUsers() {

@@ -40,7 +40,6 @@ public class InterestEntity implements Serializable {
     private String name;
 
     // Type of the interest
-    @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
     private InterestEnum type;
 
