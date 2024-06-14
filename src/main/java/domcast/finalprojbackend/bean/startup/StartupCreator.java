@@ -196,8 +196,8 @@ public class StartupCreator implements Serializable {
         String[] projectDescriptions = {"Researching the effects of climate change", "Developing artificial intelligence algorithms", "Studying the principles of quantum computing", "Researching new cancer treatments", "Exploring outer space", "Developing renewable energy sources", "Creating autonomous vehicles", "Implementing blockchain technology", "Enhancing cybersecurity measures", "Engineering genetic modifications"};
         ProjectStateEnum[] projectStates = {ProjectStateEnum.PLANNING, ProjectStateEnum.READY, ProjectStateEnum.APPROVED, ProjectStateEnum.IN_PROGRESS, ProjectStateEnum.CANCELED, ProjectStateEnum.FINISHED, ProjectStateEnum.PLANNING, ProjectStateEnum.READY, ProjectStateEnum.APPROVED, ProjectStateEnum.IN_PROGRESS};
         String[] componentResourceNames = { "Climate Data Analyzer", "AI Training Module", "Quantum Computer", "Cancer Cell Detector","Spacecraft", "Solar Panel", "Self-driving Car", "Blockchain Node", "Firewall", "DNA Sequencer"};
-        String[] componentResourceBrands = { "BrandA", "BrandB", "BrandC", "BrandD", "BrandE", "BrandF", "BrandG", "BrandH", "BrandI", "BrandJ" };
-        String[] componentResourceSuppliers = { "SupplierA", "SupplierB", "SupplierC", "SupplierD", "SupplierE", "SupplierF", "SupplierG", "SupplierH", "SupplierI", "SupplierJ" };
+        String[] componentResourceBrands = { "ThinkPad", "Surface", "MacBook", "Galaxy", "Xperia", "Pavilion", "Inspiron", "Predator", "Omen", "Alienware" };
+        String[] componentResourceSuppliers = { "Intel", "AMD", "Nvidia", "Microsoft", "Apple", "Samsung", "Sony", "LG", "Canon", "Dell" };
         String[] taskNames = {"Design Phase", "Development Phase", "Testing Phase", "Deployment Phase", "Maintenance Phase"};
         String[] taskDescriptions = {
                 "Design the architecture of the project",
@@ -206,6 +206,10 @@ public class StartupCreator implements Serializable {
                 "Deploy the project in the production environment",
                 "Maintain the project after deployment"
         };
+
+        // Create a HashSet to store the already used supplier contacts and part numbers
+        Set<Long> usedSupplierContacts = new HashSet<>();
+        Set<Long> usedPartNumbers = new HashSet<>();
 
         // Shuffle the skills, interests, labs, and users list
         Collections.shuffle(skills);
@@ -249,27 +253,45 @@ public class StartupCreator implements Serializable {
                 projectKeywords.add(projectKeyword);
             }
             project.setKeywords(projectKeywords);
-            
+
             // Create and set project component resources
             Set<M2MComponentProject> projectComponentResources = new HashSet<>();
             for (int j = 0; j < 5; j++) { // Create 5 componentResources for each project
                 ComponentResourceEntity componentResource = new ComponentResourceEntity();
                 componentResource.setName(componentResourceNames[j]);
                 componentResource.setDescription("Description for " + componentResourceNames[j]);
-                componentResource.setBrand(componentResourceBrands[j]);
-                componentResource.setPartNumber((long) j);
-                componentResource.setSupplier(componentResourceSuppliers[j]);
-                componentResource.setSupplierContact(1234567890L); // Set a dummy supplier contact
+                componentResource.setBrand(componentResourceBrands[j % componentResourceBrands.length]); // Use modulo to avoid IndexOutOfBoundsException
+
+                // Generate a unique part number
+                long partNumber;
+                do {
+                    partNumber = 100000 + random.nextInt(900000); // Generate a random number between 100000 and 999999
+                } while (usedPartNumbers.contains(partNumber));
+                usedPartNumbers.add(partNumber);
+                componentResource.setPartNumber(partNumber);
+
+                componentResource.setSupplier(componentResourceSuppliers[j % componentResourceSuppliers.length]); // Use modulo to avoid IndexOutOfBoundsException
+
+                // Generate a unique supplier contact
+                long range = 9999999999L - 1000000000L + 1;
+                long supplierContact;
+                do {
+                    supplierContact = 1000000000L + (long)(Math.random() * range);
+                } while (usedSupplierContacts.contains(supplierContact));
+                usedSupplierContacts.add(supplierContact);
+                componentResource.setSupplierContact(supplierContact);
+
                 componentResource.setType(ComponentResourceEnum.COMPONENT); // Set type as COMPONENT
                 em.persist(componentResource); // Persist the ComponentResourceEntity before using it
 
                 M2MComponentProject projectComponentResource = new M2MComponentProject();
                 projectComponentResource.setProject(project);
                 projectComponentResource.setComponentResource(componentResource);
-                projectComponentResource.setQuantity(1); // Set quantity as 1
+                projectComponentResource.setQuantity(random.nextInt(10) + 1); // Generate a random number between 1 and 10
                 projectComponentResources.add(projectComponentResource);
             }
             project.setComponentResources(projectComponentResources);
+
 
             // Create and set project users
             Set<M2MProjectUser> projectUsers = new HashSet<>();

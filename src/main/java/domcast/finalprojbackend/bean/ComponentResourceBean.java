@@ -52,7 +52,7 @@ public class ComponentResourceBean implements Serializable {
      * @param detailedCR the detailed component resource to be created.
      * @return the preview component resource if created successfully, null otherwise.
      */
-    public CRPreview createComponentResource(DetailedCR detailedCR) throws PersistenceException {
+    public CRPreview createComponentResource(DetailedCR detailedCR, int projectiId) throws PersistenceException {
         logger.info("Creating component resource");
 
         if (detailedCR == null) {
@@ -62,14 +62,14 @@ public class ComponentResourceBean implements Serializable {
 
         logger.info("Validating data");
 
-        if (!dataValidator.isCRMandatoryDataValid(detailedCR)) {
+        if (!dataValidator.isCRMandatoryDataValid(detailedCR, projectiId)) {
             logger.error("Mandatory data is not valid");
             return null;
         }
 
         logger.info("Data is valid");
 
-        ComponentResourceEntity componentResourceEntity = registerData(detailedCR);
+        ComponentResourceEntity componentResourceEntity = registerData(detailedCR, projectiId);
 
         if (componentResourceEntity == null) {
             logger.error("Error registering component resource data");
@@ -79,7 +79,7 @@ public class ComponentResourceBean implements Serializable {
         CRPreview crPreview;
 
         try {
-            crPreview = detailedToPreviewCR(detailedCR);
+            crPreview = entityToPreviewCR(componentResourceEntity);
         } catch (Exception e) {
             logger.error("Error converting detailed component resource to preview: {}", e.getMessage());
             return null;
@@ -94,7 +94,6 @@ public class ComponentResourceBean implements Serializable {
 
         return crPreview;
 
-
     }
 
 /**
@@ -103,7 +102,7 @@ public class ComponentResourceBean implements Serializable {
      * @param detailedCR the detailed component resource to be registered
      * @return the ComponentResourceEntity object if registered, null otherwise
      */
-    public ComponentResourceEntity registerData(DetailedCR detailedCR) throws PersistenceException {
+    public ComponentResourceEntity registerData(DetailedCR detailedCR, int projectId) throws PersistenceException {
         logger.info("Registering component resource data");
 
         if (detailedCR == null) {
@@ -139,7 +138,7 @@ public class ComponentResourceBean implements Serializable {
 
         logger.info("Component resource entity found");
 
-        addCRToProject(detailedCR.getProjectId(), componentResourceFromDb, detailedCR.getQuantity());
+        addCRToProject(projectId, componentResourceFromDb, detailedCR.getQuantity());
 
         logger.info("Relation between component resource and project created");
 
@@ -195,13 +194,13 @@ public class ComponentResourceBean implements Serializable {
     /**
      * Converts a detailed component resource to a preview component resource.
      *
-     * @param detailedCR the detailed component resource to convert
+     * @param entityCR the detailed component resource to convert
      * @return the preview component resource if converted, null otherwise
      */
-    public CRPreview detailedToPreviewCR(DetailedCR detailedCR) {
+    public CRPreview entityToPreviewCR(ComponentResourceEntity entityCR) {
         logger.info("Converting detailed component resource to preview");
 
-        if (detailedCR == null) {
+        if (entityCR == null) {
             logger.error("Detailed component resource is null");
             return null;
         }
@@ -209,13 +208,14 @@ public class ComponentResourceBean implements Serializable {
         logger.info("Creating preview");
 
         CRPreview crPreview = new CRPreview();
+        int type = ComponentResourceEnum.fromEnum(entityCR.getType());
 
-        crPreview.setId(detailedCR.getId());
-        crPreview.setName(detailedCR.getName());
-        crPreview.setType(detailedCR.getType());
-        crPreview.setBrand(detailedCR.getBrand());
-        crPreview.setPartNumber(detailedCR.getPartNumber());
-        crPreview.setSupplier(detailedCR.getSupplier());
+        crPreview.setId(entityCR.getId());
+        crPreview.setName(entityCR.getName());
+        crPreview.setType(type);
+        crPreview.setBrand(entityCR.getBrand());
+        crPreview.setPartNumber(entityCR.getPartNumber());
+        crPreview.setSupplier(entityCR.getSupplier());
 
         return crPreview;
     }

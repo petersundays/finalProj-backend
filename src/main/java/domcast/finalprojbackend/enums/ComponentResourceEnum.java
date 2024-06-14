@@ -68,4 +68,13 @@ public enum ComponentResourceEnum {
         }
         return false;
     }
+
+    /**
+     * Method that returns the id of the given ComponentResourceEnum.
+     * @param type the ComponentResourceEnum
+     * @return the id of the ComponentResourceEnum
+     */
+    public static int fromEnum(ComponentResourceEnum type) {
+        return type.getId();
+    }
 }

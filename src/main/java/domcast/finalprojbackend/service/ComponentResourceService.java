@@ -41,7 +41,7 @@ public class ComponentResourceService {
     @Path("")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response createComponentResource(@HeaderParam("token") String token, @HeaderParam("id") int userId, /*@QueryParam("projectId") int projectId,*/ DetailedCR detailedCR, @Context HttpServletRequest request) {
+    public Response createComponentResource(@HeaderParam("token") String token, @HeaderParam("id") int userId, @QueryParam("projectId") int projectId, DetailedCR detailedCR, @Context HttpServletRequest request) {
         String ipAddress = request.getRemoteAddr();
         logger.info("User with token {} is trying to create a component-resource, for project with id , from IP address {}", token, /*projectId,*/ ipAddress);
 
@@ -52,8 +52,8 @@ public class ComponentResourceService {
         }
 
         // Check if the user is authorized to create the component-resource for this project
-        if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, userId) /*&&
-                !authenticationAndAuthorization.isUserMemberOfTheProject(userId, projectId)*/) {
+        if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, userId) &&
+                !authenticationAndAuthorization.isUserMemberOfTheProject(userId, projectId)) {
             logger.info("User with session token {} tried to change the state of a task unsuccessfully", token);
             return Response.status(401).entity("Unauthorized").build();
         }
@@ -62,7 +62,7 @@ public class ComponentResourceService {
         CRPreview crPreview;
 
         try {
-            crPreview = componentResourceBean.createComponentResource(detailedCR);
+            crPreview = componentResourceBean.createComponentResource(detailedCR, projectId);
             if (crPreview == null) {
                 logger.error("Error creating component resource");
                 return Response.status(500).entity("Error creating component resource").build();

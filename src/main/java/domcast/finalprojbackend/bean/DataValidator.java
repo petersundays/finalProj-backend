@@ -187,12 +187,12 @@ public class DataValidator {
                 newTask.getResponsibleId() > 0 && newTask.getProjectId() > 0;
     }
 
-    public boolean isCRMandatoryDataValid(DetailedCR detailedCR) {
+    public boolean isCRMandatoryDataValid(DetailedCR detailedCR, int projectId) {
         logger.info("Checking if mandatory data is valid for detailed CR");
 
         return detailedCR.getName() != null && !detailedCR.getName().isBlank() &&
                 detailedCR.getDescription() != null && !detailedCR.getDescription().isBlank() &&
-                detailedCR.getProjectId() > 0 &&
+                projectId > 0 &&
                 detailedCR.getBrand() != null && !detailedCR.getBrand().isBlank() &&
                 detailedCR.getPartNumber() != null && detailedCR.getPartNumber() > 0 &&
                 ComponentResourceEnum.isValidId(detailedCR.getType()) &&
