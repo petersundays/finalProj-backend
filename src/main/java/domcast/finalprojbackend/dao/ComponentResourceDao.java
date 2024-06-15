@@ -57,4 +57,22 @@ public class ComponentResourceDao extends AbstractDao<ComponentResourceEntity> {
             return null;
         }
     }
+
+    /**
+     * Finds a component resource entity by id.
+     * @param id the id of the component resource.
+     * @return the component resource entity.
+     */
+    public ComponentResourceEntity findCREntityById(int id) {
+        logger.info("Finding component resource entity by id");
+        try {
+            return em.createNamedQuery("ComponentResource.findCREntityById", ComponentResourceEntity.class)
+                    .setParameter("id", id)
+                    .getSingleResult();
+        } catch (Exception e) {
+            logger.error("Component resource with id {} not found, when trying to return entity", id);
+            return null;
+        }
+    }
+
 }

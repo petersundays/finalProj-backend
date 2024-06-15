@@ -177,6 +177,11 @@ public class DataValidator {
         return true;
     }
 
+    /**
+     * Checks if the mandatory data is valid for a new task
+     * @param newTask the new task to be checked
+     * @return boolean value indicating if the mandatory data is valid
+     */
     public boolean isTaskMandatoryDataValid(NewTask<Integer> newTask) {
         logger.info("Checking if mandatory data is valid for new task");
 
@@ -187,17 +192,28 @@ public class DataValidator {
                 newTask.getResponsibleId() > 0 && newTask.getProjectId() > 0;
     }
 
-    public boolean isCRMandatoryDataValid(DetailedCR detailedCR) {
+    /**
+     * Checks if the mandatory data is valid for detailed CR
+     * @param detailedCR the detailed CR to be checked
+     * @param projectId the id of the project where the CR will be created. It can be null if the CR is not being created in a project.
+     * @return boolean value indicating if the mandatory data is valid
+     */
+    public boolean isCRMandatoryDataValid(DetailedCR detailedCR, Integer projectId) {
         logger.info("Checking if mandatory data is valid for detailed CR");
 
-        return detailedCR.getName() != null && !detailedCR.getName().isBlank() &&
+        boolean isValid = detailedCR.getName() != null && !detailedCR.getName().isBlank() &&
                 detailedCR.getDescription() != null && !detailedCR.getDescription().isBlank() &&
-                detailedCR.getProjectId() > 0 &&
                 detailedCR.getBrand() != null && !detailedCR.getBrand().isBlank() &&
                 detailedCR.getPartNumber() != null && detailedCR.getPartNumber() > 0 &&
                 ComponentResourceEnum.isValidId(detailedCR.getType()) &&
                 detailedCR.getQuantity() > 0 &&
                 detailedCR.getSupplier() != null && !detailedCR.getSupplier().isBlank() &&
                 detailedCR.getSupplierContact() > 0;
+
+        if (projectId != null) {
+            isValid = isValid && projectId > 0;
+        }
+
+        return isValid;
     }
 }

@@ -1,6 +1,7 @@
 package domcast.finalprojbackend.bean;
 
 import domcast.finalprojbackend.dao.ComponentResourceDao;
+import domcast.finalprojbackend.dao.M2MComponentProjectDao;
 import domcast.finalprojbackend.dao.ProjectDao;
 import domcast.finalprojbackend.dto.componentResourceDto.CRPreview;
 import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
@@ -40,6 +41,9 @@ public class ComponentResourceBean implements Serializable {
     @EJB
     private ProjectDao projectDao;
 
+    @EJB
+    private M2MComponentProjectDao m2MComponentProjectDao;
+
     // Default constructor
     public ComponentResourceBean() {
     }
@@ -52,7 +56,7 @@ public class ComponentResourceBean implements Serializable {
      * @param detailedCR the detailed component resource to be created.
      * @return the preview component resource if created successfully, null otherwise.
      */
-    public CRPreview createComponentResource(DetailedCR detailedCR) throws PersistenceException {
+    public CRPreview createComponentResource(DetailedCR detailedCR, Integer projectId, Integer quantity) throws PersistenceException {
         logger.info("Creating component resource");
 
         if (detailedCR == null) {
@@ -62,14 +66,14 @@ public class ComponentResourceBean implements Serializable {
 
         logger.info("Validating data");
 
-        if (!dataValidator.isCRMandatoryDataValid(detailedCR)) {
+        if (!dataValidator.isCRMandatoryDataValid(detailedCR, projectId)) {
             logger.error("Mandatory data is not valid");
             return null;
         }
 
         logger.info("Data is valid");
 
-        ComponentResourceEntity componentResourceEntity = registerData(detailedCR);
+        ComponentResourceEntity componentResourceEntity = registerData(detailedCR, projectId, quantity);
 
         if (componentResourceEntity == null) {
             logger.error("Error registering component resource data");
@@ -79,7 +83,7 @@ public class ComponentResourceBean implements Serializable {
         CRPreview crPreview;
 
         try {
-            crPreview = detailedToPreviewCR(detailedCR);
+            crPreview = entityToPreviewCR(componentResourceEntity);
         } catch (Exception e) {
             logger.error("Error converting detailed component resource to preview: {}", e.getMessage());
             return null;
@@ -93,8 +97,15 @@ public class ComponentResourceBean implements Serializable {
         logger.info("Component resource created successfully");
 
         return crPreview;
+    }
 
-
+    /**
+     * Overloaded method for creating a new component resource without associating it with a project.
+     * @param detailedCR the detailed component resource to be created.
+     * @return the preview component resource if created successfully, null otherwise.
+     */
+    public CRPreview createComponentResource(DetailedCR detailedCR) throws PersistenceException {
+        return createComponentResource(detailedCR, null, null);
     }
 
 /**
@@ -103,48 +114,49 @@ public class ComponentResourceBean implements Serializable {
      * @param detailedCR the detailed component resource to be registered
      * @return the ComponentResourceEntity object if registered, null otherwise
      */
-    public ComponentResourceEntity registerData(DetailedCR detailedCR) throws PersistenceException {
-        logger.info("Registering component resource data");
+public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer projectId, Integer quantity) throws PersistenceException {
+    logger.info("Registering component resource data");
 
-        if (detailedCR == null) {
-            logger.error("Component resource is null while registering data");
-            return null;
-        }
-
-        logger.info("Creating entity");
-
-        ComponentResourceEntity componentResourceEntity = new ComponentResourceEntity();
-
-        componentResourceEntity.setName(detailedCR.getName());
-        componentResourceEntity.setType(ComponentResourceEnum.fromId(detailedCR.getType()));
-        componentResourceEntity.setDescription(detailedCR.getDescription());
-        componentResourceEntity.setBrand(detailedCR.getBrand());
-        componentResourceEntity.setPartNumber(detailedCR.getPartNumber());
-        componentResourceEntity.setSupplier(detailedCR.getSupplier());
-        componentResourceEntity.setSupplierContact(detailedCR.getSupplierContact());
-
-        boolean alreadyExists = componentResourceDao.doesCRExistByNameAndBrand(detailedCR.getName(), detailedCR.getBrand());
-
-        if (alreadyExists) {
-            logger.error("Component resource already exists");
-            return null;
-        }
-
-        logger.info("Persisting entity");
-        componentResourceDao.persist(componentResourceEntity);
-
-        logger.info("Entity persisted");
-
-        ComponentResourceEntity componentResourceFromDb = componentResourceDao.findCREntityByNameAndBrand(detailedCR.getName(), detailedCR.getBrand());
-
-        logger.info("Component resource entity found");
-
-        addCRToProject(detailedCR.getProjectId(), componentResourceFromDb, detailedCR.getQuantity());
-
-        logger.info("Relation between component resource and project created");
-
-        return componentResourceEntity;
+    if (detailedCR == null) {
+        logger.error("Component resource is null while registering data");
+        return null;
     }
+
+    logger.info("Creating entity");
+
+    ComponentResourceEntity componentResourceEntity = new ComponentResourceEntity();
+
+    componentResourceEntity.setName(detailedCR.getName());
+    componentResourceEntity.setType(ComponentResourceEnum.fromId(detailedCR.getType()));
+    componentResourceEntity.setDescription(detailedCR.getDescription());
+    componentResourceEntity.setBrand(detailedCR.getBrand());
+    componentResourceEntity.setPartNumber(detailedCR.getPartNumber());
+    componentResourceEntity.setSupplier(detailedCR.getSupplier());
+    componentResourceEntity.setSupplierContact(detailedCR.getSupplierContact());
+
+    boolean alreadyExists = componentResourceDao.doesCRExistByNameAndBrand(detailedCR.getName(), detailedCR.getBrand());
+
+    if (alreadyExists) {
+        logger.error("Component resource already exists");
+        return null;
+    }
+
+    logger.info("Persisting entity");
+    componentResourceDao.persist(componentResourceEntity);
+
+    logger.info("Entity persisted");
+
+    ComponentResourceEntity componentResourceFromDb = componentResourceDao.findCREntityByNameAndBrand(detailedCR.getName(), detailedCR.getBrand());
+
+    logger.info("Component resource entity found");
+
+    if (projectId != null && quantity != null) {
+        addCRToProject(projectId, componentResourceFromDb, quantity);
+        logger.info("Relation between component resource and project created");
+    }
+
+    return componentResourceEntity;
+}
 
     /**
      * Creates a many-to-many relation between a component resource and a project.
@@ -195,13 +207,13 @@ public class ComponentResourceBean implements Serializable {
     /**
      * Converts a detailed component resource to a preview component resource.
      *
-     * @param detailedCR the detailed component resource to convert
+     * @param entityCR the detailed component resource to convert
      * @return the preview component resource if converted, null otherwise
      */
-    public CRPreview detailedToPreviewCR(DetailedCR detailedCR) {
+    public CRPreview entityToPreviewCR(ComponentResourceEntity entityCR) {
         logger.info("Converting detailed component resource to preview");
 
-        if (detailedCR == null) {
+        if (entityCR == null) {
             logger.error("Detailed component resource is null");
             return null;
         }
@@ -209,14 +221,189 @@ public class ComponentResourceBean implements Serializable {
         logger.info("Creating preview");
 
         CRPreview crPreview = new CRPreview();
+        int type = ComponentResourceEnum.fromEnum(entityCR.getType());
 
-        crPreview.setId(detailedCR.getId());
-        crPreview.setName(detailedCR.getName());
-        crPreview.setType(detailedCR.getType());
-        crPreview.setBrand(detailedCR.getBrand());
-        crPreview.setPartNumber(detailedCR.getPartNumber());
-        crPreview.setSupplier(detailedCR.getSupplier());
+        crPreview.setId(entityCR.getId());
+        crPreview.setName(entityCR.getName());
+        crPreview.setType(type);
+        crPreview.setBrand(entityCR.getBrand());
+        crPreview.setPartNumber(entityCR.getPartNumber());
+        crPreview.setSupplier(entityCR.getSupplier());
 
         return crPreview;
+    }
+
+    /**
+     * Edits a component resource based on the detailed component resource passed as parameter.
+     *
+     * @param detailedCR the detailed component resource to be edited.
+     * @param quantity the quantity of the component resource in the project, if it is being edited in a project.
+     * @param projectId the id of the project where the component resource will be edited.
+     *                  It can be null if the component resource is not being edited in a project.
+     * @return the detailed component resource if edited successfully, null otherwise.
+     */
+    public DetailedCR editComponentResource (DetailedCR detailedCR, Integer quantity, int projectId) {
+        logger.info("Editing component resource");
+
+        if (detailedCR == null) {
+            logger.error("Component resource is null while editing");
+            return null;
+        }
+
+        ComponentResourceEntity componentResourceEntity = componentResourceDao.findCREntityById(detailedCR.getId());
+
+        if (componentResourceEntity == null) {
+            logger.error("Component resource not found");
+            return null;
+        }
+
+        try {
+            componentResourceEntity = updateData(detailedCR, componentResourceEntity, projectId, quantity);
+        } catch (Exception e) {
+            logger.error("Error converting detailed component resource to preview: {}", e.getMessage());
+            return null;
+        }
+
+        try {
+            componentResourceDao.merge(componentResourceEntity);
+        } catch (PersistenceException e) {
+            logger.error("Error updating component resource data in editComponentResource: {}", e.getMessage());
+            return null;
+        }
+
+        logger.info("Component resource edited successfully");
+
+        DetailedCR updatedCr = entityToDetailedCr(componentResourceEntity);
+
+        if (updatedCr == null) {
+            logger.error("Error converting detailed component resource to a detailed component resource");
+            return null;
+        }
+
+        return updatedCr;
+    }
+
+    /**
+     * Overloaded method for editing a component resource without associating it with a project.
+     *
+     * @param detailedCR the detailed component resource to be edited.
+     * @return the detailed component resource if edited successfully, null otherwise.
+     */
+    public DetailedCR editComponentResource (DetailedCR detailedCR) {
+        return editComponentResource(detailedCR, null, 0);
+    }
+
+
+        /**
+         * Updates the data of a component resource.
+         * If the component resource is being updated in a project, the quantity of the component resource in the project is also updated.
+         *
+         * @param detailedCR the detailed component resource with the new data
+         * @param componentResourceEntity the component resource entity to update
+         * @param projectId the id of the project where the component resource is being updated
+         * @param quantity the quantity of the component resource in the project
+         * @return the updated component resource entity if updated, null otherwise
+         */
+    public ComponentResourceEntity updateData (DetailedCR detailedCR, ComponentResourceEntity componentResourceEntity, int projectId, int quantity) {
+        logger.info("Updating data of component resource");
+
+        if (detailedCR == null) {
+            logger.error("Component resource is null while updating data");
+            return null;
+        }
+
+        if (componentResourceEntity == null) {
+            logger.error("Component resource entity is null while updating data");
+            return null;
+        }
+
+        if (detailedCR.getName() != null && !detailedCR.getName().isBlank()) {
+            componentResourceEntity.setName(detailedCR.getName());
+        }
+
+        if (detailedCR.getDescription() != null && !detailedCR.getDescription().isBlank()) {
+            componentResourceEntity.setDescription(detailedCR.getDescription());
+        }
+
+        if (detailedCR.getBrand() != null && !detailedCR.getBrand().isBlank()) {
+            componentResourceEntity.setBrand(detailedCR.getBrand());
+        }
+
+        if (detailedCR.getPartNumber() != null && detailedCR.getPartNumber() > 0) {
+            componentResourceEntity.setPartNumber(detailedCR.getPartNumber());
+        }
+
+        if (detailedCR.getSupplier() != null && !detailedCR.getSupplier().isBlank()) {
+            componentResourceEntity.setSupplier(detailedCR.getSupplier());
+        }
+
+        if (detailedCR.getSupplierContact() > 0) {
+            componentResourceEntity.setSupplierContact(detailedCR.getSupplierContact());
+        }
+
+        if (detailedCR.getObservations() != null && !detailedCR.getObservations().isBlank()) {
+            componentResourceEntity.setObservations(detailedCR.getObservations());
+        }
+
+        // If the update occurs in a project, update the quantity of the component resource in the project
+        if (projectId > 0 && quantity > 0) {
+            M2MComponentProject m2MComponentProject;
+            try {
+                m2MComponentProject = m2MComponentProjectDao.findM2MComponentProjectByComponentIdAndProjectId(projectId, componentResourceEntity.getId());
+            } catch (PersistenceException e) {
+                logger.error("Error finding relation between component resource and project: {}", e.getMessage());
+                return null;
+            }
+
+            if (m2MComponentProject == null) {
+                logger.error("Relation between component resource and project not found");
+                return null;
+            }
+
+            m2MComponentProject.setQuantity(quantity);
+
+            try {
+                m2MComponentProjectDao.merge(m2MComponentProject);
+            } catch (PersistenceException e) {
+                logger.error("Error updating relation between component resource and project: {}", e.getMessage());
+                return null;
+            }
+        }
+
+        logger.info("Persisting entity with updated data");
+
+        try {
+            componentResourceDao.merge(componentResourceEntity);
+        } catch (PersistenceException e) {
+            logger.error("Error updating component resource data: {}", e.getMessage());
+            return null;
+        }
+
+        return componentResourceEntity;
+    }
+
+    public DetailedCR entityToDetailedCr(ComponentResourceEntity entityCR) {
+        logger.info("Converting detailed component resource to a detailed component resource");
+
+        if (entityCR == null) {
+            logger.error("Detailed component resource is null while converting");
+            return null;
+        }
+
+        logger.info("Creating detailed component resource");
+
+        DetailedCR detailedCR = new DetailedCR();
+        int type = ComponentResourceEnum.fromEnum(entityCR.getType());
+
+        detailedCR.setId(entityCR.getId());
+        detailedCR.setName(entityCR.getName());
+        detailedCR.setType(type);
+        detailedCR.setBrand(entityCR.getBrand());
+        detailedCR.setPartNumber(entityCR.getPartNumber());
+        detailedCR.setSupplier(entityCR.getSupplier());
+        detailedCR.setSupplierContact(entityCR.getSupplierContact());
+        detailedCR.setObservations(entityCR.getObservations());
+
+        return detailedCR;
     }
 }

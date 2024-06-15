@@ -34,6 +34,9 @@ import java.util.Set;
         query = "SELECT CASE WHEN COUNT(c) > 0 THEN TRUE ELSE FALSE END FROM ComponentResourceEntity c WHERE c.name = :name AND c.brand = :brand")
 @NamedQuery(name = "ComponentResource.findCREntityByNameAndBrand",
         query = "SELECT c FROM ComponentResourceEntity c WHERE c.name = :name AND c.brand = :brand")
+@NamedQuery(name = "ComponentResource.findCREntityById", query = "SELECT c FROM ComponentResourceEntity c WHERE c.id = :id")
+@NamedQuery(name = "ComponentResource.findM2MComponentProjectByProjectIdAndComponentId",
+        query = "SELECT m FROM M2MComponentProject m WHERE m.project.id = :projectId AND m.componentResource.id = :componentId")
 
 public class ComponentResourceEntity implements Serializable {
     private static final long serialVersionUID = 1L;

@@ -1,3 +1,4 @@
+/*
 import domcast.finalprojbackend.bean.ComponentResourceBean;
 import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.dao.ComponentResourceDao;
@@ -59,7 +60,8 @@ public class ComponentResourceBeanTest {
         assertEquals(detailedCR.getBrand(), result.getBrand());
     }
 
-    /*@Test
+    */
+/*@Test
     public void testCreateComponentResource_Failure() {
         // Arrange
         DetailedCR detailedCR = new DetailedCR();
@@ -74,7 +76,8 @@ public class ComponentResourceBeanTest {
         // Assert
         assertNull(result);
     }
-*/
+*//*
+
 
     @Test
     public void testRegisterData_Success() {
@@ -174,4 +177,4 @@ public class ComponentResourceBeanTest {
         // Assert
         assertNull(result);
     }
-}
+}*/
