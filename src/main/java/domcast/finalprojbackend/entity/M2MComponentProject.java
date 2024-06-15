@@ -21,6 +21,10 @@ import java.io.Serializable;
 
 @Entity
 @Table(name = "project_component_resources")
+
+@NamedQuery(name = "M2MComponentProject.findM2MComponentProjectByProjectIdAndComponentId",
+        query = "SELECT m FROM M2MComponentProject m WHERE m.project.id = :projectId AND m.componentResource.id = :componentId")
+
 public class M2MComponentProject implements Serializable {
 
     private static final long serialVersionUID = 1L;
