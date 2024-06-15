@@ -52,7 +52,7 @@ public class ComponentResourceBean implements Serializable {
      * @param detailedCR the detailed component resource to be created.
      * @return the preview component resource if created successfully, null otherwise.
      */
-    public CRPreview createComponentResource(DetailedCR detailedCR, int projectiId) throws PersistenceException {
+    public CRPreview createComponentResource(DetailedCR detailedCR, Integer projectId, Integer quantity) throws PersistenceException {
         logger.info("Creating component resource");
 
         if (detailedCR == null) {
@@ -62,14 +62,14 @@ public class ComponentResourceBean implements Serializable {
 
         logger.info("Validating data");
 
-        if (!dataValidator.isCRMandatoryDataValid(detailedCR, projectiId)) {
+        if (!dataValidator.isCRMandatoryDataValid(detailedCR, projectId)) {
             logger.error("Mandatory data is not valid");
             return null;
         }
 
         logger.info("Data is valid");
 
-        ComponentResourceEntity componentResourceEntity = registerData(detailedCR, projectiId);
+        ComponentResourceEntity componentResourceEntity = registerData(detailedCR, projectId, quantity);
 
         if (componentResourceEntity == null) {
             logger.error("Error registering component resource data");
@@ -93,7 +93,15 @@ public class ComponentResourceBean implements Serializable {
         logger.info("Component resource created successfully");
 
         return crPreview;
+    }
 
+    /**
+     * Overloaded method for creating a new component resource without associating it with a project.
+     * @param detailedCR the detailed component resource to be created.
+     * @return the preview component resource if created successfully, null otherwise.
+     */
+    public CRPreview createComponentResource(DetailedCR detailedCR) throws PersistenceException {
+        return createComponentResource(detailedCR, null, null);
     }
 
 /**
@@ -102,48 +110,49 @@ public class ComponentResourceBean implements Serializable {
      * @param detailedCR the detailed component resource to be registered
      * @return the ComponentResourceEntity object if registered, null otherwise
      */
-    public ComponentResourceEntity registerData(DetailedCR detailedCR, int projectId) throws PersistenceException {
-        logger.info("Registering component resource data");
+public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer projectId, Integer quantity) throws PersistenceException {
+    logger.info("Registering component resource data");
 
-        if (detailedCR == null) {
-            logger.error("Component resource is null while registering data");
-            return null;
-        }
-
-        logger.info("Creating entity");
-
-        ComponentResourceEntity componentResourceEntity = new ComponentResourceEntity();
-
-        componentResourceEntity.setName(detailedCR.getName());
-        componentResourceEntity.setType(ComponentResourceEnum.fromId(detailedCR.getType()));
-        componentResourceEntity.setDescription(detailedCR.getDescription());
-        componentResourceEntity.setBrand(detailedCR.getBrand());
-        componentResourceEntity.setPartNumber(detailedCR.getPartNumber());
-        componentResourceEntity.setSupplier(detailedCR.getSupplier());
-        componentResourceEntity.setSupplierContact(detailedCR.getSupplierContact());
-
-        boolean alreadyExists = componentResourceDao.doesCRExistByNameAndBrand(detailedCR.getName(), detailedCR.getBrand());
-
-        if (alreadyExists) {
-            logger.error("Component resource already exists");
-            return null;
-        }
-
-        logger.info("Persisting entity");
-        componentResourceDao.persist(componentResourceEntity);
-
-        logger.info("Entity persisted");
-
-        ComponentResourceEntity componentResourceFromDb = componentResourceDao.findCREntityByNameAndBrand(detailedCR.getName(), detailedCR.getBrand());
-
-        logger.info("Component resource entity found");
-
-        addCRToProject(projectId, componentResourceFromDb, detailedCR.getQuantity());
-
-        logger.info("Relation between component resource and project created");
-
-        return componentResourceEntity;
+    if (detailedCR == null) {
+        logger.error("Component resource is null while registering data");
+        return null;
     }
+
+    logger.info("Creating entity");
+
+    ComponentResourceEntity componentResourceEntity = new ComponentResourceEntity();
+
+    componentResourceEntity.setName(detailedCR.getName());
+    componentResourceEntity.setType(ComponentResourceEnum.fromId(detailedCR.getType()));
+    componentResourceEntity.setDescription(detailedCR.getDescription());
+    componentResourceEntity.setBrand(detailedCR.getBrand());
+    componentResourceEntity.setPartNumber(detailedCR.getPartNumber());
+    componentResourceEntity.setSupplier(detailedCR.getSupplier());
+    componentResourceEntity.setSupplierContact(detailedCR.getSupplierContact());
+
+    boolean alreadyExists = componentResourceDao.doesCRExistByNameAndBrand(detailedCR.getName(), detailedCR.getBrand());
+
+    if (alreadyExists) {
+        logger.error("Component resource already exists");
+        return null;
+    }
+
+    logger.info("Persisting entity");
+    componentResourceDao.persist(componentResourceEntity);
+
+    logger.info("Entity persisted");
+
+    ComponentResourceEntity componentResourceFromDb = componentResourceDao.findCREntityByNameAndBrand(detailedCR.getName(), detailedCR.getBrand());
+
+    logger.info("Component resource entity found");
+
+    if (projectId != null && quantity != null) {
+        addCRToProject(projectId, componentResourceFromDb, quantity);
+        logger.info("Relation between component resource and project created");
+    }
+
+    return componentResourceEntity;
+}
 
     /**
      * Creates a many-to-many relation between a component resource and a project.
@@ -219,4 +228,6 @@ public class ComponentResourceBean implements Serializable {
 
         return crPreview;
     }
+
+    public 
 }
