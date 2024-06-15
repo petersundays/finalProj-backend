@@ -16,6 +16,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Bean class for the component resource.
@@ -169,10 +171,27 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
         logger.info("Creating many-to-many relation between component resource and project");
 
         if (!dataValidator.isIdValid(projectId) || componentResource == null || quantity <= 0) {
-            logger.error("Invalid ids or quantity");
+            logger.error("Invalid ids or quantity while creating relation");
             return;
         }
 
+        logger.info("Checking if relation already exists");
+        
+        M2MComponentProject previousRelation;
+        try {
+            previousRelation = m2MComponentProjectDao.findM2MComponentProjectByComponentIdAndProjectId(projectId, componentResource.getId());
+        } catch (PersistenceException e) {
+            logger.error("Error finding relation between component resource and project while creating relation: {}", e.getMessage());
+            return;
+        }
+
+        // If the relation already exists, updates if the quantity is different,
+        // activates if it is inactive or returns if it is active and the quantity is the same
+        if (alreadyExists(quantity, previousRelation)) {
+            return;
+        }
+
+        // If the relation does not exist, create it
         logger.info("Creating relation");
 
         ProjectEntity projectEntity;
@@ -202,6 +221,46 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
         }
 
         logger.info("Relation component-resource with project created for project id: {} and component resource id: {}", projectId, componentResource);
+    }
+
+    /**
+     * Checks if the relation between a component resource and a project already exists.
+     * If the relation already exists, updates the quantity if it is different,
+     * activates it if it is inactive or returns if it is active and the quantity is the same.
+     *
+     * @param quantity the quantity of the component resource
+     * @param previousRelation the previous relation between the component resource and the project
+     * @return true if the relation already exists, false otherwise
+     */
+    public boolean alreadyExists(int quantity, M2MComponentProject previousRelation) {
+
+        if (previousRelation != null && previousRelation.isActive() && previousRelation.getQuantity() == quantity) {
+            logger.error("Relation already exists with the same quantity of this component resource");
+            return true;
+
+        } else if (previousRelation != null && previousRelation.getQuantity() != quantity) {
+            logger.info("Updating quantity of relation");
+            previousRelation.setQuantity(quantity);
+            try {
+                m2MComponentProjectDao.merge(previousRelation);
+            } catch (PersistenceException e) {
+                logger.error("Error updating quantity of relation: {}", e.getMessage());
+            }
+            return true;
+
+        } else if (previousRelation != null && !previousRelation.isActive()) {
+            logger.info("Activating relation");
+            previousRelation.setActive(true);
+            previousRelation.setQuantity(quantity);
+
+            try {
+                m2MComponentProjectDao.merge(previousRelation);
+            } catch (PersistenceException e) {
+                logger.error("Error activating relation: {}", e.getMessage());
+            }
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -237,12 +296,12 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
      * Edits a component resource based on the detailed component resource passed as parameter.
      *
      * @param detailedCR the detailed component resource to be edited.
-     * @param quantity the quantity of the component resource in the project, if it is being edited in a project.
+     * @param id component-resource's id to edit.
      * @param projectId the id of the project where the component resource will be edited.
      *                  It can be null if the component resource is not being edited in a project.
      * @return the detailed component resource if edited successfully, null otherwise.
      */
-    public DetailedCR editComponentResource (DetailedCR detailedCR, Integer quantity, int projectId) {
+    public DetailedCR editComponentResource (DetailedCR detailedCR, int id, Integer projectId) {
         logger.info("Editing component resource");
 
         if (detailedCR == null) {
@@ -250,7 +309,7 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
             return null;
         }
 
-        ComponentResourceEntity componentResourceEntity = componentResourceDao.findCREntityById(detailedCR.getId());
+        ComponentResourceEntity componentResourceEntity = componentResourceDao.findCREntityById(id);
 
         if (componentResourceEntity == null) {
             logger.error("Component resource not found");
@@ -258,7 +317,7 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
         }
 
         try {
-            componentResourceEntity = updateData(detailedCR, componentResourceEntity, projectId, quantity);
+            componentResourceEntity = updateData(detailedCR, componentResourceEntity, projectId);
         } catch (Exception e) {
             logger.error("Error converting detailed component resource to preview: {}", e.getMessage());
             return null;
@@ -287,10 +346,11 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
      * Overloaded method for editing a component resource without associating it with a project.
      *
      * @param detailedCR the detailed component resource to be edited.
+     * @param id component-resource's id to edit.
      * @return the detailed component resource if edited successfully, null otherwise.
      */
-    public DetailedCR editComponentResource (DetailedCR detailedCR) {
-        return editComponentResource(detailedCR, null, 0);
+    public DetailedCR editComponentResource (DetailedCR detailedCR, int id) {
+        return editComponentResource(detailedCR, id, null);
     }
 
 
@@ -301,10 +361,9 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
          * @param detailedCR the detailed component resource with the new data
          * @param componentResourceEntity the component resource entity to update
          * @param projectId the id of the project where the component resource is being updated
-         * @param quantity the quantity of the component resource in the project
          * @return the updated component resource entity if updated, null otherwise
          */
-    public ComponentResourceEntity updateData (DetailedCR detailedCR, ComponentResourceEntity componentResourceEntity, int projectId, int quantity) {
+    public ComponentResourceEntity updateData (DetailedCR detailedCR, ComponentResourceEntity componentResourceEntity, Integer projectId) {
         logger.info("Updating data of component resource");
 
         if (detailedCR == null) {
@@ -346,7 +405,7 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
         }
 
         // If the update occurs in a project, update the quantity of the component resource in the project
-        if (projectId > 0 && quantity > 0) {
+        if (projectId != null && detailedCR.getQuantity() > 0) {
             M2MComponentProject m2MComponentProject;
             try {
                 m2MComponentProject = m2MComponentProjectDao.findM2MComponentProjectByComponentIdAndProjectId(projectId, componentResourceEntity.getId());
@@ -360,7 +419,7 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
                 return null;
             }
 
-            m2MComponentProject.setQuantity(quantity);
+            m2MComponentProject.setQuantity(detailedCR.getQuantity());
 
             try {
                 m2MComponentProjectDao.merge(m2MComponentProject);
@@ -406,4 +465,107 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
 
         return detailedCR;
     }
+
+    /**
+     * Inactivates a relation between a component resource and a project.
+     * This is used to remove a component resource from a project's Bill of Materials.
+     *
+     * @param projectId the project id to inactivate the relation with
+     * @param componentId the component resource id to inactivate the relation with
+     * @return true if the relation was inactivated successfully, false otherwise
+     */
+    public boolean inactivateRelation(int projectId, int componentId) {
+        logger.info("Inactivating relation between component resource and project");
+
+        if (!dataValidator.isIdValid(projectId) || !dataValidator.isIdValid(componentId)) {
+            logger.error("Invalid ids while inactivating relation");
+            return false;
+        }
+
+        M2MComponentProject m2MComponentProject;
+        try {
+            m2MComponentProject = m2MComponentProjectDao.findM2MComponentProjectByComponentIdAndProjectId(projectId, componentId);
+        } catch (PersistenceException e) {
+            logger.error("Error finding relation between component resource and project: {}", e.getMessage());
+            return false;
+        }
+
+        if (m2MComponentProject == null) {
+            logger.error("Relation between component resource and project not found");
+            return false;
+        }
+
+        m2MComponentProject.setActive(false);
+
+        try {
+            m2MComponentProjectDao.merge(m2MComponentProject);
+        } catch (PersistenceException e) {
+            logger.error("Error inactivating relation between component resource and project: {}", e.getMessage());
+            return false;
+        }
+
+        logger.info("Relation inactivated successfully");
+
+        return true;
+    }
+
+    /**
+     * Gets the component resources by project id.
+     * The method validates the data,
+     * gets the component resources from the database and returns the preview component resources.
+     *
+     * @param projectId the id of the project to get the component resources from
+     * @return the set of preview component resources if found, null otherwise
+     */
+    public Set<CRPreview> getComponentResourcesByProjectId(int projectId) {
+        logger.info("Getting component resources by project id");
+
+        if (!dataValidator.isIdValid(projectId)) {
+            logger.error("Invalid id while getting component resources by project id");
+            return null;
+        }
+
+        Set<Integer> componentResourceIds;
+        try {
+            componentResourceIds = m2MComponentProjectDao.findComponentResourceIdsByProjectId(projectId);
+        } catch (PersistenceException e) {
+            logger.error("Error finding component resource ids by project id: {}", e.getMessage());
+            return null;
+        }
+
+        if (componentResourceIds == null) {
+            logger.error("Component resource ids not found");
+            return null;
+        }
+
+        Set<CRPreview> crPreviews = new HashSet<>();
+
+        // For each component resource id, convert the detailed component resource to a preview component resource
+        for (Integer componentResourceId : componentResourceIds) {
+            ComponentResourceEntity componentResourceEntity;
+            try {
+                componentResourceEntity = componentResourceDao.findCREntityById(componentResourceId);
+            } catch (PersistenceException e) {
+                logger.error("Error finding component resource entity by id: {}", e.getMessage());
+                return null;
+            }
+
+            if (componentResourceEntity == null) {
+                logger.error("Component resource entity not found");
+                return null;
+            }
+
+            CRPreview crPreview = entityToPreviewCR(componentResourceEntity);
+
+            if (crPreview == null) {
+                logger.error("Error converting detailed component resource to preview");
+                return null;
+            }
+
+            crPreviews.add(crPreview);
+        }
+
+        return crPreviews;
+    }
+    
 }

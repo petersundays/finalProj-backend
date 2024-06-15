@@ -118,9 +118,24 @@ public class UserDao extends AbstractDao<UserEntity> {
      * @param lastName the last name of the user
      * @param nickname the nickname of the user
      * @param workplace the workplace of the user
+     * @param orderBy the attribute by which to order the results
+     * @param orderAsc whether to order the results in ascending order
      * @return a list of UserEntity objects
      */
-    public List<UserEntity> getUsersByCriteria(String firstName, String lastName, String nickname, String workplace) {
+    /**
+     * Gets a list of users by criteria with pagination.
+     *
+     * @param firstName the first name of the user
+     * @param lastName the last name of the user
+     * @param nickname the nickname of the user
+     * @param workplace the workplace of the user
+     * @param orderBy the attribute by which to order the results
+     * @param orderAsc whether to order the results in ascending order
+     * @param pageNumber the page number
+     * @param pageSize the number of records per page
+     * @return a list of UserEntity objects
+     */
+    public List<UserEntity> getUsersByCriteria(String firstName, String lastName, String nickname, String workplace, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<UserEntity> cq = cb.createQuery(UserEntity.class);
 
@@ -137,12 +152,23 @@ public class UserDao extends AbstractDao<UserEntity> {
         }
         if (workplace != null) {
             LabEnum workplaceEnum = LabEnum.valueOf(workplace.toUpperCase());
+            System.out.println("#*#*#*#*#* workplaceEnum: " + workplaceEnum);
             predicates.add(cb.equal(user.get("workplace").get("city"), workplaceEnum));
         }
 
         cq.select(user).where(cb.and(predicates.toArray(new Predicate[0])));
 
+        if (orderBy != null) {
+            if (orderAsc) {
+                cq.orderBy(cb.asc(user.get(orderBy)));
+            } else {
+                cq.orderBy(cb.desc(user.get(orderBy)));
+            }
+        }
+
         TypedQuery<UserEntity> query = em.createQuery(cq);
+        query.setFirstResult(pageNumber * pageSize);
+        query.setMaxResults(pageSize);
         return query.getResultList();
     }
 

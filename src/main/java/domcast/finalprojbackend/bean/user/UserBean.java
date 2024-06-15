@@ -941,30 +941,52 @@ public class UserBean implements Serializable {
     }
 
     /**
-     * Retrieves a list of users based on the search criteria.
+     * Returns a list of users based on the search criteria.
      * @param firstName The first name of the user.
      * @param lastName The last name of the user.
      * @param nickname The nickname of the user.
      * @param workplace The workplace of the user.
-     * @return A list of searched users.
+     * @param orderBy The field to order the results by.
+     * @param orderAsc True if the results should be ordered in ascending order, false otherwise.
+     * @param pageNumber The page number of the results.
+     * @param pageSize The number of results per page.
+     * @return A list of users based on the search criteria.
      */
-    public List<SearchedUser> getUsersByCriteria(String firstName, String lastName, String nickname, String workplace) {
-        List<UserEntity> users = userDao.getUsersByCriteria(firstName, lastName, nickname, workplace);
+    public List<SearchedUser> getUsersByCriteria(String firstName, String lastName, String nickname, String workplace, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
         List<SearchedUser> searchedUsers = new ArrayList<>();
-
-        for (UserEntity user : users) {
-            SearchedUser searchedUser = new SearchedUser();
-            searchedUser.setId(user.getId());
-            searchedUser.setFirstName(user.getFirstName());
-            searchedUser.setLastName(user.getLastName());
-            searchedUser.setNickname(user.getNickname());
-            searchedUser.setWorkplace(user.getWorkplace().getCity().getValue());
-            searchedUser.setPhoto(user.getPhoto());
-            searchedUser.setVisible(user.isVisible());
-            searchedUsers.add(searchedUser);
+        try {
+            List<UserEntity> users = userDao.getUsersByCriteria(firstName, lastName, nickname, workplace, orderBy, orderAsc, pageNumber, pageSize);
+            if (users != null && !users.isEmpty()) {
+                logger.info("Users found in DAO: {}", users.size());
+                for (UserEntity user : users) {
+                    if (user != null) {
+                        SearchedUser searchedUser = entityToSearchedUser(user);
+                        searchedUsers.add(searchedUser);
+                    }
+                }
+                logger.info("Users found: {}", searchedUsers.size());
+            }
+        } catch (Exception e) {
+            logger.error("Error occurred while getting users by criteria", e);
         }
-
         return searchedUsers;
+    }
+
+    /**
+     * Converts a UserEntity object to a SearchedUser object.
+     * @param user The UserEntity object to convert.
+     * @return The SearchedUser object.
+     */
+    private static SearchedUser entityToSearchedUser(UserEntity user) {
+        SearchedUser searchedUser = new SearchedUser();
+        searchedUser.setId(user.getId());
+        searchedUser.setFirstName(user.getFirstName());
+        searchedUser.setLastName(user.getLastName());
+        searchedUser.setNickname(user.getNickname());
+        searchedUser.setWorkplace(user.getWorkplace().getCity().getValue());
+        searchedUser.setPhoto(user.getPhoto());
+        searchedUser.setVisible(user.isVisible());
+        return searchedUser;
     }
 
     /**

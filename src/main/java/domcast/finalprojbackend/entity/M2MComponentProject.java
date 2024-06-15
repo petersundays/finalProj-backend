@@ -24,6 +24,8 @@ import java.io.Serializable;
 
 @NamedQuery(name = "M2MComponentProject.findM2MComponentProjectByProjectIdAndComponentId",
         query = "SELECT m FROM M2MComponentProject m WHERE m.project.id = :projectId AND m.componentResource.id = :componentId")
+@NamedQuery(name = "M2MComponentProject.findComponentResourceIdsByProjectId",
+        query = "SELECT m.componentResource.id FROM M2MComponentProject m WHERE m.project.id = :projectId")
 
 public class M2MComponentProject implements Serializable {
 

@@ -2,8 +2,16 @@ package domcast.finalprojbackend.dao;
 
 import domcast.finalprojbackend.entity.ComponentResourceEntity;
 import jakarta.ejb.Stateless;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Stateless
 public class ComponentResourceDao extends AbstractDao<ComponentResourceEntity> {
@@ -75,4 +83,47 @@ public class ComponentResourceDao extends AbstractDao<ComponentResourceEntity> {
         }
     }
 
+    /**
+     * Gets a list of ComponentResourceEntity by criteria.
+     *
+     * @param name the name of the component resource
+     * @param brand the brand of the component resource
+     * @param partNumber the part number of the component resource
+     * @param supplier the supplier of the component resource
+     * @param orderBy the attribute by which to order the results
+     * @param orderAsc whether to order the results in ascending order
+     * @return a list of ComponentResourceEntity objects
+     */
+    public List<ComponentResourceEntity> getComponentResourcesByCriteria(String name, String brand, String partNumber, String supplier, String orderBy, boolean orderAsc) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<ComponentResourceEntity> cq = cb.createQuery(ComponentResourceEntity.class);
+
+        Root<ComponentResourceEntity> componentResource = cq.from(ComponentResourceEntity.class);
+        List<Predicate> predicates = new ArrayList<>();
+        if (name != null) {
+            predicates.add(cb.equal(componentResource.get("name"), name));
+        }
+        if (brand != null) {
+            predicates.add(cb.equal(componentResource.get("brand"), brand));
+        }
+        if (partNumber != null) {
+            predicates.add(cb.equal(componentResource.get("partNumber"), partNumber));
+        }
+        if (supplier != null) {
+            predicates.add(cb.equal(componentResource.get("supplier"), supplier));
+        }
+
+        cq.select(componentResource).where(cb.and(predicates.toArray(new Predicate[0])));
+
+        if (orderBy != null) {
+            if (orderAsc) {
+                cq.orderBy(cb.asc(componentResource.get(orderBy)));
+            } else {
+                cq.orderBy(cb.desc(componentResource.get(orderBy)));
+            }
+        }
+
+        TypedQuery<ComponentResourceEntity> query = em.createQuery(cq);
+        return query.getResultList();
+    }
 }
