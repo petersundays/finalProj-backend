@@ -1,16 +1,14 @@
 package domcast.finalprojbackend.dao;
 
 import domcast.finalprojbackend.bean.user.UserBean;
+import domcast.finalprojbackend.entity.LabEntity;
 import domcast.finalprojbackend.entity.UserEntity;
 import domcast.finalprojbackend.enums.LabEnum;
 import domcast.finalprojbackend.enums.TypeOfUserEnum;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -152,22 +150,30 @@ public class UserDao extends AbstractDao<UserEntity> {
         }
         if (workplace != null) {
             LabEnum workplaceEnum = LabEnum.valueOf(workplace.toUpperCase());
-            System.out.println("#*#*#*#*#* workplaceEnum: " + workplaceEnum);
             predicates.add(cb.equal(user.get("workplace").get("city"), workplaceEnum));
         }
 
         cq.select(user).where(cb.and(predicates.toArray(new Predicate[0])));
 
         if (orderBy != null) {
-            if (orderAsc) {
-                cq.orderBy(cb.asc(user.get(orderBy)));
+            if (orderBy.equals("workplace")) {
+                Join<UserEntity, LabEntity> join = user.join("workplace");
+                if (orderAsc) {
+                    cq.orderBy(cb.asc(join.get("city")));
+                } else {
+                    cq.orderBy(cb.desc(join.get("city")));
+                }
             } else {
-                cq.orderBy(cb.desc(user.get(orderBy)));
+                if (orderAsc) {
+                    cq.orderBy(cb.asc(user.get(orderBy)));
+                } else {
+                    cq.orderBy(cb.desc(user.get(orderBy)));
+                }
             }
         }
 
         TypedQuery<UserEntity> query = em.createQuery(cq);
-        query.setFirstResult(pageNumber * pageSize);
+        query.setFirstResult((pageNumber - 1) * pageSize); // Adjust pageNumber to be 0-indexed
         query.setMaxResults(pageSize);
         return query.getResultList();
     }

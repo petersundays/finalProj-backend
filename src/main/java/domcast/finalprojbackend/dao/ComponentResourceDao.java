@@ -94,7 +94,7 @@ public class ComponentResourceDao extends AbstractDao<ComponentResourceEntity> {
      * @param orderAsc whether to order the results in ascending order
      * @return a list of ComponentResourceEntity objects
      */
-    public List<ComponentResourceEntity> getComponentResourcesByCriteria(String name, String brand, String partNumber, String supplier, String orderBy, boolean orderAsc) {
+    public List<ComponentResourceEntity> getComponentResourcesByCriteria(String name, String brand, long partNumber, String supplier, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<ComponentResourceEntity> cq = cb.createQuery(ComponentResourceEntity.class);
 
@@ -106,7 +106,7 @@ public class ComponentResourceDao extends AbstractDao<ComponentResourceEntity> {
         if (brand != null) {
             predicates.add(cb.equal(componentResource.get("brand"), brand));
         }
-        if (partNumber != null) {
+        if (partNumber != 0) {
             predicates.add(cb.equal(componentResource.get("partNumber"), partNumber));
         }
         if (supplier != null) {
@@ -124,6 +124,8 @@ public class ComponentResourceDao extends AbstractDao<ComponentResourceEntity> {
         }
 
         TypedQuery<ComponentResourceEntity> query = em.createQuery(cq);
+        query.setFirstResult((pageNumber - 1) * pageSize); // Adjust pageNumber to be 0-indexed
+        query.setMaxResults(pageSize);
         return query.getResultList();
     }
 }

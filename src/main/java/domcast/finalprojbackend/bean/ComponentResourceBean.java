@@ -16,7 +16,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -567,5 +569,59 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
 
         return crPreviews;
     }
-    
+
+    /**
+     * Gets the component resources by criteria.
+     * The method validates the data,
+     * gets the component resources from the database and returns the preview component resources.
+     *
+     * @param name the name of the component resource
+     * @param brand the brand of the component resource
+     * @param partNumber the part number of the component resource
+     * @param supplier the supplier of the component resource
+     * @param orderBy the field to order the component resources by
+     * @param orderAsc the order of the component resources
+     * @param pageNumber the page number to get the component resources from
+     * @param pageSize the page size to get the component resources from
+     * @return the list of preview component resources if found, empty list otherwise
+     */
+    public List<CRPreview> getComponentResourcesByCriteria(String name, String brand, long partNumber, String supplier, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
+        logger.info("Getting component resources by criteria: name={}, brand={}, partNumber={}, supplier={}, orderBy={}, orderAsc={}, pageNumber={}, pageSize={}", name, brand, partNumber, supplier, orderBy, orderAsc, pageNumber, pageSize);
+
+        if (!dataValidator.isPageNumberValid(pageNumber)) {
+            logger.error("Invalid page number: {}", pageNumber);
+            return Collections.emptyList();
+        }
+        if (!dataValidator.isPageSizeValid(pageSize)) {
+            logger.error("Invalid page size: {}", pageSize);
+            return Collections.emptyList();
+        }
+
+        // Get the component resources from the database
+        List<ComponentResourceEntity> componentResourceEntities;
+        try {
+            componentResourceEntities = componentResourceDao.getComponentResourcesByCriteria(name, brand, partNumber, supplier, orderBy, orderAsc, pageNumber, pageSize);
+        } catch (PersistenceException e) {
+            logger.error("Error getting component resources by criteria: {}", e.getMessage());
+            return Collections.emptyList();
+        }
+
+        if (componentResourceEntities == null || componentResourceEntities.isEmpty()) {
+            logger.info("No component resources found for the given criteria");
+            return Collections.emptyList();
+        }
+
+        // Convert the detailed component resources to preview component resources
+        List<CRPreview> crPreviews;
+        try {
+            crPreviews = componentResourceEntities.stream()
+                    .map(this::entityToPreviewCR)
+                    .toList();
+        } catch (Exception e) {
+            logger.error("Error converting detailed component resource list to preview list: {}", e.getMessage());
+            return Collections.emptyList();
+        }
+
+        return crPreviews;
+    }
 }

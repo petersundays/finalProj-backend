@@ -15,6 +15,7 @@ import jakarta.ws.rs.core.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.List;
 import java.util.Set;
 
 @Path("/component-resource")
@@ -261,6 +262,57 @@ public class ComponentResourceService {
             response = Response.status(500).entity("Error getting component resources. Please try again later").build();
         } catch (Exception e) {
             logger.error("Error getting component resources for project with id {}", projectId, e);
+            response = Response.status(500).entity("Error getting component resources. Please try again later").build();
+        }
+
+        return response;
+    }
+
+    @GET
+    @Path("")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getComponentResourcesByCriteria(@HeaderParam("token") String token,
+                                                    @HeaderParam("id") int userId,
+                                                    @QueryParam("name") String name,
+                                                    @QueryParam("brand") String brand,
+                                                    @QueryParam("partNumber") long partNumber,
+                                                    @QueryParam("supplier") String supplier,
+                                                    @QueryParam("orderBy") String orderBy,
+                                                    @QueryParam("orderAsc") boolean orderAsc,
+                                                    @QueryParam("pageNumber") int pageNumber,
+                                                    @QueryParam("pageSize") int pageSize,
+                                                    @Context HttpServletRequest request) {
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with token {} is trying to get component-resources from IP address {}", token, ipAddress);
+
+        // Check if the user's and project's ids are valid
+        if (!dataValidator.isIdValid(userId)) {
+            logger.info("User with session token {} tried to get component-resources unsuccessfully", token);
+            return Response.status(400).entity("Invalid id").build();
+        }
+
+        // Check if the user is authorized to get the component-resources by criteria
+        if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, userId)) {
+            logger.info("User with session token {} tried to get component-resources unsuccessfully", token);
+            return Response.status(401).entity("Unauthorized").build();
+        }
+
+        Response response;
+        List<CRPreview> crPreviews;
+
+        try {
+            crPreviews = componentResourceBean.getComponentResourcesByCriteria(name, brand, partNumber, supplier, orderBy, orderAsc, pageNumber, pageSize);
+            if (crPreviews == null) {
+                logger.error("Error getting component resources with name: {}, brand: {}, partNumber: {}, supplier: {}, orderBy: {}, orderAsc: {}, pageNumber: {}, pageSize: {}", name, brand, partNumber, supplier, orderBy, orderAsc, pageNumber, pageSize);
+                return Response.status(500).entity("Error getting component resources").build();
+            }
+            response = Response.status(200).entity(crPreviews).build();
+        } catch (PersistenceException e) {
+            logger.error("Error getting component resources with name: {}, brand: {}, partNumber: {}, supplier: {}, orderBy: {}, orderAsc: {}, pageNumber: {}, pageSize: {}", name, brand, partNumber, supplier, orderBy, orderAsc, pageNumber, pageSize, e);
+            response = Response.status(500).entity("Error getting component resources. Please try again later").build();
+        } catch (Exception e) {
+            logger.error("Error getting component resources with name: {}, brand: {}, partNumber: {}, supplier: {}, orderBy: {}, orderAsc: {}, pageNumber: {}, pageSize: {}", name, brand, partNumber, supplier, orderBy, orderAsc, pageNumber, pageSize, e);
             response = Response.status(500).entity("Error getting component resources. Please try again later").build();
         }
 

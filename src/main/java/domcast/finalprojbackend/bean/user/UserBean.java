@@ -953,6 +953,12 @@ public class UserBean implements Serializable {
      * @return A list of users based on the search criteria.
      */
     public List<SearchedUser> getUsersByCriteria(String firstName, String lastName, String nickname, String workplace, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
+
+        if (!dataValidator.isPageSizeValid(pageSize) || !dataValidator.isPageNumberValid(pageNumber)) {
+            logger.error("Invalid page size or page number");
+            return new ArrayList<>();
+        }
+
         List<SearchedUser> searchedUsers = new ArrayList<>();
         try {
             List<UserEntity> users = userDao.getUsersByCriteria(firstName, lastName, nickname, workplace, orderBy, orderAsc, pageNumber, pageSize);
