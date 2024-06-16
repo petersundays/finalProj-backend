@@ -358,6 +358,10 @@ public class UserService {
                                        @QueryParam("lastName") String lastName,
                                        @QueryParam("nickname") String nickname,
                                        @QueryParam("workplace") String workplace,
+                                       @QueryParam("orderBy") String orderBy,
+                                       @QueryParam("orderAsc") boolean orderAsc,
+                                       @QueryParam("pageNumber") int pageNumber,
+                                       @QueryParam("pageSize") int pageSize,
                                        @Context HttpServletRequest request) {
         String ipAddress = request.getRemoteAddr();
         logger.info("User with IP address {} is trying to get users by criteria", ipAddress);
@@ -380,7 +384,7 @@ public class UserService {
         }
 
         try {
-            users = userBean.getUsersByCriteria(firstName, lastName, nickname, workplace);
+            users = userBean.getUsersByCriteria(firstName, lastName, nickname, workplace, orderBy, orderAsc, pageNumber, pageSize);
             response = Response.status(200).entity(users).build();
             logger.info("User with IP address {} got users by criteria successfully", ipAddress);
         } catch (Exception e) {

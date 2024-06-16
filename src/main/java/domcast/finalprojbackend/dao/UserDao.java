@@ -1,16 +1,14 @@
 package domcast.finalprojbackend.dao;
 
 import domcast.finalprojbackend.bean.user.UserBean;
+import domcast.finalprojbackend.entity.LabEntity;
 import domcast.finalprojbackend.entity.UserEntity;
 import domcast.finalprojbackend.enums.LabEnum;
 import domcast.finalprojbackend.enums.TypeOfUserEnum;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -118,9 +116,24 @@ public class UserDao extends AbstractDao<UserEntity> {
      * @param lastName the last name of the user
      * @param nickname the nickname of the user
      * @param workplace the workplace of the user
+     * @param orderBy the attribute by which to order the results
+     * @param orderAsc whether to order the results in ascending order
      * @return a list of UserEntity objects
      */
-    public List<UserEntity> getUsersByCriteria(String firstName, String lastName, String nickname, String workplace) {
+    /**
+     * Gets a list of users by criteria with pagination.
+     *
+     * @param firstName the first name of the user
+     * @param lastName the last name of the user
+     * @param nickname the nickname of the user
+     * @param workplace the workplace of the user
+     * @param orderBy the attribute by which to order the results
+     * @param orderAsc whether to order the results in ascending order
+     * @param pageNumber the page number
+     * @param pageSize the number of records per page
+     * @return a list of UserEntity objects
+     */
+    public List<UserEntity> getUsersByCriteria(String firstName, String lastName, String nickname, String workplace, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<UserEntity> cq = cb.createQuery(UserEntity.class);
 
@@ -142,7 +155,26 @@ public class UserDao extends AbstractDao<UserEntity> {
 
         cq.select(user).where(cb.and(predicates.toArray(new Predicate[0])));
 
+        if (orderBy != null) {
+            if (orderBy.equals("workplace")) {
+                Join<UserEntity, LabEntity> join = user.join("workplace");
+                if (orderAsc) {
+                    cq.orderBy(cb.asc(join.get("city")));
+                } else {
+                    cq.orderBy(cb.desc(join.get("city")));
+                }
+            } else {
+                if (orderAsc) {
+                    cq.orderBy(cb.asc(user.get(orderBy)));
+                } else {
+                    cq.orderBy(cb.desc(user.get(orderBy)));
+                }
+            }
+        }
+
         TypedQuery<UserEntity> query = em.createQuery(cq);
+        query.setFirstResult((pageNumber - 1) * pageSize); // Adjust pageNumber to be 0-indexed
+        query.setMaxResults(pageSize);
         return query.getResultList();
     }
 

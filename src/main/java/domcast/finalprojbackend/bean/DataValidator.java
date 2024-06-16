@@ -216,4 +216,26 @@ public class DataValidator {
 
         return isValid;
     }
+
+    public boolean isPageNumberValid(int pageNumber) {
+        logger.info("Checking if page number is valid");
+
+        if (pageNumber <= 0) {
+            logger.error("Page number must be greater than 0");
+            throw new IllegalArgumentException("Page number must be greater than 0");
+        }
+
+        return true;
+    }
+
+    public boolean isPageSizeValid(int pageSize) {
+        logger.info("Checking if page size is valid");
+
+        if (pageSize <= 0) {
+            logger.error("Page size must be greater than 0");
+            throw new IllegalArgumentException("Page size must be greater than 0");
+        }
+
+        return true;
+    }
 }

@@ -152,7 +152,7 @@ public class StartupCreator implements Serializable {
                     user.setWorkplace(lab);
                 }
 
-                if (i == 0) {
+                if (i == 9) {
                     user.setType(TypeOfUserEnum.NOT_CONFIRMED);
                     ValidationTokenEntity validationToken = tokenBean.generateValidationToken(user, 48*60, "127.0.0.1");
                     user.addValidationToken(validationToken);
