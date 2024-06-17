@@ -67,8 +67,10 @@ public class ComponentResourceBean implements Serializable {
 
         logger.info("Validating data");
 
-        if (!dataValidator.isCRMandatoryDataValid(detailedCR, projectId)) {
-            logger.error("Mandatory data is not valid");
+        try {
+            dataValidator.isCRMandatoryDataValid(detailedCR, projectId, quantity);
+        } catch (IllegalArgumentException e) {
+            logger.error("Data validation failed: ", e);
             return null;
         }
 
@@ -91,7 +93,7 @@ public class ComponentResourceBean implements Serializable {
         }
 
         if (crPreview == null) {
-            logger.error("Error converting detailed component resource to preview");
+            logger.error("Error converting detailed component resource to preview while creating component resource");
             return null;
         }
 
@@ -279,11 +281,12 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
         logger.info("Creating preview");
 
         CRPreview crPreview = new CRPreview();
-        int type = ComponentResourceEnum.fromEnum(entityCR.getType());
-
+        if (entityCR.getType() != null) {
+            int type = ComponentResourceEnum.fromEnum(entityCR.getType());
+            crPreview.setType(type);
+        }
         crPreview.setId(entityCR.getId());
         crPreview.setName(entityCR.getName());
-        crPreview.setType(type);
         crPreview.setBrand(entityCR.getBrand());
         crPreview.setPartNumber(entityCR.getPartNumber());
         crPreview.setSupplier(entityCR.getSupplier());
@@ -451,11 +454,12 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
         logger.info("Creating detailed component resource");
 
         DetailedCR detailedCR = new DetailedCR();
-        int type = ComponentResourceEnum.fromEnum(entityCR.getType());
-
+        if (entityCR.getType() != null) {
+            int type = ComponentResourceEnum.fromEnum(entityCR.getType());
+            detailedCR.setType(type);
+        }
         detailedCR.setId(entityCR.getId());
         detailedCR.setName(entityCR.getName());
-        detailedCR.setType(type);
         detailedCR.setBrand(entityCR.getBrand());
         detailedCR.setPartNumber(entityCR.getPartNumber());
         detailedCR.setSupplier(entityCR.getSupplier());

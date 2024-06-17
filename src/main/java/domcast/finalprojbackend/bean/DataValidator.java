@@ -199,23 +199,44 @@ public class DataValidator {
      * @param projectId the id of the project where the CR will be created. It can be null if the CR is not being created in a project.
      * @return boolean value indicating if the mandatory data is valid
      */
-    public boolean isCRMandatoryDataValid(DetailedCR detailedCR, Integer projectId) {
-        logger.info("Checking if mandatory data is valid for detailed CR");
-
-        boolean isValid = detailedCR.getName() != null && !detailedCR.getName().isBlank() &&
-                detailedCR.getDescription() != null && !detailedCR.getDescription().isBlank() &&
-                detailedCR.getBrand() != null && !detailedCR.getBrand().isBlank() &&
-                detailedCR.getPartNumber() != null && detailedCR.getPartNumber() > 0 &&
-                ComponentResourceEnum.isValidId(detailedCR.getType()) &&
-                detailedCR.getQuantity() > 0 &&
-                detailedCR.getSupplier() != null && !detailedCR.getSupplier().isBlank() &&
-                detailedCR.getSupplierContact() > 0;
-
-        if (projectId != null) {
-            isValid = isValid && projectId > 0;
+    public boolean isCRMandatoryDataValid(DetailedCR detailedCR, Integer projectId, Integer quantity) {
+        if (detailedCR.getName() == null || detailedCR.getName().isBlank()) {
+            throw new IllegalArgumentException("Name is null or blank");
         }
 
-        return isValid;
+        if (detailedCR.getDescription() == null || detailedCR.getDescription().isBlank()) {
+            throw new IllegalArgumentException("Description is null or blank");
+        }
+
+        if (detailedCR.getBrand() == null || detailedCR.getBrand().isBlank()) {
+            throw new IllegalArgumentException("Brand is null or blank");
+        }
+
+        if (detailedCR.getPartNumber() == null || detailedCR.getPartNumber() <= 0) {
+            throw new IllegalArgumentException("PartNumber is null or not greater than 0");
+        }
+
+        if (!ComponentResourceEnum.isValidId(detailedCR.getType())) {
+            throw new IllegalArgumentException("Type is not a valid ComponentResourceEnum id");
+        }
+
+        if (detailedCR.getSupplier() == null || detailedCR.getSupplier().isBlank()) {
+            throw new IllegalArgumentException("Supplier is null or blank");
+        }
+
+        if (detailedCR.getSupplierContact() <= 0) {
+            throw new IllegalArgumentException("SupplierContact is not greater than 0");
+        }
+
+        if (projectId != null && projectId <= 0) {
+            throw new IllegalArgumentException("ProjectId is not greater than 0");
+        }
+
+        if (quantity != null && quantity <= 0) {
+            throw new IllegalArgumentException("Quantity is not greater than 0");
+        }
+
+        return true;
     }
 
     public boolean isPageNumberValid(int pageNumber) {
