@@ -179,7 +179,6 @@ public class StartupCreator implements Serializable {
     public void createDefaultProjects() {
         logger.info("Creating default projects");
 
-        // Assuming SkillEntity, InterestEntity, LabEntity, and UserEntity instances are already created
         List<SkillEntity> skills = em.createQuery("SELECT s FROM SkillEntity s", SkillEntity.class).getResultList();
         List<InterestEntity> interests = em.createQuery("SELECT i FROM InterestEntity i", InterestEntity.class).getResultList();
         List<LabEntity> labs = em.createQuery("SELECT l FROM LabEntity l", LabEntity.class).getResultList();
@@ -191,6 +190,9 @@ public class StartupCreator implements Serializable {
 
         // Create a Random instance
         Random random = new Random();
+
+        // Create a HashSet to store the already used componentResource names and brands
+        Set<String> usedComponentResourceNamesAndBrands = new HashSet<>();
 
         String[] projectNames = {"Climate Change Research", "AI Development", "Quantum Computing Study", "Cancer Treatment Research", "Space Exploration", "Renewable Energy Development", "Autonomous Vehicles", "Blockchain Technology", "Cybersecurity Enhancement", "Genetic Engineering"};
         String[] projectDescriptions = {"Researching the effects of climate change", "Developing artificial intelligence algorithms", "Studying the principles of quantum computing", "Researching new cancer treatments", "Exploring outer space", "Developing renewable energy sources", "Creating autonomous vehicles", "Implementing blockchain technology", "Enhancing cybersecurity measures", "Engineering genetic modifications"};
@@ -258,9 +260,19 @@ public class StartupCreator implements Serializable {
             Set<M2MComponentProject> projectComponentResources = new HashSet<>();
             for (int j = 0; j < 5; j++) { // Create 5 componentResources for each project
                 ComponentResourceEntity componentResource = new ComponentResourceEntity();
-                componentResource.setName(componentResourceNames[j]);
-                componentResource.setDescription("Description for " + componentResourceNames[j]);
-                componentResource.setBrand(componentResourceBrands[j % componentResourceBrands.length]); // Use modulo to avoid IndexOutOfBoundsException
+
+                // Generate a unique name and brand
+                String name, brand;
+                do {
+                    name = componentResourceNames[random.nextInt(componentResourceNames.length)];
+                    brand = componentResourceBrands[random.nextInt(componentResourceBrands.length)];
+                } while (usedComponentResourceNamesAndBrands.contains(name + brand));
+                usedComponentResourceNamesAndBrands.add(name + brand);
+
+
+                componentResource.setName(name);
+                componentResource.setDescription("Description for " + name);
+                componentResource.setBrand(brand);
 
                 // Generate a unique part number
                 long partNumber;
@@ -281,7 +293,8 @@ public class StartupCreator implements Serializable {
                 usedSupplierContacts.add(supplierContact);
                 componentResource.setSupplierContact(supplierContact);
 
-                componentResource.setType(ComponentResourceEnum.COMPONENT); // Set type as COMPONENT
+                // Randomly set the type as COMPONENT or RESOURCE
+                componentResource.setType(random.nextBoolean() ? ComponentResourceEnum.COMPONENT : ComponentResourceEnum.RESOURCE);
                 em.persist(componentResource); // Persist the ComponentResourceEntity before using it
 
                 M2MComponentProject projectComponentResource = new M2MComponentProject();
@@ -327,13 +340,32 @@ public class StartupCreator implements Serializable {
                 task.setDescription(taskDescriptions[j % taskDescriptions.length]);
                 task.setProjectedStartDate(project.getDeadline().minusDays(numTasks - j));
                 task.setDeadline(project.getDeadline().minusDays(numTasks - j - 1));
-                task.setResponsible(users.get(0)); // Set the first user as the responsible
                 task.setProjectId(project);
 
+                // Set the responsible user only if the user is part of the project
+                UserEntity responsibleUser = users.get(j % users.size()); // Set the first user as the responsible
+                if (project.getProjectUsers().stream().anyMatch(pu -> pu.getUser().equals(responsibleUser))) {
+                    task.setResponsible(responsibleUser);
+                } else {
+                    // If the responsible user is not part of the project, set another user that is part of the project as responsible
+                    Optional<UserEntity> anotherUser = project.getProjectUsers().stream().map(M2MProjectUser::getUser).findFirst();
+                    anotherUser.ifPresent(task::setResponsible);
+                }
+
+
                 // Set the state of the task based on the project's state
-                if (projectStates[i] == ProjectStateEnum.IN_PROGRESS || projectStates[i] == ProjectStateEnum.FINISHED) {
-                    task.setState(TaskStateEnum.IN_PROGRESS);
-                    task.setRealStartDate(task.getProjectedStartDate());
+                if (projectStates[i] == ProjectStateEnum.FINISHED) {
+                    task.setState(TaskStateEnum.FINISHED);
+                } else if (projectStates[i] == ProjectStateEnum.IN_PROGRESS || projectStates[i] == ProjectStateEnum.CANCELED) {
+                    // The task's state can be PLANNED, IN_PROGRESS, or FINISHED
+                    int taskStateIndex = random.nextInt(3);
+                    if (taskStateIndex == 0) {
+                        task.setState(TaskStateEnum.PLANNED);
+                    } else if (taskStateIndex == 1) {
+                        task.setState(TaskStateEnum.IN_PROGRESS);
+                    } else {
+                        task.setState(TaskStateEnum.FINISHED);
+                    }
                 } else {
                     task.setState(TaskStateEnum.PLANNED);
                 }
