@@ -97,7 +97,7 @@ public class TaskEntity implements Serializable {
 
     // Project to which the task belongs
     @ManyToOne
-    @JoinColumn(name = "project_id", nullable = false)
+    @JoinColumn(name = "project_id", nullable = false, updatable = false)
     private ProjectEntity projectId;
 
     // Tasks that this task depends on
@@ -149,9 +149,15 @@ public class TaskEntity implements Serializable {
     public void setState(TaskStateEnum state) {
         if (state == TaskStateEnum.FINISHED) {
             this.realEndDate = LocalDateTime.now();
+        } else if (this.state == TaskStateEnum.FINISHED && state == TaskStateEnum.IN_PROGRESS) {
+            this.realEndDate = null;
         } else if (state == TaskStateEnum.IN_PROGRESS) {
             this.realStartDate = LocalDateTime.now();
+        } else if (state == TaskStateEnum.PLANNED) {
+            this.realStartDate = null;
+            this.realEndDate = null;
         }
+
         this.state = state;
     }
 

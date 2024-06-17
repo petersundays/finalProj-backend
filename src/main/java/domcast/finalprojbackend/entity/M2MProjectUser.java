@@ -25,8 +25,8 @@ import java.io.Serializable;
 @Entity
 @Table(name = "project_user")
 
-@NamedQuery(name = "M2MProjectUser.isUserActiveInProject",
-        query = "SELECT p FROM M2MProjectUser p WHERE p.user.id = :userId AND p.project.id = :projectId AND p.active = true")
+@NamedQuery(name = "M2MProjectUser.isUserActiveAndApprovedInProject",
+        query = "SELECT pu FROM M2MProjectUser pu WHERE pu.user.id = :userId AND pu.project.id = :projectId AND pu.approved = 1")
 
 
 public class M2MProjectUser implements Serializable {

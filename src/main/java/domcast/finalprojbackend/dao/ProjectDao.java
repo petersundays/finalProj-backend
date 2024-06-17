@@ -38,15 +38,15 @@ public class ProjectDao extends AbstractDao<ProjectEntity> {
     }
 
     /**
-     * Checks if a user is active in a project.
+     * Checks if a user is active and approved in a project.
      *
      * @param userId the id of the user
      * @param projectId the id of the project
-     * @return boolean value indicating if the user is active in the project
+     * @return boolean value indicating if the user is active and approved in the project
      */
-    public boolean isUserActiveInProject(int userId, int projectId) {
+    public boolean isUserActiveAndApprovedInProject(int userId, int projectId) {
         try {
-            M2MProjectUser result = em.createNamedQuery("M2MProjectUser.isUserActiveInProject", M2MProjectUser.class)
+            M2MProjectUser result = em.createNamedQuery("M2MProjectUser.isUserActiveAndApprovedInProject", M2MProjectUser.class)
                     .setParameter("userId", userId)
                     .setParameter("projectId", projectId)
                     .getSingleResult();

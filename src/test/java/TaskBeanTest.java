@@ -58,7 +58,7 @@ public class TaskBeanTest {
     @BeforeEach
     public void setup() {
         MockitoAnnotations.openMocks(this);
-        when(projectBean.isUserActiveInProject(anyInt(), anyInt())).thenReturn(true);
+        when(projectBean.isUserActiveAndApprovedInProject(anyInt(), anyInt())).thenReturn(true);
     }
 
     /**

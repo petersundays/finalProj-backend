@@ -22,6 +22,12 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.*;
 
+/**
+ * Bean class for the task entity.
+ *
+ * @author José Castro
+ * @author Pedro Domingos
+ */
 @Stateless
 public class TaskBean implements Serializable {
 
@@ -47,6 +53,11 @@ public class TaskBean implements Serializable {
     public TaskBean() {
     }
 
+    /**
+     * Creates a new task
+     * @param newTask the new task
+     * @return the chart task
+     */
     public ChartTask newTask(NewTask<Integer> newTask) {
         logger.info("Creating new task");
 
@@ -92,6 +103,11 @@ public class TaskBean implements Serializable {
                 taskEntityFromDB.getDeadline());
     }
 
+    /**
+     * Registers the new task info
+     * @param newTask the new task
+     * @return the task entity
+     */
     public TaskEntity registerNewTaskInfo (NewTask<Integer> newTask) {
 
         if (newTask == null) {
@@ -108,7 +124,7 @@ public class TaskBean implements Serializable {
             return null;
         }
 
-        if (!projectBean.isUserActiveInProject(newTask.getResponsibleId(), newTask.getProjectId())) {
+        if (!projectBean.isUserActiveAndApprovedInProject(newTask.getResponsibleId(), newTask.getProjectId())) {
             logger.error("The responsible user is not a member of the project");
             return null;
         }
@@ -517,6 +533,11 @@ public class TaskBean implements Serializable {
         return chartTasks;
     }
 
+    /**
+     * Converts a task entity to a chart task
+     * @param taskEntity the task entity
+     * @return the chart task
+     */
     public ChartTask entityToChartTask (TaskEntity taskEntity) {
 
         logger.info("Converting task entity to chart task");
@@ -543,5 +564,73 @@ public class TaskBean implements Serializable {
                 taskEntity.getState().getId(),
                 taskEntity.getProjectedStartDate(),
                 taskEntity.getDeadline());
+    }
+
+    public NewTask<Integer> editTask (NewTask<Integer> newTask, int taskId) {
+        logger.info("Editing task");
+
+        if (!dataValidator.isIdValid(taskId)) {
+            throw new IllegalArgumentException("Invalid task id: " + taskId);
+        }
+
+        if (newTask == null) {
+            throw new IllegalArgumentException("The input for the new task is null");
+        }
+
+        TaskEntity taskEntity;
+
+        try {
+            taskEntity = findTaskById(taskId);
+            if (taskEntity == null) {
+                throw new IllegalArgumentException("Task with id " + taskId + " not found");
+            }
+        } catch (Exception e) {
+            logger.error("Error editing task", e);
+            throw new RuntimeException("Error editing task: " + e.getMessage(), e);
+        }
+
+
+    }
+
+    public NewTask<Integer> updateTaskInfo (NewTask<Integer> newTask, TaskEntity taskEntity) {
+        logger.info("Updating task info");
+
+        if (newTask == null) {
+            logger.error("The new task is null");
+            return null;
+        }
+
+        if (taskEntity == null) {
+            logger.error("The task entity is null");
+            return null;
+        }
+
+        if (newTask.getTitle() != null && !newTask.getTitle().isBlank()) {
+            taskEntity.setTitle(newTask.getTitle());
+        }
+
+        if (newTask.getDescription() != null && !newTask.getDescription().isBlank()) {
+            taskEntity.setDescription(newTask.getDescription());
+        }
+
+        if (newTask.getProjectedStartDate() != null) {
+            taskEntity.setProjectedStartDate(newTask.getProjectedStartDate());
+        }
+
+        if (newTask.getDeadline() != null) {
+            taskEntity.setDeadline(newTask.getDeadline());
+        }
+
+        if (newTask.getResponsibleId() > 0) {
+            UserEntity responsible = userDao.findUserById(newTask.getResponsibleId());
+            if (responsible != null && projectBean.isUserActiveAndApprovedInProject(newTask.getResponsibleId(), taskEntity.getProjectId().getId())) {
+                taskEntity.setResponsible(responsible);
+            }
+        }
+
+        //////////////// ATUALIZAR LISTA - VERUFICAR QUEM É PARA ADICIONAR E QUEM É PARA REMOVER - MUDAR APENAS O BOOLEAN PARA FALSE \\\\\
+        if (newTask.getOtherExecutors() != null && !newTask.getOtherExecutors().isEmpty()) {
+            taskEntity.setOtherExecutors(newTask.getOtherExecutors());
+        }
     }
 }

@@ -33,12 +33,12 @@ public class ProjectBean implements Serializable {
      * @param projectId the id of the project
      * @return boolean value indicating if the user is active in the project
      */
-    public boolean isUserActiveInProject(int userId, int projectId) {
+    public boolean isUserActiveAndApprovedInProject(int userId, int projectId) {
         logger.info("Checking if user with ID {} is active in project with ID {}", userId, projectId);
 
         boolean isActive;
         try {
-            isActive = projectDao.isUserActiveInProject(userId, projectId);
+            isActive = projectDao.isUserActiveAndApprovedInProject(userId, projectId);
         } catch (PersistenceException e) {
             logger.error("Error checking if user with ID {} is active in project with ID {}", userId, projectId, e);
             throw new RuntimeException(e);
