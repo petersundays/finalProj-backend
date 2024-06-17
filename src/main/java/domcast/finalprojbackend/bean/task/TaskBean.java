@@ -20,10 +20,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Stateless
 public class TaskBean implements Serializable {
@@ -430,6 +427,12 @@ public class TaskBean implements Serializable {
         return chartTasks;
     }
 
+    /**
+     * Updates the task's state
+     * @param taskId the id of the task
+     * @param stateId the id of the state
+     * @return the detailed task
+     */
     public DetailedTask updateTaskState(Integer taskId, Integer stateId) {
         logger.info("Updating task state");
 
@@ -466,5 +469,79 @@ public class TaskBean implements Serializable {
         taskDao.merge(taskEntity);
 
         return createDetailedTask(taskId);
+    }
+
+    /**
+     * Finds tasks by project id
+     * @param projectId the id of the project
+     * @return the list of chart tasks
+     */
+    public List<ChartTask> findTaskByProjectId (int projectId) {
+        logger.info("Finding tasks by project id");
+
+        // Check if the project id is valid
+        if (!dataValidator.isIdValid(projectId)) {
+            logger.error("The project id is invalid");
+            throw new IllegalArgumentException("Invalid project id: " + projectId);
+        }
+
+        // Find the tasks by the project id
+        List<TaskEntity> taskEntities;
+        try {
+            taskEntities = taskDao.findTaskByProjectId(projectId);
+        } catch (Exception e) {
+            logger.error("Error finding tasks by project id", e);
+            throw new RuntimeException("Error finding tasks by project id: " + e.getMessage(), e);
+        }
+
+        // Check if the task entities are null or empty
+        if (taskEntities == null || taskEntities.isEmpty()) {
+            logger.info("No tasks found for project id: {}", projectId);
+            return new ArrayList<>();
+        }
+
+        List<ChartTask> chartTasks = new ArrayList<>();
+
+        logger.info("Task entities found: {}", taskEntities.size());
+
+        // Convert the task entities to chart tasks
+        try {
+            for (TaskEntity taskEntity : taskEntities) {
+                chartTasks.add(entityToChartTask(taskEntity));
+            }
+        } catch (Exception e) {
+            logger.error("Error converting task entity to chart task", e);
+            throw new RuntimeException("Error converting task entity to chart task: " + e.getMessage(), e);
+        }
+
+        return chartTasks;
+    }
+
+    public ChartTask entityToChartTask (TaskEntity taskEntity) {
+
+        logger.info("Converting task entity to chart task");
+
+        if (taskEntity == null) {
+            logger.error("The task entity is null");
+            return null;
+        }
+
+        if (!dataValidator.isChartTaskInfoValid(taskEntity)) {
+            logger.error("The task entity does not have all the necessary information");
+            return null;
+        }
+
+        logger.info("Task entity with id {} is valid", taskEntity.getId());
+
+        if (!dataValidator.isIdValid(taskEntity.getId())) {
+            logger.error("The task entity id is invalid");
+            return null;
+        }
+
+        return new ChartTask(taskEntity.getId(),
+                taskEntity.getTitle(),
+                taskEntity.getState().getId(),
+                taskEntity.getProjectedStartDate(),
+                taskEntity.getDeadline());
     }
 }

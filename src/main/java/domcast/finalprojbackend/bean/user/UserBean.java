@@ -954,8 +954,16 @@ public class UserBean implements Serializable {
      */
     public List<SearchedUser> getUsersByCriteria(String firstName, String lastName, String nickname, String workplace, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
 
+        // Validate page size and page number
         if (!dataValidator.isPageSizeValid(pageSize) || !dataValidator.isPageNumberValid(pageNumber)) {
             logger.error("Invalid page size or page number");
+            return new ArrayList<>();
+        }
+
+        // Validate orderBy field
+        List<String> allowedOrderByFields = Arrays.asList("firstName", "lastName", "nickname", "workplace");
+        if (!allowedOrderByFields.contains(orderBy)) {
+            logger.error("Invalid orderBy field");
             return new ArrayList<>();
         }
 

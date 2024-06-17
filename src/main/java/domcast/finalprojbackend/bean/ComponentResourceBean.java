@@ -16,10 +16,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Bean class for the component resource.
@@ -587,6 +584,13 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
      */
     public List<CRPreview> getComponentResourcesByCriteria(String name, String brand, long partNumber, String supplier, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
         logger.info("Getting component resources by criteria: name={}, brand={}, partNumber={}, supplier={}, orderBy={}, orderAsc={}, pageNumber={}, pageSize={}", name, brand, partNumber, supplier, orderBy, orderAsc, pageNumber, pageSize);
+
+        // Validate orderBy field
+        List<String> allowedOrderByFields = Arrays.asList("name", "brand", "partNumber", "supplier");
+        if (orderBy != null && !orderBy.isEmpty() && !allowedOrderByFields.contains(orderBy)) {
+            logger.error("Invalid orderBy field");
+            return Collections.emptyList();
+        }
 
         if (!dataValidator.isPageNumberValid(pageNumber)) {
             logger.error("Invalid page number: {}", pageNumber);

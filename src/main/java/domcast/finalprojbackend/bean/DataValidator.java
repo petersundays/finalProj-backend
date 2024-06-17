@@ -8,6 +8,7 @@ import domcast.finalprojbackend.dto.taskDto.NewTask;
 import domcast.finalprojbackend.dto.userDto.FirstRegistration;
 import domcast.finalprojbackend.dto.userDto.FullRegistration;
 import domcast.finalprojbackend.dto.userDto.Login;
+import domcast.finalprojbackend.entity.TaskEntity;
 import domcast.finalprojbackend.enums.ComponentResourceEnum;
 import domcast.finalprojbackend.enums.InterestEnum;
 import domcast.finalprojbackend.enums.SkillTypeEnum;
@@ -237,5 +238,12 @@ public class DataValidator {
         }
 
         return true;
+    }
+
+    public boolean isChartTaskInfoValid (TaskEntity taskEntity) {
+        logger.info("Checking if chart task info is valid");
+
+        return taskEntity != null && taskEntity.getTitle() != null && !taskEntity.getTitle().isBlank() &&
+                taskEntity.getState() != null && taskEntity.getProjectedStartDate() != null && taskEntity.getDeadline() != null;
     }
 }

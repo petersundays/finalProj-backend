@@ -100,16 +100,16 @@ public class ComponentResourceDao extends AbstractDao<ComponentResourceEntity> {
 
         Root<ComponentResourceEntity> componentResource = cq.from(ComponentResourceEntity.class);
         List<Predicate> predicates = new ArrayList<>();
-        if (name != null) {
+        if (name != null && !name.isEmpty()) {
             predicates.add(cb.equal(componentResource.get("name"), name));
         }
-        if (brand != null) {
+        if (brand != null && !brand.isEmpty()) {
             predicates.add(cb.equal(componentResource.get("brand"), brand));
         }
         if (partNumber != 0) {
             predicates.add(cb.equal(componentResource.get("partNumber"), partNumber));
         }
-        if (supplier != null) {
+        if (supplier != null && !supplier.isEmpty()) {
             predicates.add(cb.equal(componentResource.get("supplier"), supplier));
         }
 

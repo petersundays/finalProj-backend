@@ -15,6 +15,8 @@ import jakarta.ws.rs.core.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.List;
+
 @Path("/task")
 public class TaskService  {
 
@@ -169,6 +171,45 @@ public class TaskService  {
             response = Response.status(400).entity(e.getMessage()).build();
         } catch (RuntimeException e) {
             logger.error("Error changing task state", e);
+            response = Response.status(500).entity(e.getMessage()).build();
+        }
+
+        return response;
+    }
+
+    @GET
+    @Path("")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getTasks(@HeaderParam("token") String token, @HeaderParam("id") int userId, @QueryParam("projectId") int projectId, @Context HttpServletRequest request) {
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with token {} is getting the tasks of the project with id {} from IP address {}", token, projectId, ipAddress);
+
+        // Check if the id is valid
+        if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(projectId)) {
+            logger.info("User with session token {} tried to get the tasks unsuccessfully", token);
+            return Response.status(400).entity("Invalid id").build();
+        }
+
+        // Check if the user is authorized to get the tasks
+        if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, userId) &&
+                !authenticationAndAuthorization.isUserMemberOfTheProject(userId, projectId)) {
+            logger.info("User with session token {} tried to get the tasks unsuccessfully", token);
+            return Response.status(401).entity("Unauthorized").build();
+        }
+
+        Response response;
+        List<ChartTask> chartTasks;
+
+        // Get the tasks
+        try {
+            chartTasks = taskBean.findTaskByProjectId(projectId);
+            logger.info("User with session token {} got the tasks of the project with id {} from IP address {}", token, projectId, ipAddress);
+            response = Response.status(200).entity(chartTasks).build();
+        } catch (IllegalArgumentException e) {
+            logger.error("Error getting tasks", e);
+            response = Response.status(400).entity(e.getMessage()).build();
+        } catch (RuntimeException e) {
+            logger.error("Error getting tasks", e);
             response = Response.status(500).entity(e.getMessage()).build();
         }
 
