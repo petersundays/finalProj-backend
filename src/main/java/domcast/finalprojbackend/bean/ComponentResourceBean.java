@@ -16,10 +16,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Bean class for the component resource.
@@ -70,8 +67,10 @@ public class ComponentResourceBean implements Serializable {
 
         logger.info("Validating data");
 
-        if (!dataValidator.isCRMandatoryDataValid(detailedCR, projectId)) {
-            logger.error("Mandatory data is not valid");
+        try {
+            dataValidator.isCRMandatoryDataValid(detailedCR, projectId, quantity);
+        } catch (IllegalArgumentException e) {
+            logger.error("Data validation failed: ", e);
             return null;
         }
 
@@ -94,7 +93,7 @@ public class ComponentResourceBean implements Serializable {
         }
 
         if (crPreview == null) {
-            logger.error("Error converting detailed component resource to preview");
+            logger.error("Error converting detailed component resource to preview while creating component resource");
             return null;
         }
 
@@ -282,11 +281,12 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
         logger.info("Creating preview");
 
         CRPreview crPreview = new CRPreview();
-        int type = ComponentResourceEnum.fromEnum(entityCR.getType());
-
+        if (entityCR.getType() != null) {
+            int type = ComponentResourceEnum.fromEnum(entityCR.getType());
+            crPreview.setType(type);
+        }
         crPreview.setId(entityCR.getId());
         crPreview.setName(entityCR.getName());
-        crPreview.setType(type);
         crPreview.setBrand(entityCR.getBrand());
         crPreview.setPartNumber(entityCR.getPartNumber());
         crPreview.setSupplier(entityCR.getSupplier());
@@ -454,11 +454,12 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
         logger.info("Creating detailed component resource");
 
         DetailedCR detailedCR = new DetailedCR();
-        int type = ComponentResourceEnum.fromEnum(entityCR.getType());
-
+        if (entityCR.getType() != null) {
+            int type = ComponentResourceEnum.fromEnum(entityCR.getType());
+            detailedCR.setType(type);
+        }
         detailedCR.setId(entityCR.getId());
         detailedCR.setName(entityCR.getName());
-        detailedCR.setType(type);
         detailedCR.setBrand(entityCR.getBrand());
         detailedCR.setPartNumber(entityCR.getPartNumber());
         detailedCR.setSupplier(entityCR.getSupplier());
@@ -587,6 +588,13 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
      */
     public List<CRPreview> getComponentResourcesByCriteria(String name, String brand, long partNumber, String supplier, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
         logger.info("Getting component resources by criteria: name={}, brand={}, partNumber={}, supplier={}, orderBy={}, orderAsc={}, pageNumber={}, pageSize={}", name, brand, partNumber, supplier, orderBy, orderAsc, pageNumber, pageSize);
+
+        // Validate orderBy field
+        List<String> allowedOrderByFields = Arrays.asList("name", "brand", "partNumber", "supplier");
+        if (orderBy != null && !orderBy.isEmpty() && !allowedOrderByFields.contains(orderBy)) {
+            logger.error("Invalid orderBy field");
+            return Collections.emptyList();
+        }
 
         if (!dataValidator.isPageNumberValid(pageNumber)) {
             logger.error("Invalid page number: {}", pageNumber);

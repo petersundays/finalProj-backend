@@ -11,6 +11,8 @@ import domcast.finalprojbackend.entity.M2MTaskDependencies;
 import domcast.finalprojbackend.entity.ProjectEntity;
 import domcast.finalprojbackend.entity.TaskEntity;
 import domcast.finalprojbackend.entity.UserEntity;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -18,9 +20,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -47,6 +47,13 @@ public class TaskBeanTest {
 
     @Mock
     private ProjectBean projectBean;
+
+    @Mock
+    private EntityManager em;
+
+    @Mock
+    private TypedQuery<TaskEntity> query;
+
 
     @BeforeEach
     public void setup() {
@@ -431,5 +438,60 @@ public class TaskBeanTest {
         when(taskDao.findTaskById(taskId)).thenThrow(new RuntimeException("Database error"));
 
         assertThrows(RuntimeException.class, () -> taskBean.findTaskById(taskId));
+    }
+
+    /**
+     * Test the findTaskByProjectId method for a success scenario.
+     * The method should return a list of ChartTask objects.
+     */
+    @Test
+    public void testFindTaskByProjectId_Success() {
+        int projectId = 1;
+        List<TaskEntity> taskEntities = Arrays.asList(new TaskEntity(), new TaskEntity());
+
+        when(dataValidator.isIdValid(projectId)).thenReturn(true);
+        when(taskDao.findTaskByProjectId(projectId)).thenReturn(taskEntities);
+
+        List<ChartTask> result = taskBean.findTaskByProjectId(projectId);
+
+        assertNotNull(result);
+        assertEquals(taskEntities.size(), result.size());
+
+        verify(dataValidator).isIdValid(projectId);
+        verify(taskDao).findTaskByProjectId(projectId);
+    }
+
+    /**
+     * Test the findTaskByProjectId method for a failure scenario.
+     * The method should throw an IllegalArgumentException because the project id is invalid.
+     */
+    @Test
+    public void testFindTaskByProjectId_InvalidProjectId() {
+        int projectId = -1;
+
+        when(dataValidator.isIdValid(projectId)).thenReturn(false);
+
+        assertThrows(IllegalArgumentException.class, () -> taskBean.findTaskByProjectId(projectId));
+
+        verify(dataValidator).isIdValid(projectId);
+        verify(taskDao, never()).findTaskByProjectId(anyInt());
+    }
+
+    /**
+     * Test the findTaskByProjectId method for a failure scenario.
+     * The method should throw a RuntimeException because an exception occurred
+     * while finding the tasks by project id in the database.
+     */
+    @Test
+    public void testFindTaskByProjectId_Exception() {
+        int projectId = 1;
+
+        when(dataValidator.isIdValid(projectId)).thenReturn(true);
+        when(taskDao.findTaskByProjectId(projectId)).thenThrow(new RuntimeException("Database error"));
+
+        assertThrows(RuntimeException.class, () -> taskBean.findTaskByProjectId(projectId));
+
+        verify(dataValidator).isIdValid(projectId);
+        verify(taskDao).findTaskByProjectId(projectId);
     }
 }

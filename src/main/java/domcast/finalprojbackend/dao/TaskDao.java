@@ -6,6 +6,8 @@ import jakarta.persistence.NoResultException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.List;
+
 /**
  * TaskDao is a Data Access Object (DAO) class for TaskEntity.
  * It provides methods to interact with the database and perform operations on TaskEntity.
@@ -81,6 +83,24 @@ public class TaskDao extends AbstractDao<TaskEntity> {
                     .getSingleResult();
         } catch (NoResultException e) {
             logger.error("Task with id {} not found", id);
+            return null;
+        }
+    }
+
+    /**
+     * Finds a task by its project id.
+     *
+     * @param projectId the id of the project
+     * @return the TaskEntity object if found, null otherwise
+     */
+    public List<TaskEntity> findTaskByProjectId(int projectId) {
+        logger.info("Finding task by project id {}", projectId);
+        try {
+            return em.createNamedQuery("Task.findTaskByProjectId", TaskEntity.class)
+                    .setParameter("projectId", projectId)
+                    .getResultList();
+        } catch (NoResultException e) {
+            logger.error("Task with project id {} not found", projectId);
             return null;
         }
     }

@@ -134,28 +134,29 @@ public class UserDao extends AbstractDao<UserEntity> {
      * @return a list of UserEntity objects
      */
     public List<UserEntity> getUsersByCriteria(String firstName, String lastName, String nickname, String workplace, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
+
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<UserEntity> cq = cb.createQuery(UserEntity.class);
 
         Root<UserEntity> user = cq.from(UserEntity.class);
         List<Predicate> predicates = new ArrayList<>();
-        if (firstName != null) {
+        if (firstName != null && !firstName.isEmpty()) {
             predicates.add(cb.equal(user.get("firstName"), firstName));
         }
-        if (lastName != null) {
+        if (lastName != null && !lastName.isEmpty()) {
             predicates.add(cb.equal(user.get("lastName"), lastName));
         }
-        if (nickname != null) {
+        if (nickname != null && !nickname.isEmpty()) {
             predicates.add(cb.equal(user.get("nickname"), nickname));
         }
-        if (workplace != null) {
+        if (workplace != null && !workplace.isEmpty()) {
             LabEnum workplaceEnum = LabEnum.valueOf(workplace.toUpperCase());
             predicates.add(cb.equal(user.get("workplace").get("city"), workplaceEnum));
         }
 
         cq.select(user).where(cb.and(predicates.toArray(new Predicate[0])));
 
-        if (orderBy != null) {
+        if (orderBy != null && !orderBy.isEmpty()) {
             if (orderBy.equals("workplace")) {
                 Join<UserEntity, LabEntity> join = user.join("workplace");
                 if (orderAsc) {
@@ -175,7 +176,13 @@ public class UserDao extends AbstractDao<UserEntity> {
         TypedQuery<UserEntity> query = em.createQuery(cq);
         query.setFirstResult((pageNumber - 1) * pageSize); // Adjust pageNumber to be 0-indexed
         query.setMaxResults(pageSize);
-        return query.getResultList();
+
+        try {
+            return query.getResultList();
+        } catch (Exception e) {
+            logger.error("Error while getting users by criteria", e);
+            return new ArrayList<>();
+        }
     }
 
     /**
