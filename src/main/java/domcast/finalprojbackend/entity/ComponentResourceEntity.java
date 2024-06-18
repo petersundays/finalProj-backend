@@ -4,6 +4,7 @@ import domcast.finalprojbackend.enums.ComponentResourceEnum;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -29,6 +30,14 @@ import java.util.Set;
 @Entity
 @Table(name = "component_resource")
 
+@NamedQuery(name = "ComponentResource.doesCRExistByNameAndBrand",
+        query = "SELECT CASE WHEN COUNT(c) > 0 THEN TRUE ELSE FALSE END FROM ComponentResourceEntity c WHERE c.name = :name AND c.brand = :brand")
+@NamedQuery(name = "ComponentResource.findCREntityByNameAndBrand",
+        query = "SELECT c FROM ComponentResourceEntity c WHERE c.name = :name AND c.brand = :brand")
+@NamedQuery(name = "ComponentResource.findCREntityById", query = "SELECT c FROM ComponentResourceEntity c WHERE c.id = :id")
+@NamedQuery(name = "ComponentResource.findM2MComponentProjectByProjectIdAndComponentId",
+        query = "SELECT m FROM M2MComponentProject m WHERE m.project.id = :projectId AND m.componentResource.id = :componentId")
+
 public class ComponentResourceEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -39,7 +48,6 @@ public class ComponentResourceEntity implements Serializable {
     private int id;
 
     // Type of the object (component or resource)
-    @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
     private ComponentResourceEnum type;
 
@@ -59,10 +67,6 @@ public class ComponentResourceEntity implements Serializable {
     @Column(name = "part_number", nullable = false)
     private Long partNumber;
 
-    // Quantity of the component or resource
-    @Column(name = "quantity", nullable = false)
-    private int quantity;
-
     // Supplier of the component or resource
     @Column(name = "supplier", nullable = false)
     private String supplier;
@@ -72,12 +76,12 @@ public class ComponentResourceEntity implements Serializable {
     private long supplierContact;
 
     // Observations of the component or resource
-    @Column(name = "observations", nullable = false)
+    @Column(name = "observations")
     private String observations;
 
     // Projects that use the component or resource
     @OneToMany(mappedBy = "componentResource", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Set<M2MComponentProject> projects;
+    private Set<M2MComponentProject> projects = new HashSet<>();
 
     // Default constructor
     public ComponentResourceEntity() {
@@ -133,14 +137,6 @@ public class ComponentResourceEntity implements Serializable {
         this.partNumber = partNumber;
     }
 
-    public int getQuantity() {
-        return quantity;
-    }
-
-    public void setQuantity(int quantity) {
-        this.quantity = quantity;
-    }
-
     public String getSupplier() {
         return supplier;
     }
@@ -171,5 +167,9 @@ public class ComponentResourceEntity implements Serializable {
 
     public void setProjects(Set<M2MComponentProject> projects) {
         this.projects = projects;
+    }
+
+    public void addProject(M2MComponentProject project) {
+        this.projects.add(project);
     }
 }

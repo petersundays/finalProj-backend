@@ -41,7 +41,11 @@ public enum ComponentResourceEnum {
         return value;
     }
 
-    // Method that returns the type of object by its id.
+    /**
+     * Method that returns the type of object by its id.
+     * @param id the object's type id
+     * @return the type of object
+     */
     public static ComponentResourceEnum fromId(int id) {
         for (ComponentResourceEnum type : ComponentResourceEnum.values()) {
             if (type.getId() == id) {
@@ -49,5 +53,28 @@ public enum ComponentResourceEnum {
             }
         }
         throw new IllegalArgumentException("Invalid ComponentResourceEnum id: " + id);
+    }
+
+    /**
+     * Method that checks if the id is valid.
+     * @param id the id of the Enum
+     * @return true if the id is valid, false otherwise
+     */
+    public static boolean isValidId(int id) {
+        for (ComponentResourceEnum state : ComponentResourceEnum.values()) {
+            if (state.getId() == id) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Method that returns the id of the given ComponentResourceEnum.
+     * @param type the ComponentResourceEnum
+     * @return the id of the ComponentResourceEnum
+     */
+    public static int fromEnum(ComponentResourceEnum type) {
+        return type.getId();
     }
 }

@@ -1,6 +1,7 @@
 package domcast.finalprojbackend.entity;
 
 import domcast.finalprojbackend.enums.ProjectStateEnum;
+import domcast.finalprojbackend.enums.converters.ProjectStateEnumConverter;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
@@ -35,6 +36,8 @@ import java.util.Set;
 @Entity
 @Table(name = "project")
 
+@NamedQuery(name = "Project.findProjectById", query = "SELECT p FROM ProjectEntity p WHERE p.id = :id")
+
 public class ProjectEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -63,13 +66,9 @@ public class ProjectEntity implements Serializable {
     private Set<M2MKeyword> keywords = new HashSet<>();
 
     // State of the project
-    @Enumerated(EnumType.ORDINAL)
+    @Convert(converter = ProjectStateEnumConverter.class)
     @Column(name = "state", nullable = false)
     private ProjectStateEnum state;
-
-    // Maximum number of members of the project
-    @Column(name = "max_members", nullable = false)
-    private int maxMembers;
 
     // Users associated with the project
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -108,7 +107,7 @@ public class ProjectEntity implements Serializable {
     private Set<M2MComponentProject> componentResources = new HashSet<>();
 
     // Tasks take part of the execution plan of the project
-    @OneToMany(mappedBy = "project_id", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "projectId", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<TaskEntity> tasks = new HashSet<>();
 
     // Default constructor
@@ -162,15 +161,13 @@ public class ProjectEntity implements Serializable {
     }
 
     public void setState(ProjectStateEnum state) {
+        if (state == ProjectStateEnum.IN_PROGRESS) {
+            this.realStartDate = LocalDateTime.now();
+        } else if (state == ProjectStateEnum.FINISHED) {
+            this.realEndDate = LocalDateTime.now();
+        }
+
         this.state = state;
-    }
-
-    public int getMaxMembers() {
-        return maxMembers;
-    }
-
-    public void setMaxMembers(int maxMembers) {
-        this.maxMembers = maxMembers;
     }
 
     public Set<M2MProjectUser> getProjectUsers() {
@@ -251,5 +248,9 @@ public class ProjectEntity implements Serializable {
 
     public void setComponentResources(Set<M2MComponentProject> componentResources) {
         this.componentResources = componentResources;
+    }
+
+    public void addComponentResource(M2MComponentProject componentResource) {
+        this.componentResources.add(componentResource);
     }
 }

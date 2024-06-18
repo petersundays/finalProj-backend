@@ -24,6 +24,9 @@ import java.time.LocalDateTime;
 @Table(name = "tokens")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "token_type")
+
+@NamedQuery(name = "Token.setTokenInactive", query = "UPDATE ValidationTokenEntity t SET t.active = false WHERE t.token = :token")
+@NamedQuery(name = "Token.isTokenValid", query = "SELECT COUNT(t) FROM ValidationTokenEntity t WHERE t.token = :token AND t.expirationTime > CURRENT_TIMESTAMP")
 public class ValidationTokenEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -33,8 +36,12 @@ public class ValidationTokenEntity implements Serializable {
     @Column(name = "id", nullable = false, unique = true, updatable = false)
     protected int id;
 
+    // IP from which the session was created
+    @Column(name = "ip_address", nullable = false)
+    private String ipAddress;
+
     // The generated token for the user
-    @Column(name = "token")
+    @Column(name = "token", nullable = false, unique = true, updatable = false)
     protected String token;
 
     // The user associated with the token
@@ -43,7 +50,7 @@ public class ValidationTokenEntity implements Serializable {
     private UserEntity user;
 
     // Represents the creation time of the token if it's a validation token or the login time if it's a session token
-    @Column(name = "creationTime")
+    @Column(name = "creationTime", nullable = false, updatable = false)
     private LocalDateTime creationTime = LocalDateTime.now();
 
     @Column(name = "expirationTime")
@@ -51,18 +58,24 @@ public class ValidationTokenEntity implements Serializable {
 
     // The status of the token
     @Column(name = "active")
-    protected boolean active;
+    protected boolean active = true;
 
     // Default constructor
     public ValidationTokenEntity() {
-        // active is true by default
-        this.active = true;
     }
 
     // Getters and setters
 
     public int getId() {
         return id;
+    }
+
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
     }
 
     public String getToken() {

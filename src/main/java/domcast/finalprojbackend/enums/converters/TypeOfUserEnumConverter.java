@@ -24,7 +24,7 @@ public class TypeOfUserEnumConverter implements AttributeConverter<TypeOfUserEnu
         if (userType == null) {
             return null;
         }
-        return userType.getId();
+        return userType.getValue();
     }
 
     // Method to convert from Integer to TypeOfUserEnum.
@@ -33,6 +33,7 @@ public class TypeOfUserEnumConverter implements AttributeConverter<TypeOfUserEnu
         if (id == null) {
             return null;
         }
-        return TypeOfUserEnum.fromId(id);
+        return TypeOfUserEnum.fromValue(id);
     }
+
 }

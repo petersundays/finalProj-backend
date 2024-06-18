@@ -1,8 +1,0 @@
-2024-05-23 23:07:11.675 [main] INFO - Registering email: test@test.com
-2024-05-23 23:07:11.681 [main] INFO - Email and password are valid
-2024-05-23 23:07:11.688 [main] INFO - Email registered: test@test.com
-2024-05-23 23:11:31.521 [main] INFO - Registering email: test@test.com
-2024-05-23 23:11:31.528 [main] INFO - Email and password are valid
-2024-05-23 23:11:31.532 [main] INFO - Email registered: test@test.com
-2024-05-23 23:11:31.552 [main] INFO - Registering email: invalid@test.com
-2024-05-23 23:11:31.553 [main] ERROR - Email or password are invalid

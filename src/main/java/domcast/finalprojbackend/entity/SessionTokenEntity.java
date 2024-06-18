@@ -18,6 +18,14 @@ import java.time.LocalDateTime;
  */
 
 @Entity
+
+@NamedQuery(name = "SessionToken.isSessionTokenFromAdminTypeUser", query = "SELECT COUNT(s) FROM SessionTokenEntity s WHERE s.user.type = 300 AND s.token = :token")
+@NamedQuery(name = "SessionToken.setSessionTokenLogoutToNow", query = "UPDATE SessionTokenEntity s SET s.logoutTime = CURRENT_TIMESTAMP WHERE s.token = :token")
+@NamedQuery(name = "SessionToken.findActiveSessionsExceededTimeout",
+        query = "SELECT s FROM SessionTokenEntity s WHERE s.active = true AND s.lastAccess < :timeBeforeNow")
+@NamedQuery(name = "SessionToken.isTokenActiveAndFromUserId",
+        query = "SELECT COUNT(s) FROM SessionTokenEntity s WHERE s.active = true AND s.user.id = :userId AND s.token = :token")
+
 public class SessionTokenEntity extends ValidationTokenEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -25,16 +33,26 @@ public class SessionTokenEntity extends ValidationTokenEntity implements Seriali
     @Column(name = "logout_time")
     private LocalDateTime logoutTime;
 
-    // IP from which the session was created
-    @Column(name = "ip_address")
-    private String ipAddress;
-
     // Last access of the user with this session token
     @Column(name = "lastAccess")
-    private LocalDateTime lastAccess;
+    private LocalDateTime lastAccess = LocalDateTime.now();
 
     // Default constructor
     public SessionTokenEntity() {
+    }
+
+    /**
+     * Method to validate the session token entity.
+     * It checks if the last access is not null.
+     * If it is null, it throws an IllegalArgumentException.
+     * This is necessary because the last access must not be null for a session token entity, but it can be null for a validation token entity.
+     */
+    @PrePersist
+    @PreUpdate
+    public void validate() {
+        if (lastAccess == null) {
+            throw new IllegalArgumentException("lastAccess must not be null for SessionTokenEntity");
+        }
     }
 
     // Getters and setters
@@ -45,14 +63,6 @@ public class SessionTokenEntity extends ValidationTokenEntity implements Seriali
 
     public void setLogoutTime(LocalDateTime logoutTime) {
         this.logoutTime = logoutTime;
-    }
-
-    public String getIpAddress() {
-        return ipAddress;
-    }
-
-    public void setIpAddress(String ipAddress) {
-        this.ipAddress = ipAddress;
     }
 
     public LocalDateTime getLastAccess() {

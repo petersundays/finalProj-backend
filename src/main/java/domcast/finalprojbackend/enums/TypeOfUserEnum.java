@@ -42,7 +42,11 @@ public enum TypeOfUserEnum {
         return value;
     }
 
-    // Method that returns the type of user by its id.
+    /**
+     * Method that returns the type of Enum by its id.
+     * @param id the id of the Enum
+     * @return the TypeOfUserEnum object if found, null otherwise
+     */
     public static TypeOfUserEnum fromId(int id) {
         for (TypeOfUserEnum userType : TypeOfUserEnum.values()) {
             if (userType.getId() == id) {
@@ -50,5 +54,42 @@ public enum TypeOfUserEnum {
             }
         }
         throw new IllegalArgumentException("Invalid TypeOfUserEnum id: " + id);
+    }
+
+    /**
+     * Method that returns the type of Enum by its value.
+     * @param value the value of the Enum
+     * @return the TypeOfUserEnum object if found, null otherwise
+     */
+    public static TypeOfUserEnum fromValue(int value) {
+        for (TypeOfUserEnum userType : TypeOfUserEnum.values()) {
+            if (userType.getValue() == value) {
+                return userType;
+            }
+        }
+        throw new IllegalArgumentException("Invalid TypeOfUserEnum value: " + value);
+    }
+
+    /**
+     * Method that checks if the id is valid.
+     * @param id the id of the Enum
+     * @return true if the id is valid, false otherwise
+     */
+    public static boolean isValidId(int id) {
+        for (TypeOfUserEnum userType : TypeOfUserEnum.values()) {
+            if (userType.getId() == id) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Method that checks if the id is NOT_CONFIRMED.
+     * @param id the id of the Enum
+     *           true if the id is NOT_CONFIRMED, false otherwise
+     */
+    public static boolean isNotConfirmed(int id) {
+        return id == NOT_CONFIRMED.getId();
     }
 }

@@ -12,7 +12,7 @@ import java.util.Properties;
 /**
  * Bean for sending emails
  * Uses Gmail SMTP server
- * @authod José Castro
+ * @author José Castro
  * @author Pedro Domingos
  */
 @Stateless
@@ -23,9 +23,9 @@ public class EmailBean {
 
     private static final Logger logger = LogManager.getLogger(EmailBean.class);
     private final String username = "domcast46@gmail.com";
-    private final String password = System.getenv("SMTP_PASSWORD");
+    private final String password = System.getenv("SMTP_DOMCAST");
     private final String host = "smtp.gmail.com";
-    private final int port = 587;
+    private final int port = 587 ;
 
     /**
      * Default constructor for the EmailBean class
@@ -78,11 +78,11 @@ public class EmailBean {
     }
 
     /**
-     * Sends a confirmation email to the user with the validation token for account confirmation
-     * @param user the user to send the email to
-     * @param validationToken the validation token for account confirmation
-     * @return true if the email was sent successfully, false otherwise
-     */
+        * Sends a confirmation email to the user with the validation token for account confirmation
+        * @param email the email address of the user
+        * @param validationToken the validation token for account confirmation
+        * @return true if the email was sent successfully, false otherwise
+        */
     public boolean sendConfirmationEmail(String email, String validationToken) {
         logger.info("Sending confirmation email to: {}", email);
 
@@ -99,7 +99,11 @@ public class EmailBean {
             sent = true;
             logger.info("Confirmation email sent to: {}", email);
         } else {
-            userBean.delete(user.getUsername());
+            try {
+                userBean.delete(email);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
             logger.error("Confirmation email not sent to: {}", email);
         }
         return sent;
@@ -113,6 +117,10 @@ public class EmailBean {
      * @return true if the email was sent successfully, false otherwise
      */
     public boolean sendPasswordResetEmail(String email, String firstName, String validationToken) {
+        if (email == null || email.isEmpty() || firstName == null || firstName.isEmpty() || validationToken == null || validationToken.isEmpty()) {
+            throw new IllegalArgumentException("Email, firstName, and validationToken must not be null or empty");
+        }
+
         logger.info("Sending password reset email to: {}", email);
         boolean sent = false;
 
@@ -122,11 +130,15 @@ public class EmailBean {
                 + "Please click on the link below to reset your password.\n\n"
                 + "Reset Link: " + resetLink;
 
-        if (sendEmail(email, subject, body)) {
-            sent = true;
-            logger.info("Password reset email sent to: {}", email);
-        } else {
-            logger.error("Password reset email not sent to: {}", email);
+        try {
+            if (sendEmail(email, subject, body)) {
+                sent = true;
+                logger.info("Password reset email sent to: {}", email);
+            } else {
+                logger.error("Password reset email not sent to: {}", email);
+            }
+        } catch (Exception e) {
+            logger.error("Error sending password reset email to: {}", email);
         }
 
         return sent;

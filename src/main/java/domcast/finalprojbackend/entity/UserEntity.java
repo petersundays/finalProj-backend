@@ -1,6 +1,7 @@
 package domcast.finalprojbackend.entity;
 
 import domcast.finalprojbackend.enums.TypeOfUserEnum;
+import domcast.finalprojbackend.enums.converters.TypeOfUserEnumConverter;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import java.util.HashSet;
@@ -35,6 +36,17 @@ import java.util.Set;
 
 @Entity
 @Table(name = "user")
+
+@NamedQuery(name = "User.findUserById", query = "SELECT u FROM UserEntity u WHERE u.id = :id")
+@NamedQuery(name = "User.findUserByEmail", query = "SELECT u FROM UserEntity u WHERE u.email = :email")
+@NamedQuery(name = "User.findUserByValidationToken", query = "SELECT u FROM UserEntity u JOIN u.validationTokens vt WHERE vt.token = :token")
+@NamedQuery(name = "User.findUserByActiveValidationOrSessionToken", query = "SELECT u FROM UserEntity u JOIN u.validationTokens vt JOIN u.sessionTokens st WHERE (vt.token = :token AND vt.active = true) OR (st.token = :token AND st.active = true)")
+@NamedQuery(name = "User.getUserPassword", query = "SELECT u.password FROM UserEntity u WHERE u.id = :id")
+@NamedQuery(name = "User.setUserPassword", query = "UPDATE UserEntity u SET u.password = :password WHERE u.id = :id")
+@NamedQuery(name = "User.setUserType", query = "UPDATE UserEntity u SET u.type = :type WHERE u.id = :id")
+@NamedQuery(name = "User.getUserType", query = "SELECT u.type FROM UserEntity u WHERE u.id = :id")
+@NamedQuery(name = "User.isUserAdminByToken", query = "SELECT u FROM UserEntity u JOIN u.sessionTokens st WHERE st.token = :token AND u.type = domcast.finalprojbackend.enums.TypeOfUserEnum.ADMIN")
+@NamedQuery(name = "User.existsByFirstAndLastName", query = "SELECT COUNT(u) FROM UserEntity u WHERE u.firstName = :firstName AND u.lastName = :lastName")
 
 public class UserEntity implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -75,10 +87,10 @@ public class UserEntity implements Serializable {
 
     // Visibility of the user
     @Column(name = "visible", nullable = false)
-    private boolean visible;
+    private boolean visible = false;
 
     // The type is an enum
-    @Enumerated(EnumType.ORDINAL)
+    @Convert(converter = TypeOfUserEnumConverter.class)
     @Column(name = "type", nullable = false)
     private TypeOfUserEnum type = TypeOfUserEnum.NOT_CONFIRMED;
 
@@ -273,6 +285,10 @@ public class UserEntity implements Serializable {
         this.interests = interests;
     }
 
+    public void addInterest(M2MUserInterest interest) {
+        this.interests.add(interest);
+    }
+
     public Set<M2MUserSkill> getUserSkills() {
         return userSkills;
     }
@@ -281,12 +297,20 @@ public class UserEntity implements Serializable {
         this.userSkills = userSkills;
     }
 
+    public void addUserSkill(M2MUserSkill userSkill) {
+        this.userSkills.add(userSkill);
+    }
+
     public Set<M2MProjectUser> getProjectUsers() {
         return projectUsers;
     }
 
     public void setProjectUsers(Set<M2MProjectUser> projectUsers) {
         this.projectUsers = projectUsers;
+    }
+
+    public void addProjectUser(M2MProjectUser projectUser) {
+        this.projectUsers.add(projectUser);
     }
 }
 

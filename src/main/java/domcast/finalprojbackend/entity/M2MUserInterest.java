@@ -20,6 +20,7 @@ import java.io.Serializable;
 @Entity
 @Table(name = "user_interest")
 
+
 public class M2MUserInterest implements Serializable {
 
     private static final long serialVersionUID = 1L;
