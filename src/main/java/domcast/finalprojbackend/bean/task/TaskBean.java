@@ -7,6 +7,7 @@ import domcast.finalprojbackend.dao.TaskDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.taskDto.ChartTask;
 import domcast.finalprojbackend.dto.taskDto.DetailedTask;
+import domcast.finalprojbackend.dto.taskDto.EditTask;
 import domcast.finalprojbackend.dto.taskDto.NewTask;
 import domcast.finalprojbackend.entity.M2MTaskDependencies;
 import domcast.finalprojbackend.entity.ProjectEntity;
@@ -316,7 +317,6 @@ public class TaskBean implements Serializable {
         Set<String> users = executors.get("users");
         Set<String> externalExecutors = executors.get("externalExecutors");
 
-// Now you can use users and externalExecutors to set your variables
         Set<ChartTask> dependencies = createChartTaskFromRelationships(taskEntity.getDependencies());
         Set<ChartTask> dependentTasks = createChartTaskFromRelationships(taskEntity.getDependentTasks());
 
@@ -566,14 +566,20 @@ public class TaskBean implements Serializable {
                 taskEntity.getDeadline());
     }
 
-    public NewTask<Integer> editTask (NewTask<Integer> newTask, int taskId) {
+    /**
+     * Updates the task's information
+     * @param editedTask the task with the information to be updated
+     * @param taskId the id of the task to be updated
+     * @return the detailed task with the updated information
+     */
+    public DetailedTask editTask (EditTask editedTask, int taskId) {
         logger.info("Editing task");
 
         if (!dataValidator.isIdValid(taskId)) {
             throw new IllegalArgumentException("Invalid task id: " + taskId);
         }
 
-        if (newTask == null) {
+        if (editedTask == null) {
             throw new IllegalArgumentException("The input for the new task is null");
         }
 
@@ -589,48 +595,114 @@ public class TaskBean implements Serializable {
             throw new RuntimeException("Error editing task: " + e.getMessage(), e);
         }
 
+        try {
+            taskEntity = updateTaskInfo(editedTask, taskEntity);
+        } catch (IllegalArgumentException e) {
+            logger.error("Error updating task info", e);
+            throw new IllegalArgumentException("Error updating task info: " + e.getMessage(), e);
+        } catch (RuntimeException e) {
+            logger.error("Error updating task info", e);
+            throw new RuntimeException("Error updating task info: " + e.getMessage(), e);
+        }
 
+        Map<String, Set<String>> executors = setTaskExecutors(taskEntity.getOtherExecutors());
+
+        Set<String> users = executors.get("users");
+        Set<String> externalExecutors = executors.get("externalExecutors");
+
+        try {
+            taskDao.merge(taskEntity);
+        } catch (Exception e) {
+            logger.error("Error merging task", e);
+            throw new RuntimeException("Error merging task: " + e.getMessage(), e);
+        }
+
+        return new DetailedTask(taskEntity.getTitle(),
+                taskEntity.getDescription(),
+                taskEntity.getProjectedStartDate(),
+                taskEntity.getDeadline(),
+                taskEntity.getResponsible().getId(),
+                taskEntity.getProjectId().getId(),
+                users,
+                createChartTaskFromRelationships(taskEntity.getDependencies()),
+                createChartTaskFromRelationships(taskEntity.getDependentTasks()),
+                taskEntity.getId(),
+                taskEntity.getState().getId(),
+                externalExecutors);
     }
 
-    public NewTask<Integer> updateTaskInfo (NewTask<Integer> newTask, TaskEntity taskEntity) {
+    /**
+     * Checks the information to be updated and updates the task entity
+     * @param editedTask the task with the information to be updated
+     * @param taskEntity the task entity to be updated
+     * @return the updated task entity
+     */
+    public TaskEntity updateTaskInfo (EditTask editedTask, TaskEntity taskEntity) {
         logger.info("Updating task info");
 
-        if (newTask == null) {
-            logger.error("The new task is null");
-            return null;
+        if (editedTask == null) {
+            logger.error("The new task is null when updating task info");
+            throw new IllegalArgumentException("The new task is null when updating task info");
         }
 
         if (taskEntity == null) {
-            logger.error("The task entity is null");
-            return null;
+            logger.error("The task entity is null when updating task info");
+            throw new IllegalArgumentException("The task entity is null when updating task info");
         }
 
-        if (newTask.getTitle() != null && !newTask.getTitle().isBlank()) {
-            taskEntity.setTitle(newTask.getTitle());
-        }
-
-        if (newTask.getDescription() != null && !newTask.getDescription().isBlank()) {
-            taskEntity.setDescription(newTask.getDescription());
-        }
-
-        if (newTask.getProjectedStartDate() != null) {
-            taskEntity.setProjectedStartDate(newTask.getProjectedStartDate());
-        }
-
-        if (newTask.getDeadline() != null) {
-            taskEntity.setDeadline(newTask.getDeadline());
-        }
-
-        if (newTask.getResponsibleId() > 0) {
-            UserEntity responsible = userDao.findUserById(newTask.getResponsibleId());
-            if (responsible != null && projectBean.isUserActiveAndApprovedInProject(newTask.getResponsibleId(), taskEntity.getProjectId().getId())) {
-                taskEntity.setResponsible(responsible);
+        try {
+            if (editedTask.getTitle() != null && !editedTask.getTitle().isBlank()) {
+                taskEntity.setTitle(editedTask.getTitle());
             }
-        }
 
-        //////////////// ATUALIZAR LISTA - VERUFICAR QUEM É PARA ADICIONAR E QUEM É PARA REMOVER - MUDAR APENAS O BOOLEAN PARA FALSE \\\\\
-        if (newTask.getOtherExecutors() != null && !newTask.getOtherExecutors().isEmpty()) {
-            taskEntity.setOtherExecutors(newTask.getOtherExecutors());
+            if (editedTask.getDescription() != null && !editedTask.getDescription().isBlank()) {
+                taskEntity.setDescription(editedTask.getDescription());
+            }
+
+            if (editedTask.getProjectedStartDate() != null) {
+                taskEntity.setProjectedStartDate(editedTask.getProjectedStartDate());
+            }
+
+            if (editedTask.getDeadline() != null) {
+                taskEntity.setDeadline(editedTask.getDeadline());
+            }
+
+            if (editedTask.getResponsibleId() > 0) {
+                UserEntity responsible = userDao.findUserById(editedTask.getResponsibleId());
+                if (responsible != null && projectBean.isUserActiveAndApprovedInProject(responsible.getId(), editedTask.getProjectId())) {
+                    taskEntity.setResponsible(responsible);
+                }
+            }
+
+            if (editedTask.getOtherExecutors() != null && !editedTask.getOtherExecutors().isEmpty()) {
+                taskEntity.setOtherExecutors(editedTask.getOtherExecutors());
+            }
+
+            if (editedTask.getDependencies() != null && !editedTask.getDependencies().isEmpty()) {
+                Set<TaskEntity> dependencies = getSetOfDependencies(editedTask.getDependencies(), taskEntity.getProjectId().getId());
+                if (dependencies != null) {
+                    Set<M2MTaskDependencies> dependenciesRelationship = createTaskDependenciesRelationship(taskEntity, dependencies);
+                    taskEntity.setDependencies(dependenciesRelationship);
+                }
+            }
+
+            if (editedTask.getDependentTasks() != null && !editedTask.getDependentTasks().isEmpty()) {
+                Set<TaskEntity> dependentTasks = getSetOfDependencies(editedTask.getDependentTasks(), taskEntity.getProjectId().getId());
+                if (dependentTasks != null) {
+                    Set<M2MTaskDependencies> dependentRelationship = createTaskDependenciesRelationship(taskEntity, dependentTasks);
+                    taskEntity.setDependentTasks(dependentRelationship);
+                }
+            }
+
+            if (editedTask.getState() > 0) {
+                taskEntity.setState(TaskStateEnum.fromId(editedTask.getState()));
+            }
+
+            return taskEntity;
+        } catch (Exception e) {
+            logger.error("Error updating task info", e);
+            throw new RuntimeException("Error updating task info: " + e.getMessage(), e);
         }
     }
+
 }

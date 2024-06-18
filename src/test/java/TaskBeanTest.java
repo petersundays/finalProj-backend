@@ -6,6 +6,7 @@ import domcast.finalprojbackend.dao.TaskDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.taskDto.ChartTask;
 import domcast.finalprojbackend.dto.taskDto.DetailedTask;
+import domcast.finalprojbackend.dto.taskDto.EditTask;
 import domcast.finalprojbackend.dto.taskDto.NewTask;
 import domcast.finalprojbackend.entity.M2MTaskDependencies;
 import domcast.finalprojbackend.entity.ProjectEntity;
@@ -493,5 +494,50 @@ public class TaskBeanTest {
 
         verify(dataValidator).isIdValid(projectId);
         verify(taskDao).findTaskByProjectId(projectId);
+    }
+
+    @Test
+    void testEditTask_Success() {
+        EditTask editedTask = new EditTask();
+        int taskId = 1;
+        TaskEntity taskEntity = new TaskEntity();
+
+        // Mock the isIdValid method to return true for the given taskId
+        when(dataValidator.isIdValid(taskId)).thenReturn(true);
+
+        // Mock the findTaskById method to return a TaskEntity for the given taskId
+        when(taskBean.findTaskById(taskId)).thenReturn(taskEntity);
+
+        // Mock the updateTaskInfo method to return a TaskEntity for the given editedTask and taskEntity
+        when(taskBean.updateTaskInfo(editedTask, taskEntity)).thenReturn(taskEntity);
+
+        // Now the editTask method should not throw an exception
+        assertDoesNotThrow(() -> taskBean.editTask(editedTask, taskId));
+    }
+
+    @Test
+    void testEditTask_Failure() {
+        EditTask editedTask = null;
+        int taskId = -1;
+
+        when(dataValidator.isIdValid(taskId)).thenReturn(false);
+
+        assertThrows(IllegalArgumentException.class, () -> taskBean.editTask(editedTask, taskId));
+    }
+
+    @Test
+    void testUpdateTaskInfo_Success() {
+        EditTask editedTask = new EditTask();
+        TaskEntity taskEntity = new TaskEntity();
+
+        assertDoesNotThrow(() -> taskBean.updateTaskInfo(editedTask, taskEntity));
+    }
+
+    @Test
+    void testUpdateTaskInfo_Failure() {
+        EditTask editedTask = null;
+        TaskEntity taskEntity = null;
+
+        assertThrows(IllegalArgumentException.class, () -> taskBean.updateTaskInfo(editedTask, taskEntity));
     }
 }
