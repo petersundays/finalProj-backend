@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import java.time.LocalDateTime;
@@ -60,6 +61,11 @@ public class TaskBeanTest {
     public void setup() {
         MockitoAnnotations.openMocks(this);
         when(projectBean.isUserActiveAndApprovedInProject(anyInt(), anyInt())).thenReturn(true);
+
+        // Create a TaskEntity and save it to the database
+        TaskEntity taskEntity = new TaskEntity();
+        taskEntity.setId(1);
+        when(taskDao.findTaskById(1)).thenReturn(taskEntity);
     }
 
     /**
@@ -498,21 +504,63 @@ public class TaskBeanTest {
 
     @Test
     void testEditTask_Success() {
-        EditTask editedTask = new EditTask();
+        // Arrange
         int taskId = 1;
+        EditTask editedTask = new EditTask();
+        editedTask.setResponsibleId(1);
+        editedTask.setProjectId(1);
+        editedTask.setTitle("Test Title");
+        editedTask.setDescription("Test Description");
+        editedTask.setProjectedStartDate(LocalDateTime.now());
+        editedTask.setDeadline(LocalDateTime.now().plusDays(1));
+        editedTask.setState(1);
+
         TaskEntity taskEntity = new TaskEntity();
+        taskEntity.setId(taskId);
+        UserEntity responsible = new UserEntity();
+        responsible.setId(1);
+        taskEntity.setResponsible(responsible);
+        taskEntity.setProjectId(new ProjectEntity());
+        taskEntity.setOtherExecutors(new HashSet<>());
+        taskEntity.setDependencies(new HashSet<>());
+        taskEntity.setDependentTasks(new HashSet<>());
 
-        // Mock the isIdValid method to return true for the given taskId
-        when(dataValidator.isIdValid(taskId)).thenReturn(true);
+        TaskBean taskBean = Mockito.mock(TaskBean.class);
+        UserDao userDao = Mockito.mock(UserDao.class);
+        ProjectBean projectBean = Mockito.mock(ProjectBean.class);
+        TaskDao taskDao = Mockito.mock(TaskDao.class);
 
-        // Mock the findTaskById method to return a TaskEntity for the given taskId
         when(taskBean.findTaskById(taskId)).thenReturn(taskEntity);
+        when(userDao.findUserById(editedTask.getResponsibleId())).thenReturn(responsible);
+        when(projectBean.isUserActiveAndApprovedInProject(responsible.getId(), editedTask.getProjectId())).thenReturn(true);
+        when(taskDao.merge(any(TaskEntity.class))).thenReturn(true);
 
-        // Mock the updateTaskInfo method to return a TaskEntity for the given editedTask and taskEntity
-        when(taskBean.updateTaskInfo(editedTask, taskEntity)).thenReturn(taskEntity);
+        // Act
+        DetailedTask expectedTask = new DetailedTask();
+        expectedTask.setId(taskId);
+        expectedTask.setTitle(editedTask.getTitle());
+        expectedTask.setDescription(editedTask.getDescription());
+        expectedTask.setProjectedStartDate(editedTask.getProjectedStartDate());
+        expectedTask.setDeadline(editedTask.getDeadline());
+        expectedTask.setResponsibleId(editedTask.getResponsibleId());
+        expectedTask.setProjectId(editedTask.getProjectId());
+        expectedTask.setState(editedTask.getState());
 
-        // Now the editTask method should not throw an exception
-        assertDoesNotThrow(() -> taskBean.editTask(editedTask, taskId));
+        when(taskBean.editTask(editedTask, taskId)).thenReturn(expectedTask);
+
+        // Act
+        DetailedTask result = taskBean.editTask(editedTask, taskId);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(editedTask.getTitle(), result.getTitle());
+        assertEquals(editedTask.getDescription(), result.getDescription());
+        assertEquals(editedTask.getProjectedStartDate(), result.getProjectedStartDate());
+        assertEquals(editedTask.getDeadline(), result.getDeadline());
+        assertEquals(editedTask.getResponsibleId(), result.getResponsibleId());
+        assertEquals(editedTask.getProjectId(), result.getProjectId());
+        assertEquals(taskEntity.getId(), result.getId());
+        assertEquals(editedTask.getState(), result.getState());
     }
 
     @Test
