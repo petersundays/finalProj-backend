@@ -42,7 +42,6 @@ public class PasswordBean {
      */
     public boolean isPasswordValid(String password) throws IllegalArgumentException {
         logger.info("Checking if password is valid");
-        System.out.println("************** PASSWORD: " + password);
         if (password == null) {
             throw new IllegalArgumentException("Password cannot be null");
         }
@@ -60,10 +59,6 @@ public class PasswordBean {
         Matcher matcher = pattern.matcher(password);
 
         if (!matcher.matches()) {
-            System.out.println("1 ########### " + password);
-            System.out.println("2 ########### " + matcher.matches());
-            System.out.println("3 ########### " + matcher);
-            System.out.println("4 ########### " + pattern);
             throw new IllegalArgumentException("Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character");
         }
 

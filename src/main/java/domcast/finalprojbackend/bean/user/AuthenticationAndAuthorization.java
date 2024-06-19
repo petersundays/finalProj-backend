@@ -80,7 +80,7 @@ public class AuthenticationAndAuthorization {
 
         boolean isMember;
         try {
-            isMember = projectBean.isUserActiveInProject(userId, projectId);
+            isMember = projectBean.isUserActiveAndApprovedInProject(userId, projectId);
         } catch (Exception e) {
             logger.error("Error checking if user with ID {} is a member of project with ID {}", userId, projectId, e);
             throw new RuntimeException(e);
