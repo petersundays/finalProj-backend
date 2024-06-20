@@ -128,7 +128,6 @@ public class UserService {
 
             // Convert the registeredUser object to a JSON string
             String registeredUserJson = userBean.convertUserToJson(registeredUser);
-            System.out.println(registeredUserJson);
 
             response = Response.status(200).entity(registeredUserJson).build();
             logger.info("User with IP address {} confirmed registration successfully", ipAddress);

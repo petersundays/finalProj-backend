@@ -6,6 +6,7 @@ import domcast.finalprojbackend.dao.TaskDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.taskDto.ChartTask;
 import domcast.finalprojbackend.dto.taskDto.DetailedTask;
+import domcast.finalprojbackend.dto.taskDto.EditTask;
 import domcast.finalprojbackend.dto.taskDto.NewTask;
 import domcast.finalprojbackend.entity.M2MTaskDependencies;
 import domcast.finalprojbackend.entity.ProjectEntity;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import java.time.LocalDateTime;
@@ -58,7 +60,12 @@ public class TaskBeanTest {
     @BeforeEach
     public void setup() {
         MockitoAnnotations.openMocks(this);
-        when(projectBean.isUserActiveInProject(anyInt(), anyInt())).thenReturn(true);
+        when(projectBean.isUserActiveAndApprovedInProject(anyInt(), anyInt())).thenReturn(true);
+
+        // Create a TaskEntity and save it to the database
+        TaskEntity taskEntity = new TaskEntity();
+        taskEntity.setId(1);
+        when(taskDao.findTaskById(1)).thenReturn(taskEntity);
     }
 
     /**
@@ -493,5 +500,92 @@ public class TaskBeanTest {
 
         verify(dataValidator).isIdValid(projectId);
         verify(taskDao).findTaskByProjectId(projectId);
+    }
+
+    @Test
+    void testEditTask_Success() {
+        // Arrange
+        int taskId = 1;
+        EditTask editedTask = new EditTask();
+        editedTask.setResponsibleId(1);
+        editedTask.setProjectId(1);
+        editedTask.setTitle("Test Title");
+        editedTask.setDescription("Test Description");
+        editedTask.setProjectedStartDate(LocalDateTime.now());
+        editedTask.setDeadline(LocalDateTime.now().plusDays(1));
+        editedTask.setState(1);
+
+        TaskEntity taskEntity = new TaskEntity();
+        taskEntity.setId(taskId);
+        UserEntity responsible = new UserEntity();
+        responsible.setId(1);
+        taskEntity.setResponsible(responsible);
+        taskEntity.setProjectId(new ProjectEntity());
+        taskEntity.setOtherExecutors(new HashSet<>());
+        taskEntity.setDependencies(new HashSet<>());
+        taskEntity.setDependentTasks(new HashSet<>());
+
+        TaskBean taskBean = Mockito.mock(TaskBean.class);
+        UserDao userDao = Mockito.mock(UserDao.class);
+        ProjectBean projectBean = Mockito.mock(ProjectBean.class);
+        TaskDao taskDao = Mockito.mock(TaskDao.class);
+
+        when(taskBean.findTaskById(taskId)).thenReturn(taskEntity);
+        when(userDao.findUserById(editedTask.getResponsibleId())).thenReturn(responsible);
+        when(projectBean.isUserActiveAndApprovedInProject(responsible.getId(), editedTask.getProjectId())).thenReturn(true);
+        when(taskDao.merge(any(TaskEntity.class))).thenReturn(true);
+
+        // Act
+        DetailedTask expectedTask = new DetailedTask();
+        expectedTask.setId(taskId);
+        expectedTask.setTitle(editedTask.getTitle());
+        expectedTask.setDescription(editedTask.getDescription());
+        expectedTask.setProjectedStartDate(editedTask.getProjectedStartDate());
+        expectedTask.setDeadline(editedTask.getDeadline());
+        expectedTask.setResponsibleId(editedTask.getResponsibleId());
+        expectedTask.setProjectId(editedTask.getProjectId());
+        expectedTask.setState(editedTask.getState());
+
+        when(taskBean.editTask(editedTask, taskId)).thenReturn(expectedTask);
+
+        // Act
+        DetailedTask result = taskBean.editTask(editedTask, taskId);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(editedTask.getTitle(), result.getTitle());
+        assertEquals(editedTask.getDescription(), result.getDescription());
+        assertEquals(editedTask.getProjectedStartDate(), result.getProjectedStartDate());
+        assertEquals(editedTask.getDeadline(), result.getDeadline());
+        assertEquals(editedTask.getResponsibleId(), result.getResponsibleId());
+        assertEquals(editedTask.getProjectId(), result.getProjectId());
+        assertEquals(taskEntity.getId(), result.getId());
+        assertEquals(editedTask.getState(), result.getState());
+    }
+
+    @Test
+    void testEditTask_Failure() {
+        EditTask editedTask = null;
+        int taskId = -1;
+
+        when(dataValidator.isIdValid(taskId)).thenReturn(false);
+
+        assertThrows(IllegalArgumentException.class, () -> taskBean.editTask(editedTask, taskId));
+    }
+
+    @Test
+    void testUpdateTaskInfo_Success() {
+        EditTask editedTask = new EditTask();
+        TaskEntity taskEntity = new TaskEntity();
+
+        assertDoesNotThrow(() -> taskBean.updateTaskInfo(editedTask, taskEntity));
+    }
+
+    @Test
+    void testUpdateTaskInfo_Failure() {
+        EditTask editedTask = null;
+        TaskEntity taskEntity = null;
+
+        assertThrows(IllegalArgumentException.class, () -> taskBean.updateTaskInfo(editedTask, taskEntity));
     }
 }

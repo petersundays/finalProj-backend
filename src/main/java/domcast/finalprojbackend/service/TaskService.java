@@ -5,6 +5,7 @@ import domcast.finalprojbackend.bean.task.TaskBean;
 import domcast.finalprojbackend.bean.user.AuthenticationAndAuthorization;
 import domcast.finalprojbackend.dto.taskDto.ChartTask;
 import domcast.finalprojbackend.dto.taskDto.DetailedTask;
+import domcast.finalprojbackend.dto.taskDto.EditTask;
 import domcast.finalprojbackend.dto.taskDto.NewTask;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
@@ -216,4 +217,43 @@ public class TaskService  {
         return response;
     }
 
+    @PUT
+    @Path("")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response updateTask(@HeaderParam("token") String token, @HeaderParam("id") int userId, @QueryParam("id") int taskId, EditTask editTask, @Context HttpServletRequest request) {
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with token {} is updating the task with id {} from IP address {}", token, taskId, ipAddress);
+
+        // Check if the id is valid
+        if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(taskId) || !dataValidator.isIdValid(editTask.getProjectId())) {
+            logger.info("User with session token {} tried to update a task unsuccessfully", token);
+            return Response.status(400).entity("Invalid id").build();
+        }
+
+        // Check if the user is authorized to update the task
+        if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, userId) &&
+                !authenticationAndAuthorization.isUserMemberOfTheProject(userId, editTask.getProjectId())) {
+            logger.info("User with session token {} tried to update a task unsuccessfully", token);
+            return Response.status(401).entity("Unauthorized").build();
+        }
+
+        Response response;
+        DetailedTask detailedTask;
+
+        // Update the task
+        try {
+            detailedTask = taskBean.editTask(editTask, taskId);
+            logger.info("User with session token {} updated the task with id {} from IP address {}", token, taskId, ipAddress);
+            response = Response.status(200).entity(detailedTask).build();
+        } catch (IllegalArgumentException e) {
+            logger.error("Error updating task", e);
+            response = Response.status(400).entity(e.getMessage()).build();
+        } catch (RuntimeException e) {
+            logger.error("Error updating task", e);
+            response = Response.status(500).entity(e.getMessage()).build();
+        }
+
+        return response;
+    }
 }
