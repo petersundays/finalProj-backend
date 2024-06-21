@@ -1,7 +1,5 @@
 package domcast.finalprojbackend.dao;
 
-import domcast.finalprojbackend.bean.user.UserBean;
-import domcast.finalprojbackend.entity.InterestEntity;
 import domcast.finalprojbackend.entity.SkillEntity;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.NoResultException;
@@ -69,6 +67,24 @@ public class SkillDao extends AbstractDao<SkillEntity> {
 
         } catch (NoResultException e) {
             logger.error("Skills with names {} not found", names);
+            return null;
+        }
+    }
+
+    /**
+     * Finds a skill by its id.
+     *
+     * @param id the id of the skill
+     * @return the SkillEntity object if found, null otherwise
+     */
+    public SkillEntity findSkillById(int id) {
+        logger.info("Finding skill by id {}", id);
+        try {
+            return (SkillEntity) em.createNamedQuery("Skill.findSkillById").setParameter("id", id)
+                    .getSingleResult();
+
+        } catch (NoResultException e) {
+            logger.error("Skill with id {} not found", id);
             return null;
         }
     }

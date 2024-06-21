@@ -236,7 +236,7 @@ public class TaskBeanTest {
         taskEntity.setDeadline(LocalDateTime.now().plusDays(1));
         dependencies.add(taskEntity);
 
-        boolean result = taskBean.isStartDateValid(LocalDateTime.now().plusDays(2), dependencies);
+        boolean result = dataValidator.isStartDateValid(LocalDateTime.now().plusDays(2), dependencies);
 
         assertTrue(result);
     }
@@ -252,7 +252,7 @@ public class TaskBeanTest {
         taskEntity.setDeadline(LocalDateTime.now().plusDays(2));
         dependencies.add(taskEntity);
 
-        boolean result = taskBean.isStartDateValid(LocalDateTime.now().plusDays(1), dependencies);
+        boolean result = dataValidator.isStartDateValid(LocalDateTime.now().plusDays(1), dependencies);
 
         assertFalse(result);
     }

@@ -73,6 +73,10 @@ public class InterestBean implements Serializable {
                     InterestEntity newInterest = new InterestEntity();
                     newInterest.setName(interest);
 
+                    // Split the interest name by spaces and take the first word
+                    String singleWordInterest = interest.split(" ")[0];
+                    newInterest.setName(singleWordInterest);
+
                     // Get the corresponding InterestDto and set the type
                     InterestDto interestDto = interestsList.get(interestsNames.indexOf(interest));
                     newInterest.setType(convertTypeToEnum(interestDto.getType()));

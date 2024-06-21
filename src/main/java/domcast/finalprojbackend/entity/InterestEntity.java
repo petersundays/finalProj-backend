@@ -47,10 +47,6 @@ public class InterestEntity implements Serializable {
     @OneToMany(mappedBy = "interest",cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<M2MUserInterest> userInterests = new HashSet<>();
 
-    // Projects that have the interest
-    @OneToMany(mappedBy = "interest",cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Set<M2MKeyword> projects = new HashSet<>();
-
     // Default constructor
     public InterestEntity() {
     }
@@ -89,11 +85,4 @@ public class InterestEntity implements Serializable {
         this.userInterests = userInterests;
     }
 
-    public Set<M2MKeyword> getProjects() {
-        return projects;
-    }
-
-    public void setProjects(Set<M2MKeyword> projects) {
-        this.projects = projects;
-    }
 }
