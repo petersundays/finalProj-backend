@@ -143,7 +143,7 @@ public class TaskBean implements Serializable {
             return null;
         }
 
-        boolean isStartDateValid = isStartDateValid(newTask.getProjectedStartDate(), dependencies);
+        boolean isStartDateValid = dataValidator.isStartDateValid(newTask.getProjectedStartDate(), dependencies);
 
         if (!isStartDateValid) {
             logger.error("The start date of the new task is not valid");
@@ -176,6 +176,23 @@ public class TaskBean implements Serializable {
             return null;
         }
 
+        TaskEntity presentationTask;
+        M2MTaskDependencies presentationTaskRelationship;
+
+        try {
+            presentationTask = taskDao.findPresentationTaskInProject(newTask.getProjectId());
+        } catch (Exception e) {
+            logger.error("Error finding presentation task in project", e);
+            return null;
+        }
+
+        try {
+            presentationTaskRelationship = relatePresentationTask(presentationTask, taskEntity);
+        } catch (Exception e) {
+            logger.error("Error relating presentation task", e);
+            return null;
+        }
+
         // Set the new task's data
         taskEntity.setTitle(newTask.getTitle());
         taskEntity.setDescription(newTask.getDescription());
@@ -185,6 +202,7 @@ public class TaskBean implements Serializable {
         taskEntity.setOtherExecutors(otherExecutors);
         taskEntity.setDependencies(dependenciesRelationship);
         taskEntity.setDependentTasks(dependentRelationship);
+        taskEntity.addDependentTask(presentationTaskRelationship);
         taskEntity.setProjectId(project);
         return taskEntity;
     }
@@ -237,35 +255,6 @@ public class TaskBean implements Serializable {
             return null;
         }
         return taskDependencies;
-    }
-
-    /**
-     * Checks if the start date of the new task is not before the deadline of its dependencies
-     * @param projectedStartDate the start date of the new task
-     * @param dependencies the dependencies of the new task
-     * @return true if the start date of the new task is valid, false otherwise
-     */
-    public boolean isStartDateValid(LocalDateTime projectedStartDate, Set<TaskEntity> dependencies) {
-        logger.info("Checking if the start date of the new task is not before the deadline of its dependencies");
-
-        if (dependencies == null || dependencies.isEmpty()) {
-            logger.info("The task has no dependencies, so its start date is always valid");
-            return true;
-        }
-
-        int countInvalid = 0;
-        for (TaskEntity dependency : dependencies) {
-            if (projectedStartDate.isBefore(dependency.getDeadline())) {
-                countInvalid++;
-            }
-        }
-
-        if (countInvalid > 0) {
-            logger.error("The projected start date of the new task is earlier than the deadline of {} of its dependencies", countInvalid);
-            return false;
-        }
-
-        return true;
     }
 
     /**
@@ -664,6 +653,13 @@ public class TaskBean implements Serializable {
             }
 
             if (editedTask.getDeadline() != null) {
+                ProjectEntity project = projectDao.findProjectById(taskEntity.getProjectId().getId());
+                if (project == null) {
+                    throw new IllegalArgumentException("Project with id " + taskEntity.getProjectId().getId() + " not found");
+                }
+                if (dataValidator.isDeadlineValid(editedTask.getDeadline(), editedTask.getProjectedStartDate(), project.getDeadline())) {
+                    throw new IllegalArgumentException("The deadline is not valid");
+                }
                 taskEntity.setDeadline(editedTask.getDeadline());
             }
 
@@ -705,4 +701,59 @@ public class TaskBean implements Serializable {
         }
     }
 
+    public boolean presentationTask (int responsibleId, ProjectEntity project) {
+        logger.info("Creating presentation task");
+
+        if (!dataValidator.isIdValid(responsibleId) || !dataValidator.isIdValid(project.getId())) {
+            throw new IllegalArgumentException("Invalid responsible id or project id");
+        }
+
+        TaskEntity taskEntity = new TaskEntity();
+
+        UserEntity responsible;
+
+        try {
+            responsible = userDao.findUserById(responsibleId);
+        } catch (Exception e) {
+            logger.error("Error finding user by id", e);
+            throw new RuntimeException("Error finding user by id: " + e.getMessage(), e);
+        }
+
+        if (responsible == null) {
+            throw new IllegalArgumentException("User with id " + responsibleId + " not found");
+        }
+
+        taskEntity.setTitle("Presentation");
+        taskEntity.setDescription("Presentation of the project");
+        taskEntity.setProjectedStartDate(project.getDeadline());
+        taskEntity.setDeadline(project.getDeadline());
+        taskEntity.setState(TaskStateEnum.PLANNED);
+        taskEntity.setResponsible(responsible);
+        taskEntity.setProjectId(project);
+
+        try {
+            taskDao.persist(taskEntity);
+        } catch (Exception e) {
+            logger.error("Error persisting presentation task", e);
+            throw new RuntimeException("Error persisting presentation task: " + e.getMessage(), e);
+        }
+
+        project.addTask(taskEntity);
+
+        return true;
+    }
+    
+    public M2MTaskDependencies relatePresentationTask (TaskEntity presentationTask, TaskEntity task) {
+        logger.info("Relating presentation task");
+
+        if (presentationTask == null || task == null) {
+            throw new IllegalArgumentException("The presentation task or the task is null");
+        }
+
+        M2MTaskDependencies taskDependency = new M2MTaskDependencies();
+        taskDependency.setTask(task);
+        taskDependency.setDependentTask(presentationTask);
+
+        return taskDependency;
+    }
 }

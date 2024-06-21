@@ -4,9 +4,7 @@ import domcast.finalprojbackend.dao.SkillDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.SkillDto;
 import domcast.finalprojbackend.dto.userDto.UpdateUserDto;
-import domcast.finalprojbackend.entity.M2MUserSkill;
-import domcast.finalprojbackend.entity.SkillEntity;
-import domcast.finalprojbackend.entity.UserEntity;
+import domcast.finalprojbackend.entity.*;
 import domcast.finalprojbackend.enums.SkillTypeEnum;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
@@ -195,5 +193,63 @@ public class SkillBean implements Serializable {
             userDao.merge(userEntity);
         }
         return userEntity;
+    }
+
+    /**
+     * Gets the ids of the skills based on their names
+     * @param skills The names of the skills
+     * @return The ids of the skills
+     */
+    public Set<Integer> getSkillsIds(Set<SkillDto> skills) {
+        if (skills == null) {
+            return new HashSet<>();
+        }
+
+        logger.info("Getting skills ids");
+
+        try {
+            Set<Integer> skillsIds = new HashSet<>();
+            for (SkillDto skill : skills) {
+                SkillEntity skillEntity = skillDao.findSkillByName(skill.getName());
+                if (skillEntity != null) {
+                    skillsIds.add(skillEntity.getId());
+                }
+            }
+            return skillsIds;
+        } catch (Exception e) {
+            logger.error("Error while getting skills ids: {}", e.getMessage());
+            return new HashSet<>();
+        }
+    }
+
+    public Set<M2MProjectSkill> createRelationshipToProject (Set<Integer> skillsIds, ProjectEntity project) {
+        logger.info("Entering createRelationshipToProject for project");
+
+        Set<M2MProjectSkill> m2MProjectSkills = new HashSet<>();
+
+        if (skillsIds == null || skillsIds.isEmpty()) {
+            logger.error("Skills list is null or empty when creating relationship");
+            return m2MProjectSkills;
+        }
+
+        if (project == null) {
+            logger.error("Project is null");
+            throw new IllegalArgumentException("Project is null");
+        }
+
+        for (Integer skillId : skillsIds) {
+            SkillEntity skill = skillDao.findSkillById(skillId);
+            if (skill == null) {
+                logger.error("Skill not found with id while creating relationship: {}", skillId);
+                continue;
+            }
+
+            M2MProjectSkill projectSkill = new M2MProjectSkill();
+            projectSkill.setProject(project);
+            projectSkill.setSkill(skill);
+            m2MProjectSkills.add(projectSkill);
+        }
+
+        return m2MProjectSkills;
     }
 }

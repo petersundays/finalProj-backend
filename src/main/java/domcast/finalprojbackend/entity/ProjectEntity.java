@@ -38,6 +38,7 @@ import java.util.Set;
 
 @NamedQuery(name = "Project.findProjectById", query = "SELECT p FROM ProjectEntity p WHERE p.id = :id")
 
+
 public class ProjectEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -49,7 +50,7 @@ public class ProjectEntity implements Serializable {
     private int id;
 
     // Name of the project
-    @Column(name = "name", nullable = false)
+    @Column(name = "name", unique = true, nullable = false)
     private String name;
 
     // Lab that the project belongs to
@@ -62,13 +63,13 @@ public class ProjectEntity implements Serializable {
     private String description;
 
     // Keywords of the project
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "project", cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
     private Set<M2MKeyword> keywords = new HashSet<>();
 
     // State of the project
     @Convert(converter = ProjectStateEnumConverter.class)
     @Column(name = "state", nullable = false)
-    private ProjectStateEnum state;
+    private ProjectStateEnum state = ProjectStateEnum.PLANNING;
 
     // Users associated with the project
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -80,7 +81,7 @@ public class ProjectEntity implements Serializable {
 
     // Creation date of the project
     @Column(name = "creation_date", nullable = false)
-    private LocalDateTime creationDate;
+    private LocalDateTime creationDate = LocalDateTime.now();
 
     // Projected start date of the project
     @Column(name = "projected_start_date", nullable = false)
@@ -240,6 +241,10 @@ public class ProjectEntity implements Serializable {
 
     public void setTasks(Set<TaskEntity> tasks) {
         this.tasks = tasks;
+    }
+
+    public void addTask(TaskEntity task) {
+        this.tasks.add(task);
     }
 
     public Set<M2MComponentProject> getComponentResources() {

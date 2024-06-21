@@ -104,4 +104,16 @@ public class TaskDao extends AbstractDao<TaskEntity> {
             return null;
         }
     }
+
+    public TaskEntity findPresentationTaskInProject(int projectId) {
+        logger.info("Finding presentation task in project with id {}", projectId);
+        try {
+            return em.createNamedQuery("Task.findPresentationTaskInProject", TaskEntity.class)
+                    .setParameter("projectId", projectId)
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            logger.error("Presentation task in project with id {} not found", projectId);
+            return null;
+        }
+    }
 }
