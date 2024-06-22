@@ -749,4 +749,40 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
 
         return m2MComponentProjects;
     }
+
+    public Set<CRPreview> componentProjectToCRPreview(Set<M2MComponentProject> m2MComponentProjects) {
+        logger.info("Converting many-to-many relations between component resources and project to preview component resources");
+
+        if (m2MComponentProjects == null) {
+            logger.error("Many-to-many relations between component resources and project is null while converting");
+            return null;
+        }
+
+        Set<CRPreview> crPreviews = new HashSet<>();
+
+        for (M2MComponentProject m2MComponentProject : m2MComponentProjects) {
+            if (m2MComponentProject == null) {
+                logger.error("Null M2MComponentProject object found");
+                continue;
+            }
+
+            ComponentResourceEntity componentResourceEntity = m2MComponentProject.getComponentResource();
+
+            if (componentResourceEntity == null) {
+                logger.error("Component resource entity is null while converting");
+                continue;
+            }
+
+            CRPreview crPreview = entityToPreviewCR(componentResourceEntity);
+
+            if (crPreview == null) {
+                logger.error("Error converting detailed component resource to preview while converting many-to-many relations");
+                continue;
+            }
+
+            crPreviews.add(crPreview);
+        }
+
+        return crPreviews;
+    }
 }

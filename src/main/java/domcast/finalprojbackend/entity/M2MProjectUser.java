@@ -27,7 +27,10 @@ import java.io.Serializable;
 
 @NamedQuery(name = "M2MProjectUser.isUserActiveAndApprovedInProject",
         query = "SELECT pu FROM M2MProjectUser pu WHERE pu.user.id = :userId AND pu.project.id = :projectId AND pu.approved = true AND pu.active = true")
-
+@NamedQuery(name = "M2MProjectUser.findMainManagerInProject",
+        query = "SELECT pu FROM M2MProjectUser pu WHERE pu.project.id = :projectId AND pu.role = 1")
+@NamedQuery(name = "M2MProjectUser.findProjectTeam",
+        query = "SELECT pu FROM M2MProjectUser pu WHERE pu.project.id = :projectId AND pu.role != 1")
 
 public class M2MProjectUser implements Serializable {
     private static final long serialVersionUID = 1L;

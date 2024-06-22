@@ -2,7 +2,7 @@ import domcast.finalprojbackend.bean.SkillBean;
 import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.dao.SkillDao;
 import domcast.finalprojbackend.dao.UserDao;
-import domcast.finalprojbackend.dto.SkillDto;
+import domcast.finalprojbackend.dto.skillDto.SkillDto;
 import domcast.finalprojbackend.dto.userDto.UpdateUserDto;
 import domcast.finalprojbackend.entity.SkillEntity;
 import domcast.finalprojbackend.entity.UserEntity;

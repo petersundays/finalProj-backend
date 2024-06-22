@@ -7,13 +7,19 @@ import domcast.finalprojbackend.bean.SkillBean;
 import domcast.finalprojbackend.bean.task.TaskBean;
 import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.dao.LabDao;
+import domcast.finalprojbackend.dao.M2MProjectUserDao;
 import domcast.finalprojbackend.dao.ProjectDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
+import domcast.finalprojbackend.dto.projectDto.DetailedProject;
 import domcast.finalprojbackend.dto.projectDto.NewProjectDto;
+import domcast.finalprojbackend.dto.skillDto.SkillDto;
+import domcast.finalprojbackend.dto.taskDto.ChartTask;
 import domcast.finalprojbackend.dto.userDto.ProjectTeam;
+import domcast.finalprojbackend.dto.userDto.ProjectUser;
 import domcast.finalprojbackend.entity.*;
 import domcast.finalprojbackend.enums.LabEnum;
+import domcast.finalprojbackend.enums.ProjectStateEnum;
 import domcast.finalprojbackend.enums.ProjectUserEnum;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
@@ -22,10 +28,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Stateless
 public class ProjectBean implements Serializable {
@@ -57,6 +60,12 @@ public class ProjectBean implements Serializable {
     @EJB
     private TaskBean taskBean;
 
+    @EJB
+    private M2MProjectUserDao m2MProjectUserDao;
+
+    @EJB
+    private UserBean userBean;
+
     /**
      * Default constructor for ProjectBean.
      */
@@ -85,7 +94,7 @@ public class ProjectBean implements Serializable {
         return isActive;
     }
 
-    public ProjectEntity newProject(NewProjectDto newProjectDto, ProjectTeam projectTeam, int responsibleUserId, Map<DetailedCR, Integer> cRDtos, Set<Integer> newSkills, Set<Integer> newCRs) {
+    public DetailedProject newProject(NewProjectDto newProjectDto, ProjectTeam projectTeam, int responsibleUserId, Map<DetailedCR, Integer> cRDtos, ArrayList<SkillDto> newSkills) {
 
         if (newProjectDto == null) {
             logger.error("New project DTO is null");
@@ -126,12 +135,56 @@ public class ProjectBean implements Serializable {
             throw e;
         }
 
+        boolean newSkillsCreated;
         try {
-            projectEntity = registerProjectInfo(newProjectDto, projectEntity, projectTeam, responsibleUserId, newSkills, componentResources);
+            newSkillsCreated = skillBean.createSkills(newSkills);
+        } catch (RuntimeException e) {
+            logger.error("Error creating new skills: {}", e.getMessage());
+            // Rethrow the exception to the caller method
+            throw e;
+        }
+
+        if (!newSkillsCreated) {
+            logger.error("Error creating new skills");
+            throw new RuntimeException("Error creating new skills");
+        }
+
+        Set<String> newSkillsNames = Set.of();
+        Set<Integer> newSkillsIds;
+
+        try {
+            for (SkillDto skill : newSkills) {
+                newSkillsNames.add(skill.getName());
+            }
+
+            newSkillsIds = skillBean.findSkillsIdsByListOfNames(newSkillsNames);
+        } catch (RuntimeException e) {
+            logger.error("Error finding new skills ids: {}", e.getMessage());
+            // Rethrow the exception to the caller method
+            throw e;
+        }
+
+        
+        try {
+            projectEntity = registerProjectInfo(newProjectDto, projectEntity, projectTeam, responsibleUserId, newSkillsIds, componentResources);
         } catch (RuntimeException e) {
             logger.error("Error registering project info: {}", e.getMessage());
             // Rethrow the exception to the caller method
             throw e;
+        }
+
+        boolean presentationTask;
+        try {
+            presentationTask = taskBean.presentationTask(responsibleUserId, projectEntity);
+        } catch (RuntimeException e) {
+            logger.error("Error creating presentation task: {}", e.getMessage());
+            // Rethrow the exception to the caller method
+            throw e;
+        }
+
+        if (!presentationTask) {
+            logger.error("Error creating presentation task");
+            throw new RuntimeException("Error creating presentation task");
         }
 
         try {
@@ -142,7 +195,15 @@ public class ProjectBean implements Serializable {
             throw e;
         }
 
-        return projectEntity;
+        DetailedProject detailedProject = entityToDetailedProject(projectEntity);
+
+        if (detailedProject == null) {
+            logger.error("Error converting project entity to detailed project");
+            throw new RuntimeException("Error converting project entity to detailed project");
+        }
+
+        logger.info("Successfully created new project with name {}", newProjectDto.getName());
+        return detailedProject;
     }
 
     public ProjectEntity registerProjectInfo (NewProjectDto newProjectDto, ProjectEntity projectEntity, ProjectTeam projectTeam, int responsibleUserId, Set<Integer> newSkills, Map<ComponentResourceEntity, Integer> newCRs) {
@@ -302,6 +363,75 @@ public class ProjectBean implements Serializable {
         }
 
         return projectTeam;
+    }
+
+    /**
+     * Converts a ProjectEntity object to a DetailedProject object.
+     *
+     * @param projectEntity the ProjectEntity object
+     * @return the DetailedProject object
+     */
+    public DetailedProject entityToDetailedProject (ProjectEntity projectEntity) {
+        logger.info("Converting ProjectEntity to DetailedProject");
+
+        if (projectEntity == null) {
+            logger.error("Project entity is null");
+            throw new IllegalArgumentException("Project entity is null");
+        }
+
+        DetailedProject detailedProject = new DetailedProject();
+        M2MProjectUser userInProject = null;
+        Set<M2MProjectUser> projectTeam = null;
+        Set<ChartTask> tasks = null;
+
+        try {
+            userInProject = m2MProjectUserDao.findMainManagerInProject(projectEntity.getId());
+        } catch (PersistenceException e) {
+            logger.error("Error finding main manager in project with id: {}", projectEntity.getId(), e);
+        }
+
+        if (userInProject == null) {
+            logger.warn("No main manager found for project with id: {}", projectEntity.getId());
+        }
+        ProjectUser mainManager = userBean.projectUserToProjectUserDto(userInProject);
+
+        try {
+            projectTeam = m2MProjectUserDao.findProjectTeam(projectEntity.getId());
+        } catch (PersistenceException e) {
+            logger.error("Error finding project team for project with id: {}", projectEntity.getId(), e);
+        }
+
+        if (projectTeam == null) {
+            logger.warn("No team found for project with id: {}", projectEntity.getId());
+        }
+        Set<ProjectUser> collaboratorsDto = userBean.projectUsersToListOfProjectUser(projectTeam);
+
+        try {
+            tasks = (Set<ChartTask>) taskBean.findTaskByProjectId(projectEntity.getId());
+        } catch (PersistenceException e) {
+            logger.error("Error finding tasks for project with id: {}", projectEntity.getId(), e);
+        }
+
+        if (tasks == null) {
+            logger.warn("No tasks found for project with id: {}", projectEntity.getId());
+        }
+
+        detailedProject.setId(projectEntity.getId());
+        detailedProject.setName(projectEntity.getName());
+        detailedProject.setDescription(projectEntity.getDescription());
+        detailedProject.setState(ProjectStateEnum.getProjectStateValue(projectEntity.getState()));
+        detailedProject.setProjectedStartDate(projectEntity.getProjectedStartDate());
+        detailedProject.setDeadline(projectEntity.getDeadline());
+        detailedProject.setKeywords(keywordBean.m2mToKeywordDto(projectEntity.getKeywords()));
+        detailedProject.setSkills(skillBean.projectSkillToDto(projectEntity.getSkills()));
+        detailedProject.setResources(componentResourceBean.componentProjectToCRPreview(projectEntity.getComponentResources()));
+        detailedProject.setMainManager(mainManager);
+        detailedProject.setCollaborators(collaboratorsDto);
+        detailedProject.setTasks(tasks);
+
+        logger.info("Successfully converted ProjectEntity to DetailedProject");
+
+        return detailedProject;
     }
 
 }

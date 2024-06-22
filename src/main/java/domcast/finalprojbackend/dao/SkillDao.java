@@ -88,4 +88,25 @@ public class SkillDao extends AbstractDao<SkillEntity> {
             return null;
         }
     }
+
+    /**
+     * Finds the ids of the skills based on their names.
+     *
+     * @param names the names of the skills
+     * @return the ids of the skills
+     */
+    public Set<Integer> findSkillsIdsByListOfNames(List<String> names) {
+        logger.info("Finding skills ids by names {}", names);
+
+        try {
+            List<Integer> resultList = em.createNamedQuery("Skill.findSkillsIdsByListOfNames", Integer.class)
+                    .setParameter("names", names)
+                    .getResultList();
+            return new HashSet<>(resultList);
+
+        } catch (NoResultException e) {
+            logger.error("Skills ids with names {} not found", names);
+            return null;
+        }
+    }
 }

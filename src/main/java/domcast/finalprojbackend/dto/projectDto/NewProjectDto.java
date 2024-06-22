@@ -1,6 +1,6 @@
 package domcast.finalprojbackend.dto.projectDto;
 
-import domcast.finalprojbackend.dto.SkillDto;
+import domcast.finalprojbackend.dto.skillDto.SkillDto;
 import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;

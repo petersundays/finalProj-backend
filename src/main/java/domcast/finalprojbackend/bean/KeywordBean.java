@@ -2,6 +2,7 @@ package domcast.finalprojbackend.bean;
 
 import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.dao.KeywordDao;
+import domcast.finalprojbackend.dto.KeywordDto;
 import domcast.finalprojbackend.entity.KeywordEntity;
 import domcast.finalprojbackend.entity.M2MKeyword;
 import domcast.finalprojbackend.entity.ProjectEntity;
@@ -73,6 +74,13 @@ public class KeywordBean implements Serializable {
         return keywordEntities;
     }
 
+    /**
+     * Creates a relationship between a project and a set of keywords.
+     *
+     * @param project the project
+     * @param keywords the set of keywords
+     * @return the set of M2MKeyword objects
+     */
     public Set<M2MKeyword> createRelationship (ProjectEntity project, Set<KeywordEntity> keywords) {
 
         logger.info("Entering createRelationship for project with ID {}", project.getId());
@@ -99,5 +107,42 @@ public class KeywordBean implements Serializable {
         logger.info("Exiting createRelationship");
 
         return m2MKeywords;
+    }
+
+    /**
+     * Converts a set of M2MKeyword objects to a set of KeywordDto objects.
+     *
+     * @param m2MKeywords the set of M2MKeyword objects
+     * @return the set of KeywordDto objects
+     */
+    public Set<KeywordDto> m2mToKeywordDto (Set<M2MKeyword> m2MKeywords) {
+
+        logger.info("Entering m2mToKeywordDto");
+
+        Set<KeywordDto> keywordDtos = new HashSet<>();
+
+        if (m2MKeywords == null || m2MKeywords.isEmpty()) {
+            logger.error("M2MKeywords list is null or empty");
+            return keywordDtos;
+        }
+
+        for (M2MKeyword m2MKeyword : m2MKeywords) {
+            if (m2MKeyword == null) {
+                logger.error("Null M2MKeyword object found");
+                continue;
+            }
+            try {
+                KeywordDto keywordDto = new KeywordDto();
+                keywordDto.setId(m2MKeyword.getKeyword().getId());
+                keywordDto.setName(m2MKeyword.getKeyword().getName());
+                keywordDtos.add(keywordDto);
+            } catch (Exception e) {
+                logger.error("Error creating KeywordDto: {}", e.getMessage());
+            }
+        }
+
+        logger.info("Exiting m2mToKeywordDto");
+
+        return keywordDtos;
     }
 }
