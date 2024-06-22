@@ -2,7 +2,8 @@ package domcast.finalprojbackend.bean;
 
 import domcast.finalprojbackend.dao.SkillDao;
 import domcast.finalprojbackend.dao.UserDao;
-import domcast.finalprojbackend.dto.SkillDto;
+import domcast.finalprojbackend.dto.skillDto.SkillDto;
+import domcast.finalprojbackend.dto.skillDto.SkillToProject;
 import domcast.finalprojbackend.dto.userDto.UpdateUserDto;
 import domcast.finalprojbackend.entity.*;
 import domcast.finalprojbackend.enums.SkillTypeEnum;
@@ -251,5 +252,45 @@ public class SkillBean implements Serializable {
         }
 
         return m2MProjectSkills;
+    }
+
+    public Set<Integer> findSkillsIdsByListOfNames(Set<String> names) {
+        logger.info("Entering findSkillsIdsByListOfNames");
+
+        if (names == null || names.isEmpty()) {
+            logger.error("Names list is null or empty");
+            return new HashSet<>();
+        }
+
+        try {
+            return skillDao.findSkillsIdsByListOfNames(new ArrayList<>(names));
+        } catch (Exception e) {
+            logger.error("Error while finding skills ids by names: {}", e.getMessage());
+            return new HashSet<>();
+        }
+    }
+
+    public Set<SkillToProject> projectSkillToDto(Set<M2MProjectSkill> m2MProjectSkills) {
+        logger.info("Entering m2mProjectSkillToSkillToProject");
+
+        Set<SkillToProject> skills = new HashSet<>();
+        if (m2MProjectSkills == null || m2MProjectSkills.isEmpty()) {
+            logger.error("M2MProjectSkills list is null or empty");
+            return skills;
+        }
+
+        for (M2MProjectSkill m2MProjectSkill : m2MProjectSkills) {
+            if (m2MProjectSkill == null) {
+                logger.error("Null M2MProjectSkill object found");
+                continue;
+            }
+            SkillToProject skill = new SkillToProject();
+            skill.setId(m2MProjectSkill.getSkill().getId());
+            skill.setName(m2MProjectSkill.getSkill().getName());
+            skill.setType(m2MProjectSkill.getSkill().getType().getId());
+            skills.add(skill);
+        }
+
+        return skills;
     }
 }

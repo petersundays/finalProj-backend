@@ -5,6 +5,12 @@ import jakarta.xml.bind.annotation.XmlRootElement;
 
 import java.io.Serializable;
 
+/**
+ * Data Transfer Object (DTO) class to send project information to the frontend.
+ * It includes the name, description and the lab id of the project.
+ * @author José Castro
+ * @author Pedro Domingos
+ */
 @XmlRootElement
 public abstract class ProjectDto implements Serializable {
 

@@ -1,4 +1,4 @@
-package domcast.finalprojbackend.dto;
+package domcast.finalprojbackend.dto.skillDto;
 
 import domcast.finalprojbackend.enums.SkillTypeEnum;
 import jakarta.xml.bind.annotation.XmlElement;

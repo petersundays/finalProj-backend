@@ -653,11 +653,11 @@ public class TaskBean implements Serializable {
             }
 
             if (editedTask.getDeadline() != null) {
-                ProjectEntity project = projectDao.findProjectById(taskEntity.getProjectId().getId());
-                if (project == null) {
-                    throw new IllegalArgumentException("Project with id " + taskEntity.getProjectId().getId() + " not found");
+                TaskEntity presentationTask = taskDao.findPresentationTaskInProject(taskEntity.getProjectId().getId());
+                if (presentationTask == null) {
+                    throw new IllegalArgumentException("Presentation task of the project with id " + taskEntity.getProjectId().getId() + " not found");
                 }
-                if (dataValidator.isDeadlineValid(editedTask.getDeadline(), editedTask.getProjectedStartDate(), project.getDeadline())) {
+                if (dataValidator.isDeadlineValid(editedTask.getDeadline(), editedTask.getProjectedStartDate(), presentationTask.getProjectedStartDate())) {
                     throw new IllegalArgumentException("The deadline is not valid");
                 }
                 taskEntity.setDeadline(editedTask.getDeadline());

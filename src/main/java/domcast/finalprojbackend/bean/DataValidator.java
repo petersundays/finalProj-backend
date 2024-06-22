@@ -3,7 +3,7 @@ package domcast.finalprojbackend.bean;
 import domcast.finalprojbackend.bean.user.PasswordBean;
 import domcast.finalprojbackend.dao.TaskDao;
 import domcast.finalprojbackend.dto.InterestDto;
-import domcast.finalprojbackend.dto.SkillDto;
+import domcast.finalprojbackend.dto.skillDto.SkillDto;
 import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
 import domcast.finalprojbackend.dto.projectDto.NewProjectDto;
 import domcast.finalprojbackend.dto.taskDto.NewTask;
@@ -246,18 +246,18 @@ public class DataValidator {
      * The deadline of the new task must be after the projected start date and before the deadline of the project
      * @param taskDeadline the deadline of the new task
      * @param taskProjectedStartDate the projected start date of the new task
-     * @param projectDeadline the deadline of the project where the task will be created
+     * @param presentationTaskStartDate the projected start date the project's presentation task
      * @return boolean value indicating if the deadline of the new task is valid
      */
-    public boolean isDeadlineValid (LocalDateTime taskDeadline, LocalDateTime taskProjectedStartDate, LocalDateTime projectDeadline) {
+    public boolean isDeadlineValid (LocalDateTime taskDeadline, LocalDateTime taskProjectedStartDate, LocalDateTime presentationTaskStartDate) {
         logger.info("Checking if the deadline of the new task is valid");
 
-        if (taskDeadline == null || taskProjectedStartDate == null || projectDeadline == null) {
+        if (taskDeadline == null || taskProjectedStartDate == null || presentationTaskStartDate == null) {
             logger.error("The deadline of the new task is null");
             return false;
         }
 
-        if (taskDeadline.isBefore(taskProjectedStartDate) || taskDeadline.isAfter(projectDeadline)) {
+        if (taskDeadline.isBefore(taskProjectedStartDate) || taskDeadline.isAfter(presentationTaskStartDate)) {
             logger.error("The deadline of the new task is not valid");
             return false;
         }
