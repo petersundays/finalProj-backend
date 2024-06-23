@@ -1214,4 +1214,17 @@ public class UserBean implements Serializable {
 
         return projectUsers;
     }
+
+    /**
+     * Extracts the project team from the input.
+     * @param input The multipart form data input containing the project team.
+     * @return The project team extracted from the input.
+     * @throws IOException If an error occurs while extracting the project team.
+     */
+    public ProjectTeam extractProjectTeam(MultipartFormDataInput input) throws IOException {
+        InputPart part = input.getFormDataMap().get("team").get(0);
+        String userString = part.getBodyAsString();
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(userString, ProjectTeam.class);
+    }
 }

@@ -1,5 +1,7 @@
 package domcast.finalprojbackend.bean;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import domcast.finalprojbackend.dao.ComponentResourceDao;
 import domcast.finalprojbackend.dao.M2MComponentProjectDao;
 import domcast.finalprojbackend.dao.ProjectDao;
@@ -14,7 +16,10 @@ import jakarta.ejb.Stateless;
 import jakarta.persistence.PersistenceException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jboss.resteasy.plugins.providers.multipart.InputPart;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
 
@@ -674,15 +679,15 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
         return componentResourceIds;
     }
 
-    public Map<ComponentResourceEntity, Integer> findEntityAndSetQuantity (Map<DetailedCR, Integer> cRDtos) {
-        logger.info("Finding component resource entity by name and brand");
+    public Map<Integer, Integer> findEntityAndSetQuantity (Map<DetailedCR, Integer> cRDtos) {
+        logger.info("Finding component resource entity by name and brand and setting quantity");
 
         if (cRDtos == null) {
-            logger.error("Detailed component resources is null");
+            logger.error("Detailed component resources is null while finding component resource entity by name and brand");
             return null;
         }
 
-        Map<ComponentResourceEntity, Integer> componentResources = new HashMap<>();
+        Map<Integer, Integer> componentResources = new HashMap<>();
 
         for (Map.Entry<DetailedCR, Integer> entry : cRDtos.entrySet()) {
             DetailedCR detailedCR = entry.getKey();
@@ -697,54 +702,76 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
             try {
                 componentResourceEntity = componentResourceDao.findCREntityByNameAndBrand(detailedCR.getName(), detailedCR.getBrand());
             } catch (PersistenceException e) {
-                logger.error("Error finding component resource entity by name and brand: {}", e.getMessage());
+                logger.error("Error finding component resource entity by name and brand and setting quantity: {}", e.getMessage());
                 return null;
             }
 
             if (componentResourceEntity == null) {
-                logger.error("Component resource entity not found for name: {} and brand: {}", detailedCR.getName(), detailedCR.getBrand());
+                logger.error("Component resource entity not found for name: {} and brand {}", detailedCR.getName(), detailedCR.getBrand());
                 return null;
             }
 
-            componentResources.put(componentResourceEntity, quantity);
+            componentResources.put(componentResourceEntity.getId(), quantity);
         }
 
         return componentResources;
     }
 
-        /**
-         * Creates many-to-many relations between component resources and project, while creating a project.
-         *
-         * @param componentResources the component resources to create the relations with
-         * @param projectEntity the project entity to create the relations with
-         * @return the set of many-to-many relations if created, null otherwise
-         */
-    public Set<M2MComponentProject> relationInProjectCreation (Map<ComponentResourceEntity, Integer> componentResources, ProjectEntity projectEntity) {
+    /**
+     * Creates many-to-many relations between component resources and project, while creating a project.
+     *
+     * @param componentResources the component resources to create the relations with
+     * @param projectEntity the project entity to create the relations with
+     * @return the set of many-to-many relations, which are the component resources in the project, or an empty set if there are no relations created
+    */
+    public Set<M2MComponentProject> relationInProjectCreation (Map<Integer, Integer> componentResources, ProjectEntity projectEntity) {
         logger.info("Creating many-to-many relations between component resources and project");
-
-        if (componentResources == null || projectEntity == null) {
-            logger.error("Component resources or project entity is null while creating relations");
-            return null;
-        }
 
         Set<M2MComponentProject> m2MComponentProjects = new HashSet<>();
 
-        for (Map.Entry<ComponentResourceEntity, Integer> entry : componentResources.entrySet()) {
-            ComponentResourceEntity componentResource = entry.getKey();
-            Integer quantity = entry.getValue();
+        if (componentResources == null || componentResources.isEmpty()) {
+            logger.error("Component resources is null or empty while creating relations");
+            return m2MComponentProjects;
+        }
 
-            if (componentResource == null || quantity == null || quantity <= 0) {
-                logger.error("Component resource or quantity is null or invalid while creating relation");
+        if (projectEntity == null) {
+            logger.error("Project entity is null while creating relations");
+            throw new IllegalArgumentException("Project entity is null while creating relations");
+        }
+
+        for (Map.Entry<Integer, Integer> entry : componentResources.entrySet()) {
+            ComponentResourceEntity componentResource;
+            Integer quantity = entry.getValue();
+            try {
+                if (dataValidator.isIdValid(entry.getKey())) {
+                    try {
+                        componentResourceDao.clear();
+                        componentResource = componentResourceDao.findCREntityById(entry.getKey());
+                    } catch (PersistenceException e) {
+                        logger.error("Error finding component resource entity by id while creating relation: {}", e.getMessage());
+                        throw new RuntimeException("Error finding component resource entity by id", e);
+                    }
+
+                    if (componentResource == null || quantity == null || quantity <= 0) {
+                        logger.error("Component resource or quantity is null or invalid while creating relation");
+                        continue;
+                    }
+
+                    M2MComponentProject m2MComponentProject = new M2MComponentProject();
+                    m2MComponentProject.setProject(projectEntity);
+                    m2MComponentProject.setComponentResource(componentResource);
+                    m2MComponentProject.setQuantity(quantity);
+                    projectEntity.addComponentResource(m2MComponentProject);
+                    componentResource.addProject(m2MComponentProject);
+                    m2MComponentProjects.add(m2MComponentProject);
+/*
+                    // Persist the M2MComponentProject object in the database
+                    m2MComponentProjectDao.persist(m2MComponentProject);*/
+                }
+            } catch (PersistenceException e) {
+                logger.error("Error creating relation between component resource and project: {}", e.getMessage());
                 return null;
             }
-
-            M2MComponentProject m2MComponentProject = new M2MComponentProject();
-            m2MComponentProject.setProject(projectEntity);
-            m2MComponentProject.setComponentResource(componentResource);
-            m2MComponentProject.setQuantity(quantity);
-            projectEntity.addComponentResource(m2MComponentProject);
-            componentResource.addProject(m2MComponentProject);
-            m2MComponentProjects.add(m2MComponentProject);
         }
 
         return m2MComponentProjects;
@@ -784,5 +811,18 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
         }
 
         return crPreviews;
+    }
+
+    /**
+     * Extracts the detailed component resources from the input.
+     *
+     * @param input the input to extract the detailed component resources from
+     * @return the map of detailed component resources if extracted, null otherwise
+     */
+    public Map<DetailedCR, Integer> extractCRDtos(MultipartFormDataInput input) throws IOException {
+        InputPart part = input.getFormDataMap().get("components").get(0);
+        String cRDtosString = part.getBodyAsString();
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(cRDtosString, new TypeReference<Map<DetailedCR, Integer>>() {});
     }
 }

@@ -104,7 +104,7 @@ public class ProjectEntity implements Serializable {
     private Set<ProjectMessageEntity> groupMessages = new HashSet<>();
 
     // Components and resources used in the project
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "project", cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
     private Set<M2MComponentProject> componentResources = new HashSet<>();
 
     // Tasks take part of the execution plan of the project

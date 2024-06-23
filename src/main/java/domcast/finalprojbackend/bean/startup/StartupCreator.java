@@ -178,7 +178,7 @@ public class StartupCreator implements Serializable {
                 } else if (i == 1) {
                     user.setType(TypeOfUserEnum.ADMIN);
                     user.setEmail("admin@mail.com");
-                    user.setPassword(passwordBean.hashPassword("admin"));
+                    user.setPassword(passwordBean.hashPassword("Domcast!2024!"));
                 } else if (i == 3 || i == 7 || i == 8) {
                     user.setVisible(true);
                 }

@@ -160,4 +160,8 @@ public abstract class AbstractDao<T extends Serializable> implements Serializabl
 	public void flush() {
 		em.flush();
 	}
+
+	public void clear() {
+		em.clear();
+	}
 }

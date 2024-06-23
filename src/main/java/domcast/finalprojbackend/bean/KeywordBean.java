@@ -83,7 +83,7 @@ public class KeywordBean implements Serializable {
      */
     public Set<M2MKeyword> createRelationship (ProjectEntity project, Set<KeywordEntity> keywords) {
 
-        logger.info("Entering createRelationship for project with ID {}", project.getId());
+        logger.info("Entering createRelationship for new project and keywords");
 
         Set<M2MKeyword> m2MKeywords = new HashSet<>();
 

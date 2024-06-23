@@ -547,7 +547,6 @@ public class TaskBean implements Serializable {
             logger.error("The task entity id is invalid");
             return null;
         }
-
         return new ChartTask(taskEntity.getId(),
                 taskEntity.getTitle(),
                 taskEntity.getState().getId(),
@@ -704,8 +703,12 @@ public class TaskBean implements Serializable {
     public boolean presentationTask (int responsibleId, ProjectEntity project) {
         logger.info("Creating presentation task");
 
-        if (!dataValidator.isIdValid(responsibleId) || !dataValidator.isIdValid(project.getId())) {
-            throw new IllegalArgumentException("Invalid responsible id or project id");
+        if (!dataValidator.isIdValid(responsibleId)) {
+            throw new IllegalArgumentException("Invalid responsible id");
+        }
+
+        if (project == null) {
+            throw new IllegalArgumentException("The project is null");
         }
 
         TaskEntity taskEntity = new TaskEntity();
@@ -725,7 +728,7 @@ public class TaskBean implements Serializable {
 
         taskEntity.setTitle("Presentation");
         taskEntity.setDescription("Presentation of the project");
-        taskEntity.setProjectedStartDate(project.getDeadline());
+        taskEntity.setProjectedStartDate(project.getDeadline().minusDays(1L));
         taskEntity.setDeadline(project.getDeadline());
         taskEntity.setState(TaskStateEnum.PLANNED);
         taskEntity.setResponsible(responsible);
