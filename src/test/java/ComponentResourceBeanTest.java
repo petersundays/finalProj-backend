@@ -9,12 +9,15 @@ import domcast.finalprojbackend.entity.ComponentResourceEntity;
 import domcast.finalprojbackend.entity.M2MComponentProject;
 import domcast.finalprojbackend.entity.ProjectEntity;
 import domcast.finalprojbackend.enums.ComponentResourceEnum;
+import org.jboss.resteasy.plugins.providers.multipart.InputPart;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.io.IOException;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -398,5 +401,212 @@ public class ComponentResourceBeanTest {
 
         // Assert
         assertTrue(result.isEmpty());
+    }
+
+    /**
+     * Test the deleteComponentResource method of ComponentResourceBean
+     * Success case
+     */
+    @Test
+    public void testFindCREntityByNameAndBrand_Success() {
+        // Arrange
+        Set<DetailedCR> detailedCRs = new HashSet<>();
+        DetailedCR detailedCR = new DetailedCR();
+        detailedCR.setName("Test Name");
+        detailedCR.setBrand("Test Brand");
+        detailedCRs.add(detailedCR);
+
+        ComponentResourceEntity componentResourceEntity = new ComponentResourceEntity();
+        componentResourceEntity.setId(1);
+        when(componentResourceDao.findCREntityByNameAndBrand(detailedCR.getName(), detailedCR.getBrand())).thenReturn(componentResourceEntity);
+
+        // Act
+        Set<Integer> result = componentResourceBean.findCREntityByNameAndBrand(detailedCRs);
+
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.contains(componentResourceEntity.getId()));
+    }
+
+    /**
+     * Test the deleteComponentResource method of ComponentResourceBean
+     * Failure case
+     */
+    @Test
+    public void testFindCREntityByNameAndBrand_Failure() {
+        // Arrange
+        Set<DetailedCR> detailedCRs = null;
+
+        // Act
+        Set<Integer> result = componentResourceBean.findCREntityByNameAndBrand(detailedCRs);
+
+        // Assert
+        assertNull(result);
+    }
+
+    /**
+     * Test the deleteComponentResource method of ComponentResourceBean
+     * Success case
+     */
+    @Test
+    public void testFindEntityAndSetQuantity_Success() {
+        // Arrange
+        Set<DetailedCR> cRDtos = new HashSet<>();
+        DetailedCR detailedCR = new DetailedCR();
+        detailedCR.setName("Test Name");
+        detailedCR.setBrand("Test Brand");
+        detailedCR.setQuantity(5);
+        cRDtos.add(detailedCR);
+
+        ComponentResourceEntity componentResourceEntity = new ComponentResourceEntity();
+        componentResourceEntity.setId(1);
+        when(componentResourceDao.findCREntityByNameAndBrand(detailedCR.getName(), detailedCR.getBrand())).thenReturn(componentResourceEntity);
+
+        // Act
+        Map<Integer, Integer> result = componentResourceBean.findEntityAndSetQuantity(cRDtos);
+
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.containsKey(componentResourceEntity.getId()));
+        assertEquals(detailedCR.getQuantity(), result.get(componentResourceEntity.getId()));
+    }
+
+    /**
+     * Test the deleteComponentResource method of ComponentResourceBean
+     * Failure case
+     */
+    @Test
+    public void testFindEntityAndSetQuantity_Failure() {
+        // Arrange
+        Set<DetailedCR> cRDtos = null;
+
+        // Act
+        Map<Integer, Integer> result = componentResourceBean.findEntityAndSetQuantity(cRDtos);
+
+        // Assert
+        assertNull(result);
+    }
+
+    /**
+     * Test the deleteComponentResource method of ComponentResourceBean
+     * Success case
+     */
+    @Test
+    public void testRelationInProjectCreation_Success() {
+        // Arrange
+        Map<Integer, Integer> componentResources = new HashMap<>();
+        componentResources.put(1, 5);
+
+        ProjectEntity projectEntity = new ProjectEntity();
+        projectEntity.setId(1);
+
+        ComponentResourceEntity componentResourceEntity = new ComponentResourceEntity();
+        componentResourceEntity.setId(1);
+        when(componentResourceDao.findCREntityById(1)).thenReturn(componentResourceEntity);
+        when(dataValidator.isIdValid(1)).thenReturn(true);
+
+        // Act
+        Set<M2MComponentProject> result = componentResourceBean.relationInProjectCreation(componentResources, projectEntity);
+
+        // Assert
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+    }
+
+    /**
+     * Test the deleteComponentResource method of ComponentResourceBean
+     * Failure case
+     */
+    @Test
+    public void testRelationInProjectCreation_Failure() {
+        // Arrange
+        Map<Integer, Integer> componentResources = new HashMap<>();
+        componentResources.put(1, 5);
+
+        ProjectEntity projectEntity = null;
+
+        // Act & Assert
+        assertThrows(IllegalArgumentException.class, () -> {
+            componentResourceBean.relationInProjectCreation(componentResources, projectEntity);
+        });
+    }
+
+    /**
+     * Test the deleteComponentResource method of ComponentResourceBean
+     * Success case
+     */
+    @Test
+    public void testComponentProjectToCRPreview_Success() {
+        // Arrange
+        Set<M2MComponentProject> m2MComponentProjects = new HashSet<>();
+        M2MComponentProject m2MComponentProject = new M2MComponentProject();
+        ComponentResourceEntity componentResourceEntity = new ComponentResourceEntity();
+        componentResourceEntity.setId(1);
+        m2MComponentProject.setComponentResource(componentResourceEntity);
+        m2MComponentProjects.add(m2MComponentProject);
+
+        // Act
+        Set<CRPreview> result = componentResourceBean.componentProjectToCRPreview(m2MComponentProjects);
+
+        // Assert
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+    }
+
+    /**
+     * Test the deleteComponentResource method of ComponentResourceBean
+     * Failure case
+     */
+    @Test
+    public void testComponentProjectToCRPreview_Failure() {
+        // Arrange
+        Set<M2MComponentProject> m2MComponentProjects = null;
+
+        // Act
+        Set<CRPreview> result = componentResourceBean.componentProjectToCRPreview(m2MComponentProjects);
+
+        // Assert
+        assertNull(result);
+    }
+
+    /**
+     * Test the deleteComponentResource method of ComponentResourceBean
+     * Success case
+     */
+    @Test
+    public void testExtractCRDtos_Success() throws IOException {
+        // Arrange
+        MultipartFormDataInput input = mock(MultipartFormDataInput.class);
+        Map<String, List<InputPart>> formDataMap = new HashMap<>();
+        List<InputPart> inputParts = new ArrayList<>();
+        InputPart inputPart = mock(InputPart.class);
+        inputParts.add(inputPart);
+        formDataMap.put("components", inputParts);
+        when(input.getFormDataMap()).thenReturn(formDataMap);
+        when(inputPart.getBodyAsString()).thenReturn("[{\"name\":\"Test Name\",\"brand\":\"Test Brand\"}]");
+
+        // Act
+        Set<DetailedCR> result = componentResourceBean.extractCRDtos(input);
+
+        // Assert
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+    }
+
+    /**
+     * Test the deleteComponentResource method of ComponentResourceBean
+     * Failure case
+     */
+    @Test
+    public void testExtractCRDtos_Failure() throws IOException {
+        // Arrange
+        MultipartFormDataInput input = mock(MultipartFormDataInput.class);
+        Map<String, List<InputPart>> formDataMap = new HashMap<>();
+        when(input.getFormDataMap()).thenReturn(formDataMap);
+
+        // Act & Assert
+        assertThrows(NullPointerException.class, () -> {
+            componentResourceBean.extractCRDtos(input);
+        });
     }
 }

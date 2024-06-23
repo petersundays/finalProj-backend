@@ -26,8 +26,11 @@ import java.io.Serializable;
 @Table(name = "project_user")
 
 @NamedQuery(name = "M2MProjectUser.isUserActiveAndApprovedInProject",
-        query = "SELECT pu FROM M2MProjectUser pu WHERE pu.user.id = :userId AND pu.project.id = :projectId AND pu.approved = 1")
-
+        query = "SELECT pu FROM M2MProjectUser pu WHERE pu.user.id = :userId AND pu.project.id = :projectId AND pu.approved = true AND pu.active = true")
+@NamedQuery(name = "M2MProjectUser.findMainManagerInProject",
+        query = "SELECT pu FROM M2MProjectUser pu WHERE pu.project.id = :projectId AND pu.role = 300")
+@NamedQuery(name = "M2MProjectUser.findProjectTeam",
+        query = "SELECT pu FROM M2MProjectUser pu WHERE pu.project.id = :projectId AND pu.role != 300")
 
 public class M2MProjectUser implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -55,7 +58,7 @@ public class M2MProjectUser implements Serializable {
 
     // Approval status of the user in the project
     @Column(name = "approved", nullable = false)
-    private int approved;
+    private boolean approved;
 
     // Defines wether the user is a member of the project or not
     @Column(name = "active", nullable = false)
@@ -99,11 +102,11 @@ public class M2MProjectUser implements Serializable {
         this.role = role;
     }
 
-    public int getApproved() {
+    public boolean getApproved() {
         return approved;
     }
 
-    public void setApproved(int approved) {
+    public void setApproved(boolean approved) {
         this.approved = approved;
     }
 

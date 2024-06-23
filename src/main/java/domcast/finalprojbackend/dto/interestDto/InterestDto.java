@@ -1,4 +1,4 @@
-package domcast.finalprojbackend.dto;
+package domcast.finalprojbackend.dto.interestDto;
 
 import domcast.finalprojbackend.enums.InterestEnum;
 import jakarta.xml.bind.annotation.XmlElement;

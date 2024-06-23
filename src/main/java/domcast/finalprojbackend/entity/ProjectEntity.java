@@ -38,6 +38,7 @@ import java.util.Set;
 
 @NamedQuery(name = "Project.findProjectById", query = "SELECT p FROM ProjectEntity p WHERE p.id = :id")
 
+
 public class ProjectEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -49,7 +50,7 @@ public class ProjectEntity implements Serializable {
     private int id;
 
     // Name of the project
-    @Column(name = "name", nullable = false)
+    @Column(name = "name", unique = true, nullable = false)
     private String name;
 
     // Lab that the project belongs to
@@ -62,13 +63,13 @@ public class ProjectEntity implements Serializable {
     private String description;
 
     // Keywords of the project
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "project", cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
     private Set<M2MKeyword> keywords = new HashSet<>();
 
     // State of the project
     @Convert(converter = ProjectStateEnumConverter.class)
     @Column(name = "state", nullable = false)
-    private ProjectStateEnum state;
+    private ProjectStateEnum state = ProjectStateEnum.PLANNING;
 
     // Users associated with the project
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -103,7 +104,7 @@ public class ProjectEntity implements Serializable {
     private Set<ProjectMessageEntity> groupMessages = new HashSet<>();
 
     // Components and resources used in the project
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "project", cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
     private Set<M2MComponentProject> componentResources = new HashSet<>();
 
     // Tasks take part of the execution plan of the project
@@ -161,7 +162,9 @@ public class ProjectEntity implements Serializable {
     }
 
     public void setState(ProjectStateEnum state) {
-        if (state == ProjectStateEnum.IN_PROGRESS) {
+        if (state == ProjectStateEnum.READY) {
+            this.creationDate = LocalDateTime.now();
+        } else if (state == ProjectStateEnum.IN_PROGRESS) {
             this.realStartDate = LocalDateTime.now();
         } else if (state == ProjectStateEnum.FINISHED) {
             this.realEndDate = LocalDateTime.now();
@@ -240,6 +243,10 @@ public class ProjectEntity implements Serializable {
 
     public void setTasks(Set<TaskEntity> tasks) {
         this.tasks = tasks;
+    }
+
+    public void addTask(TaskEntity task) {
+        this.tasks.add(task);
     }
 
     public Set<M2MComponentProject> getComponentResources() {

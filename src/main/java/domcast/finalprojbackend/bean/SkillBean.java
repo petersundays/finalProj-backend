@@ -1,22 +1,28 @@
 package domcast.finalprojbackend.bean;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import domcast.finalprojbackend.dao.SkillDao;
 import domcast.finalprojbackend.dao.UserDao;
-import domcast.finalprojbackend.dto.SkillDto;
+import domcast.finalprojbackend.dto.skillDto.SkillDto;
+import domcast.finalprojbackend.dto.skillDto.SkillToList;
+import domcast.finalprojbackend.dto.skillDto.SkillToProject;
 import domcast.finalprojbackend.dto.userDto.UpdateUserDto;
-import domcast.finalprojbackend.entity.M2MUserSkill;
-import domcast.finalprojbackend.entity.SkillEntity;
-import domcast.finalprojbackend.entity.UserEntity;
+import domcast.finalprojbackend.entity.*;
 import domcast.finalprojbackend.enums.SkillTypeEnum;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.NoResultException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jboss.resteasy.plugins.providers.multipart.InputPart;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Stateless
@@ -34,9 +40,10 @@ public class SkillBean implements Serializable {
 
     /**
      * Creates new skills in the database based on a list of SkillDTOs passed as parameter
+     *
      * @param skillsList List of SkillDto with the skills to be created.
-        * Return boolean true if all skills were created successfully, false otherwise.
-        */
+     *                   Return boolean true if all skills were created successfully, false otherwise.
+     */
     public boolean createSkills(ArrayList<SkillDto> skillsList) {
         logger.info("Entering createSkills");
 
@@ -86,7 +93,8 @@ public class SkillBean implements Serializable {
 
     /**
      * Adds skills to a user
-     * @param userId User ID to add skills to
+     *
+     * @param userId     User ID to add skills to
      * @param skillsList List of skills to add
      */
     public void addSkillToUser(int userId, ArrayList<String> skillsList) {
@@ -145,6 +153,7 @@ public class SkillBean implements Serializable {
 
     /**
      * Converts a skill type from an integer to a SkillTypeEnum
+     *
      * @param type The integer representing the skill type
      * @return The SkillTypeEnum corresponding to the integer
      */
@@ -157,8 +166,9 @@ public class SkillBean implements Serializable {
      * This method iterates over the user's existing skills and updates them based on the new list of skills.
      * If a skill is in the new list, it is set to active. If a skill is not in the new list, it is set to inactive.
      * If a skill is in the new list but not in the existing list, it is added to the user's skills.
+     *
      * @param userEntity The user entity to update.
-     * @param user The user DTO containing the new information.
+     * @param user       The user DTO containing the new information.
      * @return The updated user entity.
      */
     public UserEntity updateUserSkillsIfChanged(UserEntity userEntity, UpdateUserDto user) {
@@ -195,5 +205,200 @@ public class SkillBean implements Serializable {
             userDao.merge(userEntity);
         }
         return userEntity;
+    }
+
+    /**
+     * Gets the ids of the skills based on their names
+     *
+     * @param skills The names of the skills
+     * @return The ids of the skills
+     */
+    public Set<Integer> getSkillsIds(Set<SkillDto> skills) {
+        if (skills == null) {
+            return new HashSet<>();
+        }
+
+        logger.info("Getting skills ids");
+
+        try {
+            Set<Integer> skillsIds = new HashSet<>();
+            for (SkillDto skill : skills) {
+                SkillEntity skillEntity = skillDao.findSkillByName(skill.getName());
+                if (skillEntity != null) {
+                    skillsIds.add(skillEntity.getId());
+                }
+            }
+            return skillsIds;
+        } catch (Exception e) {
+            logger.error("Error while getting skills ids: {}", e.getMessage());
+            return new HashSet<>();
+        }
+    }
+
+    /**
+     * Creates a relationship between a project and a set of skills
+     *
+     * @param skillsIds The ids of the skills
+     * @param project   The project to create the relationship with
+     * @return The set of M2MProjectSkill objects
+     */
+    public Set<M2MProjectSkill> createRelationshipToProject(Set<Integer> skillsIds, ProjectEntity project) {
+        logger.info("Entering createRelationshipToProject for project");
+
+        Set<M2MProjectSkill> m2MProjectSkills = new HashSet<>();
+
+        if (skillsIds == null || skillsIds.isEmpty()) {
+            logger.error("Skills list is null or empty when creating relationship");
+            return m2MProjectSkills;
+        }
+
+        if (project == null) {
+            logger.error("Project is null");
+            throw new IllegalArgumentException("Project is null");
+        }
+
+        for (Integer skillId : skillsIds) {
+            SkillEntity skill = skillDao.findSkillById(skillId);
+            if (skill == null) {
+                logger.error("Skill not found with id while creating relationship: {}", skillId);
+                continue;
+            }
+
+            M2MProjectSkill projectSkill = new M2MProjectSkill();
+            projectSkill.setProject(project);
+            projectSkill.setSkill(skill);
+            m2MProjectSkills.add(projectSkill);
+        }
+
+        return m2MProjectSkills;
+    }
+
+    /**
+     * Finds the ids of the skills based on their names
+     *
+     * @param names The names of the skills
+     * @return The ids of the skills
+     */
+    public Set<Integer> findSkillsIdsByListOfNames(Set<String> names) {
+        logger.info("Entering findSkillsIdsByListOfNames");
+
+        if (names == null || names.isEmpty()) {
+            logger.error("Names list is null or empty");
+            return new HashSet<>();
+        }
+
+        try {
+            return skillDao.findSkillsIdsByListOfNames(new ArrayList<>(names));
+        } catch (Exception e) {
+            logger.error("Error while finding skills ids by names: {}", e.getMessage());
+            return new HashSet<>();
+        }
+    }
+
+    /**
+     * Converts a set of M2MProjectSkill objects to a set of SkillToProject objects
+     *
+     * @param m2MProjectSkills The set of M2MProjectSkill objects
+     * @return The set of SkillToProject objects
+     */
+    public Set<SkillToProject> projectSkillToDto(Set<M2MProjectSkill> m2MProjectSkills) {
+        logger.info("Entering m2mProjectSkillToSkillToProject");
+
+        Set<SkillToProject> skills = new HashSet<>();
+        if (m2MProjectSkills == null || m2MProjectSkills.isEmpty()) {
+            logger.error("M2MProjectSkills list is null or empty");
+            return skills;
+        }
+
+        for (M2MProjectSkill m2MProjectSkill : m2MProjectSkills) {
+            if (m2MProjectSkill == null) {
+                logger.error("Null M2MProjectSkill object found");
+                continue;
+            }
+            SkillToProject skill = new SkillToProject();
+            skill.setId(m2MProjectSkill.getSkill().getId());
+            skill.setName(m2MProjectSkill.getSkill().getName());
+            skill.setType(m2MProjectSkill.getSkill().getType().getId());
+            skills.add(skill);
+        }
+
+        return skills;
+    }
+
+    /**
+     * Extracts the new skills from the input
+     *
+     * @param input The input containing the new skills
+     * @return The list of new skills
+     * @throws IOException If there is an error reading the input
+     */
+    public ArrayList<SkillDto> extractNewSkills(MultipartFormDataInput input) throws IOException {
+        InputPart part = input.getFormDataMap().get("skills").get(0);
+        String newSkillsString = part.getBodyAsString();
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(newSkillsString, new TypeReference<ArrayList<SkillDto>>() {
+        });
+    }
+
+    /**
+     * Converts a SkillEntity object to a SkillToList object
+     *
+     * @param skillEntity The SkillEntity object
+     * @return The SkillToList object
+     */
+    public SkillToList convertSkillEntityToSkillToList(SkillEntity skillEntity) {
+        logger.info("Entering convertSkillEntityToSkillToList");
+
+        if (skillEntity == null) {
+            logger.error("SkillEntity is null");
+            return null;
+        }
+
+        SkillToList skill = new SkillToList();
+
+        skill.setId(skillEntity.getId());
+        skill.setName(skillEntity.getName());
+        skill.setType(skillEntity.getType().getId());
+
+        logger.info("Skill converted to SkillToList: {}", skill);
+
+        return skill;
+    }
+
+    /**
+     * Gets all skills
+     *
+     * @return The list of all SkillToList objects
+     */
+    public List<SkillToList> getAllSkills() {
+        logger.info("Entering getAllSkills");
+
+        List<SkillEntity> skills;
+
+        try {
+            skills = skillDao.findAllSkills();
+        } catch (Exception e) {
+            logger.error("Error while getting all skills: {}", e.getMessage());
+            throw e;
+        }
+
+        List<SkillToList> skillsList = new ArrayList<>();
+
+        for (SkillEntity skill : skills) {
+            try {
+                if (skill != null) {
+                    SkillToList skillToList = convertSkillEntityToSkillToList(skill);
+                    if (skillToList != null) {
+                        skillsList.add(skillToList);
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Error while converting skill to SkillToList: {}", e.getMessage());
+            }
+        }
+
+        logger.info("All skills converted to SkillToList: {}", skillsList);
+
+        return skillsList;
     }
 }

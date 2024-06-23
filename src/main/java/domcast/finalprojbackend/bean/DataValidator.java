@@ -1,9 +1,11 @@
 package domcast.finalprojbackend.bean;
 
 import domcast.finalprojbackend.bean.user.PasswordBean;
-import domcast.finalprojbackend.dto.InterestDto;
-import domcast.finalprojbackend.dto.SkillDto;
+import domcast.finalprojbackend.dao.TaskDao;
+import domcast.finalprojbackend.dto.interestDto.InterestDto;
+import domcast.finalprojbackend.dto.skillDto.SkillDto;
 import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
+import domcast.finalprojbackend.dto.projectDto.NewProjectDto;
 import domcast.finalprojbackend.dto.taskDto.NewTask;
 import domcast.finalprojbackend.dto.userDto.FirstRegistration;
 import domcast.finalprojbackend.dto.userDto.FullRegistration;
@@ -20,7 +22,9 @@ import org.apache.logging.log4j.Logger;
 import javax.imageio.ImageIO;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 @Stateless
@@ -34,6 +38,9 @@ public class DataValidator {
 
     @EJB
     private PasswordBean passwordBean;
+
+    @EJB
+    private TaskDao taskDao;
 
     /**
      * Checks if the email is valid
@@ -186,11 +193,86 @@ public class DataValidator {
     public boolean isTaskMandatoryDataValid(NewTask<Integer> newTask) {
         logger.info("Checking if mandatory data is valid for new task");
 
+        TaskEntity presentationTask;
+
+        try {
+            presentationTask = taskDao.findPresentationTaskInProject(newTask.getProjectId());
+        } catch (Exception e) {
+            logger.error("Error while finding presentation task in project: {}", e.getMessage());
+            return false;
+        }
+
         return newTask.getTitle() != null && !newTask.getTitle().isBlank() &&
                 newTask.getDescription() != null && !newTask.getDescription().isBlank() &&
-                newTask.getProjectedStartDate() != null && newTask.getDeadline() != null &&
+                newTask.getProjectedStartDate() != null &&
+                !newTask.getProjectedStartDate().isBefore(LocalDateTime.now().toLocalDate().atStartOfDay()) &&
+                newTask.getDeadline() != null &&
                 newTask.getDeadline().isAfter(newTask.getProjectedStartDate()) &&
+                newTask.getDeadline().isBefore(presentationTask.getProjectedStartDate()) &&
                 newTask.getResponsibleId() > 0 && newTask.getProjectId() > 0;
+    }
+
+    /**
+     * Checks if the start date of the new task is not before the deadline of its dependencies
+     * @param projectedStartDate the start date of the new task
+     * @param dependencies the dependencies of the new task
+     * @return true if the start date of the new task is valid, false otherwise
+     */
+    public boolean isStartDateValid(LocalDateTime projectedStartDate, Set<TaskEntity> dependencies) {
+        logger.info("Checking if the start date of the new task is not before the deadline of its dependencies");
+
+        if (projectedStartDate == null) {
+            logger.error("The projected start date cannot be null");
+            throw new IllegalArgumentException("The projected start date cannot be null");
+        }
+
+        if (dependencies == null || dependencies.isEmpty()) {
+            logger.info("The task has no dependencies, so its start date is always valid");
+            return true;
+        }
+
+        int countInvalid = 0;
+        for (TaskEntity dependency : dependencies) {
+            if (dependency.getDeadline() == null) {
+                logger.error("The deadline of a dependency cannot be null");
+                throw new IllegalArgumentException("The deadline of a dependency cannot be null");
+            }
+
+            if (projectedStartDate.isBefore(dependency.getDeadline())) {
+                countInvalid++;
+            }
+        }
+
+        if (countInvalid > 0) {
+            logger.error("The projected start date of the new task is earlier than the deadline of {} of its dependencies", countInvalid);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Checks if the deadline of the new task is valid
+     * The deadline of the new task must be after the projected start date and before the deadline of the project
+     * @param taskDeadline the deadline of the new task
+     * @param taskProjectedStartDate the projected start date of the new task
+     * @param presentationTaskStartDate the projected start date the project's presentation task
+     * @return boolean value indicating if the deadline of the new task is valid
+     */
+    public boolean isDeadlineValid (LocalDateTime taskDeadline, LocalDateTime taskProjectedStartDate, LocalDateTime presentationTaskStartDate) {
+        logger.info("Checking if the deadline of the new task is valid");
+
+        if (taskDeadline == null || taskProjectedStartDate == null || presentationTaskStartDate == null) {
+            logger.error("The deadline of the new task is null");
+            return false;
+        }
+
+        if (taskDeadline.isBefore(taskProjectedStartDate) || taskDeadline.isAfter(presentationTaskStartDate)) {
+            logger.error("The deadline of the new task is not valid");
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -239,6 +321,11 @@ public class DataValidator {
         return true;
     }
 
+    /**
+     * Checks if the page number is valid
+     * @param pageNumber the page number to be checked
+     * @return boolean value indicating if the page number is valid
+     */
     public boolean isPageNumberValid(int pageNumber) {
         logger.info("Checking if page number is valid");
 
@@ -250,6 +337,11 @@ public class DataValidator {
         return true;
     }
 
+    /**
+     * Checks if the page size is valid
+     * @param pageSize the page size to be checked
+     * @return boolean value indicating if the page size is valid
+     */
     public boolean isPageSizeValid(int pageSize) {
         logger.info("Checking if page size is valid");
 
@@ -261,10 +353,23 @@ public class DataValidator {
         return true;
     }
 
+    /**
+     * Checks if the task entity is valid
+     * @param taskEntity the task entity to be checked
+     * @return boolean value indicating if the task entity is valid
+     */
     public boolean isChartTaskInfoValid (TaskEntity taskEntity) {
         logger.info("Checking if chart task info is valid");
 
         return taskEntity != null && taskEntity.getTitle() != null && !taskEntity.getTitle().isBlank() &&
                 taskEntity.getState() != null && taskEntity.getProjectedStartDate() != null && taskEntity.getDeadline() != null;
+    }
+
+    public boolean isProjectMandatoryDataValid(NewProjectDto newProjectDto) {
+        logger.info("Checking if mandatory data is valid for new project");
+
+        return newProjectDto.getName() != null && !newProjectDto.getName().isBlank() &&
+                newProjectDto.getDescription() != null && !newProjectDto.getDescription().isBlank() &&
+                newProjectDto.getLabId() > 0;
     }
 }

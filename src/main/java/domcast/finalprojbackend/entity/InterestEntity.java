@@ -25,6 +25,8 @@ import java.util.Set;
 
 @NamedQuery(name = "Interest.findInterestByName", query = "SELECT i FROM InterestEntity i WHERE i.name = :name")
 @NamedQuery(name = "Interest.findInterestsByListOfNames", query = "SELECT i FROM InterestEntity i WHERE i.name IN :names")
+@NamedQuery(name = "Interest.findAllInterests", query = "SELECT i FROM InterestEntity i ORDER BY i.name ASC")
+@NamedQuery(name = "Interest.findAllInterestsNames", query = "SELECT i.name FROM InterestEntity i ORDER BY i.name ASC")
 
 public class InterestEntity implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -46,10 +48,6 @@ public class InterestEntity implements Serializable {
     // Users that have the interest
     @OneToMany(mappedBy = "interest",cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<M2MUserInterest> userInterests = new HashSet<>();
-
-    // Projects that have the interest
-    @OneToMany(mappedBy = "interest",cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Set<M2MKeyword> projects = new HashSet<>();
 
     // Default constructor
     public InterestEntity() {
@@ -89,11 +87,4 @@ public class InterestEntity implements Serializable {
         this.userInterests = userInterests;
     }
 
-    public Set<M2MKeyword> getProjects() {
-        return projects;
-    }
-
-    public void setProjects(Set<M2MKeyword> projects) {
-        this.projects = projects;
-    }
 }

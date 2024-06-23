@@ -1,17 +1,16 @@
 package domcast.finalprojbackend.bean.user;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.InterestBean;
 import domcast.finalprojbackend.bean.SkillBean;
 import domcast.finalprojbackend.bean.SystemBean;
-import domcast.finalprojbackend.dao.InterestDao;
-import domcast.finalprojbackend.dao.LabDao;
-import domcast.finalprojbackend.dao.SkillDao;
-import domcast.finalprojbackend.dao.UserDao;
+import domcast.finalprojbackend.dao.*;
 import domcast.finalprojbackend.dto.userDto.*;
 import domcast.finalprojbackend.entity.*;
+import domcast.finalprojbackend.enums.ProjectUserEnum;
 import domcast.finalprojbackend.enums.TypeOfUserEnum;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
@@ -61,6 +60,8 @@ public class UserBean implements Serializable {
     private SkillBean skillBean;
     @EJB
     private PasswordBean passwordBean;
+    @EJB
+    private M2MProjectUserDao m2MProjectUserDao;
 
     // Default constructor
     public UserBean() {}
@@ -1152,5 +1153,104 @@ public class UserBean implements Serializable {
         publicProfileUser.setSkills(skills);
 
         return publicProfileUser;
+    }
+
+    public ProjectUser projectUserToProjectUserDto(M2MProjectUser m2mProjectUser) {
+        logger.info("Converting M2MProjectUser to ProjectUser");
+
+        if (m2mProjectUser == null) {
+            logger.error("M2MProjectUser is null");
+            throw new IllegalArgumentException("M2MProjectUser cannot be null");
+        }
+
+        UserEntity userEntity = m2mProjectUser.getUser();
+        if (userEntity == null) {
+            logger.error("UserEntity in M2MProjectUser is null");
+            throw new IllegalArgumentException("UserEntity in M2MProjectUser cannot be null");
+        }
+
+        ProjectUserEnum role = m2mProjectUser.getRole();
+        if (role == null) {
+            logger.error("Role in M2MProjectUser is null");
+            throw new IllegalArgumentException("Role in M2MProjectUser cannot be null");
+        }
+
+        ProjectUser projectUser = new ProjectUser();
+        projectUser.setId(userEntity.getId());
+        projectUser.setFirstName(userEntity.getFirstName());
+        projectUser.setLastName(userEntity.getLastName());
+        projectUser.setRole(role.getId());
+
+        logger.info("Successfully converted M2MProjectUser to ProjectUser");
+
+        return projectUser;
+    }
+
+    /**
+     * Converts a set of M2MProjectUser objects to a set of ProjectUser objects.
+     * This method is used when a project's team members are requested.
+     *
+     * @param m2mProjectUsers The set of M2MProjectUser objects that represent the project's team members.
+     *                        If the set is null, an IllegalArgumentException is thrown.
+     * @return A set of ProjectUser objects that contain the project's team members' details.
+     */
+    public Set<ProjectUser> projectUsersToListOfProjectUser(Set<M2MProjectUser> m2mProjectUsers) {
+        logger.info("Converting project team members from M2MProjectUser to ProjectUser");
+
+        if (m2mProjectUsers == null) {
+            logger.error("Project team members are null");
+            throw new IllegalArgumentException("M2MProjectUser cannot be null");
+        }
+
+        Set<ProjectUser> projectUsers = new HashSet<>();
+        for (M2MProjectUser m2mProjectUser : m2mProjectUsers) {
+            if (m2mProjectUser == null) {
+                logger.warn("Encountered null M2MProjectUser in set, skipping this entry");
+                continue;
+            }
+            projectUsers.add(projectUserToProjectUserDto(m2mProjectUser));
+        }
+
+        logger.info("Successfully converted project team members from M2MProjectUser to ProjectUser");
+
+        return projectUsers;
+    }
+
+    /**
+     * Extracts the project team from the input.
+     * @param input The multipart form data input containing the project team.
+     * @return The project team extracted from the input.
+     * @throws IOException If an error occurs while extracting the project team.
+     */
+    public ProjectTeam extractProjectTeam(MultipartFormDataInput input) throws IOException {
+        InputPart part = input.getFormDataMap().get("team").get(0);
+        String userString = part.getBodyAsString();
+        ObjectMapper mapper = new ObjectMapper();
+
+        // Convert the JSON string into a Map<String, Integer>
+        Map<String, Integer> stringMap = mapper.readValue(userString, new TypeReference<Map<String, Integer>>() {});
+
+        // Use the convertKeysToList method to get a List of the keys
+        List<String> keys = convertKeysToList(stringMap);
+
+        // Create a new Map<Integer, Integer> and populate it with the entries from stringMap,
+        // converting the keys from strings to integers
+        Map<Integer, Integer> integerMap = new HashMap<>();
+        for (String key : keys) {
+            integerMap.put(Integer.parseInt(key), stringMap.get(key));
+        }
+
+        // Create a new ProjectTeam object and set the projectUsers field to integerMap
+        ProjectTeam projectTeam = new ProjectTeam();
+        projectTeam.setProjectUsers(integerMap);
+
+        return projectTeam;
+    }
+
+    public List<String> convertKeysToList(Map<String, ?> map) {
+        if (map == null) {
+            throw new IllegalArgumentException("Map cannot be null");
+        }
+        return new ArrayList<>(map.keySet());
     }
 }
