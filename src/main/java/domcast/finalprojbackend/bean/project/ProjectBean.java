@@ -105,7 +105,7 @@ public class ProjectBean implements Serializable {
         return isActive;
     }
 
-    public DetailedProject newProject(NewProjectDto newProjectDto, ProjectTeam projectTeam, int responsibleUserId, Map<DetailedCR, Integer> cRDtos, ArrayList<SkillDto> newSkills) {
+    public DetailedProject newProject(NewProjectDto newProjectDto, ProjectTeam projectTeam, int responsibleUserId, Set<DetailedCR> cRDtos, ArrayList<SkillDto> newSkills) {
 
         if (newProjectDto == null) {
             logger.error("New project DTO is null");
@@ -130,8 +130,8 @@ public class ProjectBean implements Serializable {
 
         if (cRDtos != null && !cRDtos.isEmpty()) {
             try {
-                for (Map.Entry<DetailedCR, Integer> entry : cRDtos.entrySet()) {
-                    componentResourceBean.createComponentResource(entry.getKey());
+                for (DetailedCR detailedCR : cRDtos) {
+                    componentResourceBean.createComponentResource(detailedCR);
                 }
             } catch (RuntimeException e) {
                 logger.error("Error creating component resources: {}", e.getMessage());
@@ -187,7 +187,6 @@ public class ProjectBean implements Serializable {
             // Rethrow the exception to the caller method
             throw e;
         }
-
 
         try {
             projectDao.persist(projectEntity);
@@ -283,10 +282,13 @@ public class ProjectBean implements Serializable {
 
 
         try {
+
             if (projectTeam == null) {
                 projectTeam = new ProjectTeam();
             }
+
             projectUsers = createProjectTeam(projectTeam.getProjectUsers(), projectEntity, responsibleUserId);
+
         } catch (RuntimeException e) {
             logger.error("Error creating project team: {}", e.getMessage());
             // Rethrow the exception to the caller method
@@ -369,7 +371,7 @@ public class ProjectBean implements Serializable {
             throw new IllegalArgumentException("Responsible ID is invalid while creating project team");
         }
 
-        M2MProjectUser projectUser= new M2MProjectUser();
+        M2MProjectUser mainManager= new M2MProjectUser();
 
         try {
             UserEntity responsible = userDao.findUserById(responsibleId);
@@ -378,12 +380,14 @@ public class ProjectBean implements Serializable {
                 throw new IllegalArgumentException("Responsible not found with id: " + responsibleId);
             }
 
-            projectUser.setUser(responsible);
-            projectUser.setProject(project);
-            projectUser.setRole(ProjectUserEnum.MAIN_MANAGER);
-            projectUser.setApproved(true);
+            mainManager.setUser(responsible);
+            mainManager.setProject(project);
+            mainManager.setRole(ProjectUserEnum.MAIN_MANAGER);
+            mainManager.setApproved(true);
 
-            projectTeam.add(projectUser);
+            projectTeam.add(mainManager);
+
+            logger.info("Added responsible user with id {} to project team with role MAIN_MANAGER", responsibleId);
 
         if (teamMembers == null || teamMembers.isEmpty()) {
             logger.info("No team members to add to project team");
@@ -393,6 +397,8 @@ public class ProjectBean implements Serializable {
         ProjectUserEnum role;
 
             for (Map.Entry<Integer, Integer> entry : teamMembers.entrySet()) {
+
+                M2MProjectUser projectUser= new M2MProjectUser();
                 UserEntity user = userDao.findUserById(entry.getKey());
 
                 if (user == null) {
@@ -400,7 +406,18 @@ public class ProjectBean implements Serializable {
                     continue;
                 }
 
+                // Check if a M2MProjectUser with the same user ID already exists in the projectTeam
+                if (projectTeam.stream().anyMatch(existingUser -> existingUser.getUser().getId() == user.getId())) {
+                    logger.error("User with id {} is already in the project team", user.getId());
+                    continue;
+                }
+
                 role = ProjectUserEnum.fromId(entry.getValue());
+
+                if (role == ProjectUserEnum.MAIN_MANAGER) {
+                    logger.error("Main manager role is not allowed for team members. Setting role to MANAGER.");
+                    role = ProjectUserEnum.MANAGER;
+                }
 
                 projectUser.setUser(user);
                 projectUser.setProject(project);
@@ -408,6 +425,7 @@ public class ProjectBean implements Serializable {
                 projectUser.setApproved(true);
 
                 projectTeam.add(projectUser);
+                logger.info("Added user with id {} to project team with role {}", entry.getKey(), role);
             }
         } catch (Exception e) {
             logger.error("Error while creating project team: {}", e.getMessage());
@@ -462,7 +480,6 @@ public class ProjectBean implements Serializable {
             logger.error("Error finding tasks for project with id: {}", projectEntity.getId(), e);
         }
 
-        System.out.println("DATAS : " + projectEntity.getProjectedStartDate());
         detailedProject.setId(projectEntity.getId());
         detailedProject.setName(projectEntity.getName());
         detailedProject.setDescription(projectEntity.getDescription());

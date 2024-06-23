@@ -700,6 +700,12 @@ public class TaskBean implements Serializable {
         }
     }
 
+    /**
+     * Creates a presentation task
+     * @param responsibleId the id of the responsible for the presentation task
+     * @param project the project associated with the presentation task
+     * @return true if the presentation task was created successfully
+     */
     public boolean presentationTask (int responsibleId, ProjectEntity project) {
         logger.info("Creating presentation task");
 
@@ -745,7 +751,13 @@ public class TaskBean implements Serializable {
 
         return true;
     }
-    
+
+    /**
+     * Relates the presentation task to another task
+     * @param presentationTask the presentation task
+     * @param task the task to be related to the presentation task
+     * @return the task dependencies
+     */
     public M2MTaskDependencies relatePresentationTask (TaskEntity presentationTask, TaskEntity task) {
         logger.info("Relating presentation task");
 

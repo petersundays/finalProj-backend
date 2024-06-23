@@ -42,6 +42,9 @@ public class TaskBeanTest {
     private TaskDao taskDao;
 
     @Mock
+    TaskEntity taskEntity;
+
+    @Mock
     private ProjectDao projectDao;
 
     @Mock
@@ -127,8 +130,10 @@ public class TaskBeanTest {
         newTask.setDeadline(LocalDateTime.now().plusDays(1));
 
         when(userDao.findUserById(anyInt())).thenReturn(new UserEntity());
-        when(taskDao.findTaskByIdAndProjectId(anyInt(), anyInt())).thenReturn(new TaskEntity());
+        when(projectBean.isUserActiveAndApprovedInProject(anyInt(), anyInt())).thenReturn(true);
+        when(taskDao.findPresentationTaskInProject(anyInt())).thenReturn(new TaskEntity());
         when(projectDao.findProjectById(anyInt())).thenReturn(new ProjectEntity());
+        when(dataValidator.isStartDateValid(any(LocalDateTime.class), anySet())).thenReturn(true);
 
         TaskEntity result = taskBean.registerNewTaskInfo(newTask);
 
@@ -231,14 +236,20 @@ public class TaskBeanTest {
      */
     @Test
     public void testIsStartDateValid_Success() {
+        // Arrange
+        DataValidator dataValidator = new DataValidator();
+        LocalDateTime projectedStartDate = LocalDateTime.now().plusDays(2);
         Set<TaskEntity> dependencies = new HashSet<>();
-        TaskEntity taskEntity = new TaskEntity();
-        taskEntity.setDeadline(LocalDateTime.now().plusDays(1));
+
+        LocalDateTime taskDeadline = LocalDateTime.now().plusDays(1);
+        when(taskEntity.getDeadline()).thenReturn(taskDeadline);
         dependencies.add(taskEntity);
 
-        boolean result = dataValidator.isStartDateValid(LocalDateTime.now().plusDays(2), dependencies);
+        // Act
+        boolean result = dataValidator.isStartDateValid(projectedStartDate, dependencies);
 
-        assertTrue(result);
+        // Assert
+        assertTrue(result, "The start date should be valid");
     }
 
     /**
@@ -587,5 +598,53 @@ public class TaskBeanTest {
         TaskEntity taskEntity = null;
 
         assertThrows(IllegalArgumentException.class, () -> taskBean.updateTaskInfo(editedTask, taskEntity));
+    }
+
+    @Test
+    public void testPresentationTask_Success() {
+        int responsibleId = 1;
+        ProjectEntity project = new ProjectEntity();
+        project.setDeadline(LocalDateTime.now().plusDays(2));
+
+        UserEntity responsible = new UserEntity();
+        responsible.setId(responsibleId);
+
+        when(dataValidator.isIdValid(responsibleId)).thenReturn(true);
+        when(userDao.findUserById(responsibleId)).thenReturn(responsible);
+
+        boolean result = taskBean.presentationTask(responsibleId, project);
+
+        assertTrue(result);
+        verify(taskDao, times(1)).persist(any(TaskEntity.class));
+    }
+
+    @Test
+    public void testPresentationTask_Failure() {
+        int responsibleId = -1;
+        ProjectEntity project = null;
+
+        when(dataValidator.isIdValid(responsibleId)).thenReturn(false);
+
+        assertThrows(IllegalArgumentException.class, () -> taskBean.presentationTask(responsibleId, project));
+    }
+
+    @Test
+    public void testRelatePresentationTask_Success() {
+        TaskEntity presentationTask = new TaskEntity();
+        TaskEntity task = new TaskEntity();
+
+        M2MTaskDependencies result = taskBean.relatePresentationTask(presentationTask, task);
+
+        assertNotNull(result);
+        assertEquals(presentationTask, result.getDependentTask());
+        assertEquals(task, result.getTask());
+    }
+
+    @Test
+    public void testRelatePresentationTask_Failure() {
+        TaskEntity presentationTask = null;
+        TaskEntity task = null;
+
+        assertThrows(IllegalArgumentException.class, () -> taskBean.relatePresentationTask(presentationTask, task));
     }
 }

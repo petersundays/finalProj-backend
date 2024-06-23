@@ -221,6 +221,11 @@ public class DataValidator {
     public boolean isStartDateValid(LocalDateTime projectedStartDate, Set<TaskEntity> dependencies) {
         logger.info("Checking if the start date of the new task is not before the deadline of its dependencies");
 
+        if (projectedStartDate == null) {
+            logger.error("The projected start date cannot be null");
+            throw new IllegalArgumentException("The projected start date cannot be null");
+        }
+
         if (dependencies == null || dependencies.isEmpty()) {
             logger.info("The task has no dependencies, so its start date is always valid");
             return true;
@@ -228,6 +233,11 @@ public class DataValidator {
 
         int countInvalid = 0;
         for (TaskEntity dependency : dependencies) {
+            if (dependency.getDeadline() == null) {
+                logger.error("The deadline of a dependency cannot be null");
+                throw new IllegalArgumentException("The deadline of a dependency cannot be null");
+            }
+
             if (projectedStartDate.isBefore(dependency.getDeadline())) {
                 countInvalid++;
             }

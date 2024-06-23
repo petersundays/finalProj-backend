@@ -679,7 +679,7 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
         return componentResourceIds;
     }
 
-    public Map<Integer, Integer> findEntityAndSetQuantity (Map<DetailedCR, Integer> cRDtos) {
+    public Map<Integer, Integer> findEntityAndSetQuantity (Set<DetailedCR> cRDtos) {
         logger.info("Finding component resource entity by name and brand and setting quantity");
 
         if (cRDtos == null) {
@@ -689,16 +689,16 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
 
         Map<Integer, Integer> componentResources = new HashMap<>();
 
-        for (Map.Entry<DetailedCR, Integer> entry : cRDtos.entrySet()) {
-            DetailedCR detailedCR = entry.getKey();
-            Integer quantity = entry.getValue();
+        for (DetailedCR detailedCR : cRDtos) {
 
-            if (detailedCR == null || quantity == null || quantity <= 0) {
+            if (detailedCR == null || detailedCR.getQuantity() <= 0) {
                 logger.error("Detailed component resource or quantity is null or invalid while finding component resource entity by name and brand");
                 return null;
             }
 
             ComponentResourceEntity componentResourceEntity;
+            int quantity = detailedCR.getQuantity();
+
             try {
                 componentResourceEntity = componentResourceDao.findCREntityByNameAndBrand(detailedCR.getName(), detailedCR.getBrand());
             } catch (PersistenceException e) {
@@ -819,10 +819,10 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
      * @param input the input to extract the detailed component resources from
      * @return the map of detailed component resources if extracted, null otherwise
      */
-    public Map<DetailedCR, Integer> extractCRDtos(MultipartFormDataInput input) throws IOException {
+    public Set<DetailedCR> extractCRDtos(MultipartFormDataInput input) throws IOException {
         InputPart part = input.getFormDataMap().get("components").get(0);
         String cRDtosString = part.getBodyAsString();
         ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue(cRDtosString, new TypeReference<Map<DetailedCR, Integer>>() {});
+        return mapper.readValue(cRDtosString, new TypeReference<Set<DetailedCR>>() {});
     }
 }
