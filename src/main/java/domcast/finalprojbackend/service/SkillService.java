@@ -1,9 +1,9 @@
 package domcast.finalprojbackend.service;
 
 import domcast.finalprojbackend.bean.DataValidator;
-import domcast.finalprojbackend.bean.InterestBean;
+import domcast.finalprojbackend.bean.SkillBean;
 import domcast.finalprojbackend.bean.user.AuthenticationAndAuthorization;
-import domcast.finalprojbackend.dto.interestDto.InterestToList;
+import domcast.finalprojbackend.dto.skillDto.SkillToList;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.GET;
@@ -18,10 +18,10 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 
-@Path("/interest")
-public class InterestService {
+@Path("/skill")
+public class SkillService {
 
-    private static final Logger logger = LogManager.getLogger(InterestService.class);
+    private static final Logger logger = LogManager.getLogger(SkillService.class);
 
     @Inject
     private AuthenticationAndAuthorization authenticationAndAuthorization;
@@ -30,22 +30,22 @@ public class InterestService {
     private DataValidator dataValidator;
 
     @Inject
-    private InterestBean interestBean;
+    private SkillBean skillBean;
 
     @GET
     @Path("")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getInterests(@HeaderParam("token") String sessionToken,
+    public Response getSkills(@HeaderParam("token") String sessionToken,
                                  @HeaderParam("id") int id,
                                  @Context HttpServletRequest request) {
         String ipAddress = request.getRemoteAddr();
-        logger.info("User with token {} and id {} is getting interests from IP address {}", sessionToken, id, ipAddress);
+        logger.info("User with token {} and id {} is getting skills from IP address {}", sessionToken, id, ipAddress);
 
         Response response;
 
         if (!dataValidator.isIdValid(id)) {
             response = Response.status(400).entity("Invalid id").build();
-            logger.info("User with token {} and id {} tried to get interests with invalid id", sessionToken, id);
+            logger.info("User with token {} and id {} tried to get skills with invalid id", sessionToken, id);
             return response;
         }
 
@@ -57,15 +57,15 @@ public class InterestService {
         }
 
         try {
-            List<InterestToList> interests = interestBean.getAllInterests();
+            List<SkillToList> skills = skillBean.getAllSkills();
 
-            if (interests == null || interests.isEmpty()) {
-                logger.info("No interests found");
+            if (skills == null || skills.isEmpty()) {
+                logger.info("No skills found");
                 return Response.status(204).build();
             }
 
-            logger.info("User with session token {} and id {} got interests", sessionToken, id);
-            response = Response.status(200).entity(interests).build();
+            logger.info("User with session token {} and id {} got skills", sessionToken, id);
+            response = Response.status(200).entity(skills).build();
         } catch (Exception e) {
             logger.error("Error getting interests", e);
             response = Response.status(500).entity("Error getting interests").build();
