@@ -107,7 +107,7 @@ public class StartupCreator implements Serializable {
     public void createDefaultInterests() {
         logger.info("Creating default interests");
 
-        String[] interestNames = {"Reading", "Traveling", "Cooking", "Hiking", "Photography", "Music", "Art", "Gaming", "Coding", "Sports"};
+        String[] interestNames = {"Reading", "Traveling", "Cybersecurity", "Hiking", "Photography", "Music", "Art", "Gaming", "Coding", "Sports"};
         InterestEnum[] interestTypes = {InterestEnum.KNOWLEDGE_AREA, InterestEnum.CAUSE, InterestEnum.THEME, InterestEnum.KNOWLEDGE_AREA, InterestEnum.CAUSE, InterestEnum.THEME, InterestEnum.KNOWLEDGE_AREA, InterestEnum.CAUSE, InterestEnum.THEME, InterestEnum.KNOWLEDGE_AREA};
 
         for (int i = 0; i < 10; i++) {
@@ -118,6 +118,25 @@ public class StartupCreator implements Serializable {
         }
 
         logger.info("Default interests created");
+    }
+
+    /**
+     * Creates default keywords in the database.
+     * This method is transactional and requires a new transaction.
+     */
+    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
+    public void createDefaultKeywords() {
+        logger.info("Creating default keywords");
+
+        String[] keywordNames = {"Climate", "AI", "Quantum", "Cancer", "Space", "Coding", "Autonomous", "Blockchain", "Cybersecurity", "Genetic", "Research", "Development", "Study", "Treatment", "Gaming", "Energy", "Vehicles", "Technology", "Enhancement", "Engineering"};
+
+        for (String keywordName : keywordNames) {
+            KeywordEntity keyword = new KeywordEntity();
+            keyword.setName(keywordName);
+            em.persist(keyword);
+        }
+
+        logger.info("Default keywords created");
     }
 
     /**
@@ -159,7 +178,7 @@ public class StartupCreator implements Serializable {
                 } else if (i == 1) {
                     user.setType(TypeOfUserEnum.ADMIN);
                     user.setEmail("admin@mail.com");
-                    user.setPassword(passwordBean.hashPassword("admin"));
+                    user.setPassword(passwordBean.hashPassword("Domcast!2024!"));
                 } else if (i == 3 || i == 7 || i == 8) {
                     user.setVisible(true);
                 }
@@ -181,12 +200,18 @@ public class StartupCreator implements Serializable {
 
         List<SkillEntity> skills = em.createQuery("SELECT s FROM SkillEntity s", SkillEntity.class).getResultList();
         List<InterestEntity> interests = em.createQuery("SELECT i FROM InterestEntity i", InterestEntity.class).getResultList();
+        List<KeywordEntity> keywords = em.createQuery("SELECT k FROM KeywordEntity k", KeywordEntity.class).getResultList();
         List<LabEntity> labs = em.createQuery("SELECT l FROM LabEntity l", LabEntity.class).getResultList();
         List<UserEntity> users = em.createQuery("SELECT u FROM UserEntity u", UserEntity.class).getResultList();
 
         // Get the maximum number of members allowed in a project
         SystemEntity systemEntity = em.find(SystemEntity.class, 1);
         int maxMembers = systemEntity.getMaxMembers();
+
+        UserEntity user2 = em.find(UserEntity.class, 2);
+        if (user2 == null) {
+            throw new RuntimeException("User with id 2 not found");
+        }
 
         // Create a Random instance
         Random random = new Random();
@@ -216,8 +241,11 @@ public class StartupCreator implements Serializable {
         // Shuffle the skills, interests, labs, and users list
         Collections.shuffle(skills);
         Collections.shuffle(interests);
+        Collections.shuffle(keywords);
         Collections.shuffle(labs);
         Collections.shuffle(users);
+
+        boolean isUser2MainManager = false;
 
         for (int i = 0; i < 10; i++) {
             ProjectEntity project = new ProjectEntity();
@@ -248,10 +276,10 @@ public class StartupCreator implements Serializable {
 
             // Create and set project keywords
             Set<M2MKeyword> projectKeywords = new HashSet<>();
-            for (int j = 0; j < 3; j++) { // Only select the first 3 interests from the shuffled list
+            for (int j = 0; j < 3; j++) { // Only select the first 3 keywords from the shuffled list
                 M2MKeyword projectKeyword = new M2MKeyword();
                 projectKeyword.setProject(project);
-                projectKeyword.setInterest(interests.get(j));
+                projectKeyword.setKeyword(keywords.get(j));
                 projectKeywords.add(projectKeyword);
             }
             project.setKeywords(projectKeywords);
@@ -310,19 +338,49 @@ public class StartupCreator implements Serializable {
             Set<M2MProjectUser> projectUsers = new HashSet<>();
             int numUsers = 1 + random.nextInt(maxMembers); // Generate a random number between 1 and maxMembers
             for (int j = 0; j < numUsers; j++) {
-                M2MProjectUser projectUser = new M2MProjectUser();
-                projectUser.setProject(project);
-                projectUser.setUser(users.get(j % users.size())); // Use modulo to avoid IndexOutOfBoundsException
-                // Set the role as MAIN_MANAGER for the first user, and randomly assign PARTICIPANT or MANAGER for the rest
-                if (j == 0) {
-                    projectUser.setRole(ProjectUserEnum.MAIN_MANAGER);
-                } else {
-                    projectUser.setRole(random.nextBoolean() ? ProjectUserEnum.PARTICIPANT : ProjectUserEnum.MANAGER);
+                UserEntity user = users.get(j % users.size()); // Use modulo to avoid IndexOutOfBoundsException
+
+                // Check if the user is already part of the project
+                boolean isUserAlreadyInProject = project.getProjectUsers().stream()
+                        .anyMatch(pu -> pu.getUser().equals(user));
+
+                // If the user is not already part of the project, add them
+                if (!isUserAlreadyInProject) {
+                    M2MProjectUser projectUser = new M2MProjectUser();
+                    projectUser.setProject(project);
+                    projectUser.setUser(user);
+                    // Set the role as MAIN_MANAGER for the first user, and randomly assign PARTICIPANT or MANAGER for the rest
+                    if (j == 0) {
+                        projectUser.setRole(ProjectUserEnum.MAIN_MANAGER);
+                    } else {
+                        projectUser.setRole(random.nextBoolean() ? ProjectUserEnum.PARTICIPANT : ProjectUserEnum.MANAGER);
+                    }
+                    projectUser.setApproved(true); // Set approved as 1
+                    projectUser.setActive(true); // Set active as true
+                    projectUsers.add(projectUser);
                 }
-                projectUser.setApproved(1); // Set approved as 1
-                projectUser.setActive(true); // Set active as true
-                projectUsers.add(projectUser);
             }
+
+// Add user with id 2 to the project
+            boolean isUser2InProject = project.getProjectUsers().stream()
+                    .anyMatch(pu -> pu.getUser().equals(user2));
+
+            if (!isUser2InProject) {
+                M2MProjectUser projectUser2 = new M2MProjectUser();
+                projectUser2.setProject(project);
+                projectUser2.setUser(user2);
+                projectUser2.setRole(ProjectUserEnum.PARTICIPANT);
+                projectUser2.setApproved(true);
+                projectUser2.setActive(true);
+                projectUsers.add(projectUser2);
+
+                // If user 2 has not been assigned as a main manager yet, assign them as the main manager for the current project
+                if (!isUser2MainManager) {
+                    projectUser2.setRole(ProjectUserEnum.MAIN_MANAGER);
+                    isUser2MainManager = true;
+                }
+            }
+
             project.setProjectUsers(projectUsers);
 
             em.persist(project);
@@ -377,10 +435,10 @@ public class StartupCreator implements Serializable {
                 }
                 task.setOtherExecutors(executors);
 
-                // If it's the last task, it's the final presentation of the project
+                // If it's the last task, it's the presentation of the project
                 if (j == numTasks - 1) {
-                    task.setTitle("Final Presentation");
-                    task.setDescription("Final presentation of the project " + projectNames[i]);
+                    task.setTitle("Presentation");
+                    task.setDescription("Presentation of the project " + projectNames[i]);
                     task.setRealStartDate(project.getDeadline());
                 }
 
@@ -403,6 +461,40 @@ public class StartupCreator implements Serializable {
                 projectTasks.add(task);
             }
 
+            // Create the presentation task for the project only if it doesn't exist
+            List<TaskEntity> existingPresentationTasks = em.createQuery("SELECT t FROM TaskEntity t WHERE t.projectId = :project AND t.title = 'Presentation'", TaskEntity.class)
+                    .setParameter("project", project)
+                    .getResultList();
+
+            if (existingPresentationTasks.isEmpty()) {
+                TaskEntity presentationTask = new TaskEntity();
+                presentationTask.setTitle("Presentation");
+                presentationTask.setDescription("Presentation of the project " + projectNames[i]);
+
+                // Set the projectedStartDate and deadline of the presentation task to the deadline of the project
+                presentationTask.setProjectedStartDate(project.getDeadline());
+                presentationTask.setDeadline(project.getDeadline());
+
+                presentationTask.setProjectId(project);
+                presentationTask.setState(TaskStateEnum.PLANNED);
+
+                // Set the responsible user only if the user is part of the project
+                UserEntity responsibleUser = users.get(i % users.size()); // Set the first user as the responsible
+                if (project.getProjectUsers().stream().anyMatch(pu -> pu.getUser().equals(responsibleUser))) {
+                    presentationTask.setResponsible(responsibleUser);
+                } else {
+                    // If the responsible user is not part of the project, set another user that is part of the project as responsible
+                    Optional<UserEntity> anotherUser = project.getProjectUsers().stream().map(M2MProjectUser::getUser).findFirst();
+                    anotherUser.ifPresent(presentationTask::setResponsible);
+                }
+
+                // Persist the presentation task
+                em.persist(presentationTask);
+
+                // Add the presentation task to the project's tasks set
+                project.getTasks().add(presentationTask);
+            }
+
             em.merge(project);
         }
 
@@ -423,7 +515,7 @@ public class StartupCreator implements Serializable {
                 SystemEntity systemEntity = new SystemEntity();
                 try {
                     systemEntity.setSessionTimeout(TypeOfUserEnum.ADMIN, 5);
-                    systemEntity.setMaxUsers(TypeOfUserEnum.ADMIN, 5);
+                    systemEntity.setMaxUsers(TypeOfUserEnum.ADMIN, 4);
                 } catch (IllegalArgumentException e) {
                     logger.error("User does not have admin privileges", e);
                     throw new RuntimeException("User does not have admin privileges", e);

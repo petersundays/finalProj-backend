@@ -251,7 +251,7 @@ public class UserService {
     @Path("/reset-password")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response resetPassword(@HeaderParam("token") String validationToken, @HeaderParam("password") String password, @Context HttpServletRequest request) {
+    public Response resetPassword(@HeaderParam("token") String validationToken, String password, @Context HttpServletRequest request) {
         String ipAddress = request.getRemoteAddr();
         logger.info("User with IP address {} is trying to change password", ipAddress);
 

@@ -2,7 +2,8 @@ package domcast.finalprojbackend.bean;
 
 import domcast.finalprojbackend.dao.InterestDao;
 import domcast.finalprojbackend.dao.UserDao;
-import domcast.finalprojbackend.dto.InterestDto;
+import domcast.finalprojbackend.dto.interestDto.InterestDto;
+import domcast.finalprojbackend.dto.interestDto.InterestToList;
 import domcast.finalprojbackend.dto.userDto.UpdateUserDto;
 import domcast.finalprojbackend.entity.InterestEntity;
 import domcast.finalprojbackend.entity.M2MUserInterest;
@@ -17,6 +18,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Stateless
@@ -72,6 +74,10 @@ public class InterestBean implements Serializable {
                 if (interests.stream().noneMatch(i -> i.getName().equals(interest))) {
                     InterestEntity newInterest = new InterestEntity();
                     newInterest.setName(interest);
+
+                    // Split the interest name by spaces and take the first word
+                    String singleWordInterest = interest.split(" ")[0];
+                    newInterest.setName(singleWordInterest);
 
                     // Get the corresponding InterestDto and set the type
                     InterestDto interestDto = interestsList.get(interestsNames.indexOf(interest));
@@ -202,5 +208,86 @@ public class InterestBean implements Serializable {
             userDao.merge(userEntity);
         }
         return userEntity;
+    }
+
+    /**
+     * Converts an InterestEntity to an InterestToList.
+     * @param interestEntity The interest entity to convert.
+     * @return The corresponding InterestToList.
+     */
+    public InterestToList convertInterestEntityToInterestToList(InterestEntity interestEntity) {
+        logger.info("Entering convertInterestEntityToInterestToList");
+
+        if (interestEntity == null) {
+            logger.error("InterestEntity must not be null");
+            throw new IllegalArgumentException("InterestEntity must not be null");
+        }
+
+        InterestToList interestToList = new InterestToList();
+
+        interestToList.setId(interestEntity.getId());
+        interestToList.setName(interestEntity.getName());
+        interestToList.setType(interestEntity.getType().getId());
+
+        logger.info("InterestEntity converted to InterestToList: {}", interestToList.getName());
+
+        return interestToList;
+    }
+
+    /**
+     * Gets all interests from the database.
+     * @return A list of all interests in the database.
+     */
+    public List<InterestToList> getAllInterests() {
+        logger.info("Entering getAllInterests");
+
+        List<InterestEntity> interests;
+
+        try {
+            interests = interestDao.findAllInterests();
+        } catch (Exception e) {
+            logger.error("Error while finding all interests: {}", e.getMessage());
+            throw e;
+        }
+
+        List<InterestToList> interestsList = new ArrayList<>();
+
+        for (InterestEntity interest : interests) {
+            try {
+                if (interest != null) {
+                    InterestToList interestToList = convertInterestEntityToInterestToList(interest);
+                    if (interestToList != null) {
+                        interestsList.add(interestToList);
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Error while converting InterestEntity to InterestToList: {}", e.getMessage());
+            }
+        }
+
+        logger.info("All interests converted to InterestToList");
+
+        return interestsList;
+    }
+
+    /**
+     * Gets all interest names from the database.
+     * @return A list of all interest names in the database.
+     */
+    public List<String> getAllInterestNames() {
+        logger.info("Entering getAllInterestNames");
+
+        List<String> interestNames;
+
+        try {
+            interestNames = interestDao.findAllInterestsNames();
+        } catch (Exception e) {
+            logger.error("Error while finding all interest names: {}", e.getMessage());
+            throw e;
+        }
+
+        logger.info("All interest names found");
+
+        return interestNames;
     }
 }

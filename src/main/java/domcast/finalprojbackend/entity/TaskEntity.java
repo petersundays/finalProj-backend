@@ -42,6 +42,8 @@ import java.util.Set;
         query = "SELECT t FROM TaskEntity t WHERE t.id = :id")
 @NamedQuery(name = "Task.findTaskByProjectId",
         query = "SELECT t FROM TaskEntity t WHERE t.projectId.id = :projectId")
+@NamedQuery(name = "Task.findPresentationTaskInProject",
+        query = "SELECT t FROM TaskEntity t WHERE t.projectId.id = :projectId AND LOWER(t.title) = 'presentation'")
 
 public class TaskEntity implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -63,6 +65,10 @@ public class TaskEntity implements Serializable {
     // State of the task
     @Column(name = "state", nullable = false)
     private TaskStateEnum state = TaskStateEnum.PLANNED;
+
+    // Active state of the task
+    @Column(name = "active", nullable = false)
+    private boolean active = true;
 
     // Date in which the task was created
     @Column(name = "creation_date", nullable = false)
@@ -161,6 +167,14 @@ public class TaskEntity implements Serializable {
         this.state = state;
     }
 
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
     public LocalDateTime getCreationDate() {
         return creationDate;
     }
@@ -231,6 +245,10 @@ public class TaskEntity implements Serializable {
 
     public void setDependentTasks(Set<M2MTaskDependencies> dependentTasks) {
         this.dependentTasks = dependentTasks;
+    }
+
+    public void addDependentTask(M2MTaskDependencies dependentTask) {
+        this.dependentTasks.add(dependentTask);
     }
 
     public Set<RecordEntity> getRecords() {

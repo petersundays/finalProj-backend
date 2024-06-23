@@ -19,7 +19,7 @@ import java.io.Serializable;
  */
 
 @Entity
-@Table(name = "keyword")
+@Table(name = "project_keyword")
 public class M2MKeyword implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -35,10 +35,10 @@ public class M2MKeyword implements Serializable {
     @JoinColumn(name = "project_id", referencedColumnName = "id")
     private ProjectEntity project;
 
-    // Interest used by the project as a keyword
+    // Keyword used by the project
     @ManyToOne
-    @JoinColumn(name = "interest_id", referencedColumnName = "id")
-    private InterestEntity interest;
+    @JoinColumn(name = "keyword_id", referencedColumnName = "id")
+    private KeywordEntity keyword;
 
     // Status of the project-keyword relationship
     @Column(name = "active", nullable = false)
@@ -67,12 +67,12 @@ public class M2MKeyword implements Serializable {
         this.project = project;
     }
 
-    public InterestEntity getInterest() {
-        return interest;
+    public KeywordEntity getKeyword() {
+        return keyword;
     }
 
-    public void setInterest(InterestEntity interest) {
-        this.interest = interest;
+    public void setKeyword(KeywordEntity keyword) {
+        this.keyword = keyword;
     }
 
     public boolean isActive() {

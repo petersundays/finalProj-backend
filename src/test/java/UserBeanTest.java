@@ -3,11 +3,9 @@ import domcast.finalprojbackend.bean.user.*;
 import domcast.finalprojbackend.dao.LabDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.userDto.*;
-import domcast.finalprojbackend.entity.LabEntity;
-import domcast.finalprojbackend.entity.SessionTokenEntity;
-import domcast.finalprojbackend.entity.UserEntity;
-import domcast.finalprojbackend.entity.ValidationTokenEntity;
+import domcast.finalprojbackend.entity.*;
 import domcast.finalprojbackend.enums.LabEnum;
+import domcast.finalprojbackend.enums.ProjectUserEnum;
 import domcast.finalprojbackend.enums.TypeOfUserEnum;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -17,9 +15,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 
@@ -662,4 +662,129 @@ public class UserBeanTest {
         assertEquals("Error while updating user type for user with id: " + id, result);
     }
 
+    @Test
+    public void testReturnPublicProfile_Success() {
+        UserEntity userEntity = new UserEntity();
+        userEntity.setId(1);
+        userEntity.setType(TypeOfUserEnum.STANDARD);
+        userEntity.setVisible(true);
+
+        when(userDao.findUserById(anyInt())).thenReturn(userEntity);
+
+        PublicProfileUser result = userBean.returnPublicProfile(1);
+
+        assertNotNull(result);
+        assertEquals(userEntity.getId(), result.getId());
+    }
+
+    @Test
+    public void testReturnPublicProfile_Failure() {
+        when(userDao.findUserById(anyInt())).thenReturn(null);
+
+        assertThrows(NoSuchElementException.class, () -> userBean.returnPublicProfile(1));
+    }
+
+    @Test
+    public void testConvertUserEntityToPublicProfile_Success() {
+        UserEntity userEntity = new UserEntity();
+        userEntity.setId(1);
+
+        PublicProfileUser result = userBean.convertUserEntityToPublicProfile(userEntity);
+
+        assertNotNull(result);
+        assertEquals(userEntity.getId(), result.getId());
+    }
+
+    @Test
+    public void testConvertUserEntityToPublicProfile_Failure() {
+        assertThrows(IllegalArgumentException.class, () -> userBean.convertUserEntityToPublicProfile(null));
+    }
+
+    @Test
+    public void testProjectUserToProjectUserDto_Success() {
+        M2MProjectUser m2MProjectUser = new M2MProjectUser();
+        UserEntity userEntity = new UserEntity();
+        userEntity.setId(1);
+        m2MProjectUser.setUser(userEntity);
+        m2MProjectUser.setRole(ProjectUserEnum.MANAGER);
+
+        ProjectUser result = userBean.projectUserToProjectUserDto(m2MProjectUser);
+
+        assertNotNull(result);
+        assertEquals(userEntity.getId(), result.getId());
+    }
+
+    @Test
+    public void testProjectUserToProjectUserDto_Failure() {
+        assertThrows(IllegalArgumentException.class, () -> userBean.projectUserToProjectUserDto(null));
+    }
+
+    // Tests for projectUsersToListOfProjectUser method
+    @Test
+    public void testProjectUsersToListOfProjectUser_Success() {
+        M2MProjectUser m2MProjectUser = new M2MProjectUser();
+        UserEntity userEntity = new UserEntity();
+        userEntity.setId(1);
+        m2MProjectUser.setUser(userEntity);
+        m2MProjectUser.setRole(ProjectUserEnum.MANAGER);
+
+        Set<M2MProjectUser> m2MProjectUsers = new HashSet<>();
+        m2MProjectUsers.add(m2MProjectUser);
+
+        Set<ProjectUser> result = userBean.projectUsersToListOfProjectUser(m2MProjectUsers);
+
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+        assertEquals(userEntity.getId(), result.iterator().next().getId());
+    }
+
+    @Test
+    public void testProjectUsersToListOfProjectUser_Failure() {
+        assertThrows(IllegalArgumentException.class, () -> userBean.projectUsersToListOfProjectUser(null));
+    }
+
+    // Tests for extractProjectTeam method
+    @Test
+    public void testExtractProjectTeam_Success() throws IOException {
+        MultipartFormDataInput input = mock(MultipartFormDataInput.class);
+        InputPart part = mock(InputPart.class);
+        when(input.getFormDataMap()).thenReturn(Collections.singletonMap("team", Collections.singletonList(part)));
+        when(part.getBodyAsString()).thenReturn("{\"1\":2}");
+
+        ProjectTeam result = userBean.extractProjectTeam(input);
+
+        assertNotNull(result);
+        assertFalse(result.getProjectUsers().isEmpty());
+        assertEquals(2, result.getProjectUsers().get(1));
+    }
+
+    @Test
+    public void testExtractProjectTeam_Failure() throws IOException {
+        UserBean userBean = new UserBean();
+        MultipartFormDataInput input = Mockito.mock(MultipartFormDataInput.class);
+        InputPart part = Mockito.mock(InputPart.class);
+
+        when(input.getFormDataMap()).thenReturn(Collections.singletonMap("team", Collections.singletonList(part)));
+        when(part.getBodyAsString()).thenReturn("not a valid json");
+
+        assertThrows(IOException.class, () -> userBean.extractProjectTeam(input));
+    }
+
+    // Tests for convertKeysToList method
+    @Test
+    public void testConvertKeysToList_Success() {
+        Map<String, Integer> map = new HashMap<>();
+        map.put("1", 2);
+
+        List<String> result = userBean.convertKeysToList(map);
+
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+        assertEquals("1", result.get(0));
+    }
+
+    @Test
+    public void testConvertKeysToList_Failure() {
+        assertThrows(IllegalArgumentException.class, () -> userBean.convertKeysToList(null));
+    }
 }
