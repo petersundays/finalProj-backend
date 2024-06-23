@@ -1,15 +1,14 @@
 package domcast.finalprojbackend.bean.project;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import domcast.finalprojbackend.bean.ComponentResourceBean;
 import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.KeywordBean;
 import domcast.finalprojbackend.bean.SkillBean;
 import domcast.finalprojbackend.bean.task.TaskBean;
 import domcast.finalprojbackend.bean.user.UserBean;
-import domcast.finalprojbackend.dao.LabDao;
-import domcast.finalprojbackend.dao.M2MProjectUserDao;
-import domcast.finalprojbackend.dao.ProjectDao;
-import domcast.finalprojbackend.dao.UserDao;
+import domcast.finalprojbackend.dao.*;
 import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
 import domcast.finalprojbackend.dto.projectDto.DetailedProject;
 import domcast.finalprojbackend.dto.projectDto.NewProjectDto;
@@ -21,12 +20,17 @@ import domcast.finalprojbackend.entity.*;
 import domcast.finalprojbackend.enums.LabEnum;
 import domcast.finalprojbackend.enums.ProjectStateEnum;
 import domcast.finalprojbackend.enums.ProjectUserEnum;
+import domcast.finalprojbackend.service.ObjectMapperContextResolver;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
+import jakarta.inject.Inject;
 import jakarta.persistence.PersistenceException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jboss.resteasy.plugins.providers.multipart.InputPart;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
 
@@ -66,6 +70,13 @@ public class ProjectBean implements Serializable {
     @EJB
     private UserBean userBean;
 
+    @EJB
+    private M2MComponentProjectDao m2MComponentProjectDao;
+
+    @Inject
+    private ObjectMapperContextResolver objectMapperContextResolver;
+
+
     /**
      * Default constructor for ProjectBean.
      */
@@ -101,7 +112,7 @@ public class ProjectBean implements Serializable {
             throw new IllegalArgumentException("New project DTO is null");
         }
 
-        if (dataValidator.isIdValid(responsibleUserId)) {
+        if (!dataValidator.isIdValid(responsibleUserId)) {
             logger.error("Responsible user ID is invalid");
             throw new IllegalArgumentException("Responsible user ID is invalid");
         }
@@ -115,60 +126,74 @@ public class ProjectBean implements Serializable {
         }
 
         ProjectEntity projectEntity = new ProjectEntity();
-        Map<ComponentResourceEntity, Integer> componentResources = new HashMap<>();
+        Map<Integer, Integer> componentResources = new HashMap<>();
 
-        try {
-            for (Map.Entry<DetailedCR, Integer> entry : cRDtos.entrySet()) {
-                componentResourceBean.createComponentResource(entry.getKey());
+        if (cRDtos != null && !cRDtos.isEmpty()) {
+            try {
+                for (Map.Entry<DetailedCR, Integer> entry : cRDtos.entrySet()) {
+                    componentResourceBean.createComponentResource(entry.getKey());
+                }
+            } catch (RuntimeException e) {
+                logger.error("Error creating component resources: {}", e.getMessage());
+                // Rethrow the exception to the caller method
+                throw e;
             }
-        } catch (RuntimeException e) {
-            logger.error("Error creating component resources: {}", e.getMessage());
-            // Rethrow the exception to the caller method
-            throw e;
-        }
 
-        try {
-            componentResources = componentResourceBean.findEntityAndSetQuantity(cRDtos);
-        } catch (RuntimeException e) {
-            logger.error("Error finding component resources: {}", e.getMessage());
-            // Rethrow the exception to the caller method
-            throw e;
+            try {
+                componentResources = componentResourceBean.findEntityAndSetQuantity(cRDtos);
+            } catch (RuntimeException e) {
+                logger.error("Error finding component resources: {}", e.getMessage());
+                // Rethrow the exception to the caller method
+                throw e;
+            }
         }
 
         boolean newSkillsCreated;
-        try {
-            newSkillsCreated = skillBean.createSkills(newSkills);
-        } catch (RuntimeException e) {
-            logger.error("Error creating new skills: {}", e.getMessage());
-            // Rethrow the exception to the caller method
-            throw e;
-        }
+        Set<String> newSkillsNames = new HashSet<>();
+        Set<Integer> newSkillsIds = new HashSet<>();
 
-        if (!newSkillsCreated) {
-            logger.error("Error creating new skills");
-            throw new RuntimeException("Error creating new skills");
-        }
-
-        Set<String> newSkillsNames = Set.of();
-        Set<Integer> newSkillsIds;
-
-        try {
-            for (SkillDto skill : newSkills) {
-                newSkillsNames.add(skill.getName());
+        if (newSkills != null && !newSkills.isEmpty()) {
+            try {
+                newSkillsCreated = skillBean.createSkills(newSkills);
+            } catch (RuntimeException e) {
+                logger.error("Error creating new skills: {}", e.getMessage());
+                // Rethrow the exception to the caller method
+                throw e;
             }
 
-            newSkillsIds = skillBean.findSkillsIdsByListOfNames(newSkillsNames);
-        } catch (RuntimeException e) {
-            logger.error("Error finding new skills ids: {}", e.getMessage());
-            // Rethrow the exception to the caller method
-            throw e;
+            if (!newSkillsCreated) {
+                logger.error("Error creating new skills");
+                throw new RuntimeException("Error creating new skills");
+            }
+
+
+            try {
+                for (SkillDto skill : newSkills) {
+                    newSkillsNames.add(skill.getName());
+                }
+
+                newSkillsIds = skillBean.findSkillsIdsByListOfNames(newSkillsNames);
+            } catch (RuntimeException e) {
+                logger.error("Error finding new skills ids: {}", e.getMessage());
+                // Rethrow the exception to the caller method
+                throw e;
+            }
         }
 
-        
         try {
             projectEntity = registerProjectInfo(newProjectDto, projectEntity, projectTeam, responsibleUserId, newSkillsIds, componentResources);
         } catch (RuntimeException e) {
             logger.error("Error registering project info: {}", e.getMessage());
+            // Rethrow the exception to the caller method
+            throw e;
+        }
+
+
+        try {
+            projectDao.persist(projectEntity);
+            projectDao.flush();
+        } catch (PersistenceException e) {
+            logger.error("Error persisting project: {}", e.getMessage());
             // Rethrow the exception to the caller method
             throw e;
         }
@@ -187,12 +212,8 @@ public class ProjectBean implements Serializable {
             throw new RuntimeException("Error creating presentation task");
         }
 
-        try {
-            projectDao.persist(projectEntity);
-        } catch (PersistenceException e) {
-            logger.error("Error persisting project: {}", e.getMessage());
-            // Rethrow the exception to the caller method
-            throw e;
+        for (M2MComponentProject m2MComponentProject : projectEntity.getComponentResources()) {
+            m2MComponentProjectDao.persist(m2MComponentProject);
         }
 
         DetailedProject detailedProject = entityToDetailedProject(projectEntity);
@@ -206,7 +227,7 @@ public class ProjectBean implements Serializable {
         return detailedProject;
     }
 
-    public ProjectEntity registerProjectInfo (NewProjectDto newProjectDto, ProjectEntity projectEntity, ProjectTeam projectTeam, int responsibleUserId, Set<Integer> newSkills, Map<ComponentResourceEntity, Integer> newCRs) {
+    public ProjectEntity registerProjectInfo (NewProjectDto newProjectDto, ProjectEntity projectEntity, ProjectTeam projectTeam, int responsibleUserId, Set<Integer> newSkills, Map<Integer, Integer> newCRs) {
 
         if (newProjectDto == null || projectEntity == null) {
             logger.error("New project DTO or project entity is null");
@@ -221,9 +242,23 @@ public class ProjectBean implements Serializable {
         logger.info("Registering project info for project with name {}", newProjectDto.getName());
 
 
-
         LabEnum labEnum = LabEnum.fromId(newProjectDto.getLabId());
         String labCity = labEnum.getValue();
+
+        LabEntity labEntity;
+
+        try {
+            labEntity = labDao.findLabByCity(labCity);
+        } catch (PersistenceException e) {
+            logger.error("Error finding lab by city: {}", e.getMessage());
+            // Rethrow the exception to the caller method
+            throw e;
+        }
+
+        if (labEntity == null) {
+            logger.error("Lab not found with city: {}", labCity);
+            throw new IllegalArgumentException("Lab not found with city: " + labCity);
+        }
 
         Set<KeywordEntity> keywordEntities;
         try {
@@ -244,9 +279,13 @@ public class ProjectBean implements Serializable {
         }
 
         // Set project users
-        Set<M2MProjectUser> projectUsers;
+        Set<M2MProjectUser> projectUsers = new HashSet<>();
+
 
         try {
+            if (projectTeam == null) {
+                projectTeam = new ProjectTeam();
+            }
             projectUsers = createProjectTeam(projectTeam.getProjectUsers(), projectEntity, responsibleUserId);
         } catch (RuntimeException e) {
             logger.error("Error creating project team: {}", e.getMessage());
@@ -255,38 +294,50 @@ public class ProjectBean implements Serializable {
         }
 
         Set<Integer> skillsIds = new HashSet<>();
-        Set<M2MProjectSkill> projectSkills;
+        Set<M2MProjectSkill> projectSkills = new HashSet<>();
 
-        if (!newProjectDto.getExistentSkills().isEmpty()) {
-            skillsIds.addAll(newProjectDto.getExistentSkills());
-        }
-
-        if (!newSkills.isEmpty()) {
+        if (newSkills != null && !newSkills.isEmpty()) {
             skillsIds.addAll(newSkills);
         }
 
-        try {
-            projectSkills = skillBean.createRelationshipToProject(skillsIds, projectEntity);
-        } catch (RuntimeException e) {
-            logger.error("Error creating relationship between project and skills: {}", e.getMessage());
-            // Rethrow the exception to the caller method
-            throw e;
+        if (newProjectDto.getExistentSkills() != null && !newProjectDto.getExistentSkills().isEmpty()) {
+            skillsIds.addAll(newProjectDto.getExistentSkills());
         }
 
-        Set<M2MComponentProject> m2MComponentProject;
-
-        try {
-            m2MComponentProject = componentResourceBean.relationInProjectCreation(newCRs, projectEntity);
-        } catch (RuntimeException e) {
-            logger.error("Error creating relationship between project and component resources: {}", e.getMessage());
-            // Rethrow the exception to the caller method
-            throw e;
+        if (!skillsIds.isEmpty()) {
+            try {
+                projectSkills = skillBean.createRelationshipToProject(skillsIds, projectEntity);
+            } catch (RuntimeException e) {
+                logger.error("Error creating relationship between project and skills: {}", e.getMessage());
+                // Rethrow the exception to the caller method
+                throw e;
+            }
         }
 
+        Set<M2MComponentProject> m2MComponentProject = new HashSet<>();
+        Map<Integer, Integer> componentResources = new HashMap<>();
+
+        if (newCRs != null && !newCRs.isEmpty()) {
+            componentResources.putAll(newCRs);
+        }
+
+        if (newProjectDto.getExistentResources() != null && !newProjectDto.getExistentResources().isEmpty()) {
+            componentResources.putAll(newProjectDto.getExistentResources());
+        }
+
+        if (!componentResources.isEmpty()) {
+            try {
+                m2MComponentProject = componentResourceBean.relationInProjectCreation(componentResources, projectEntity);
+            } catch (RuntimeException e) {
+                logger.error("Error creating relationship between project and component resources: {}", e.getMessage());
+                // Rethrow the exception to the caller method
+                throw e;
+            }
+        }
 
         projectEntity.setName(newProjectDto.getName());
         projectEntity.setDescription(newProjectDto.getDescription());
-        projectEntity.setLab(labDao.findLabByCity(labCity));
+        projectEntity.setLab(labEntity);
         projectEntity.setKeywords(projectKeywords);
         projectEntity.setProjectedStartDate(newProjectDto.getProjectedStartDate());
         projectEntity.setDeadline(newProjectDto.getDeadline());
@@ -308,22 +359,16 @@ public class ProjectBean implements Serializable {
 
         Set<M2MProjectUser> projectTeam = new HashSet<>();
 
-        if (teamMembers == null || teamMembers.isEmpty()) {
-            logger.info("No team members to add to project team");
-            return projectTeam;
-        }
-
         if (project == null) {
             logger.error("Project must not be null");
             throw new IllegalArgumentException("Project must not be null");
         }
 
-        if (responsibleId <= 0) {
-            logger.error("Responsible must not be null");
-            throw new IllegalArgumentException("Responsible must not be null");
+        if (!dataValidator.isIdValid(responsibleId)) {
+            logger.error("Responsible ID is invalid while creating project team");
+            throw new IllegalArgumentException("Responsible ID is invalid while creating project team");
         }
 
-        ProjectUserEnum role;
         M2MProjectUser projectUser= new M2MProjectUser();
 
         try {
@@ -339,6 +384,13 @@ public class ProjectBean implements Serializable {
             projectUser.setApproved(true);
 
             projectTeam.add(projectUser);
+
+        if (teamMembers == null || teamMembers.isEmpty()) {
+            logger.info("No team members to add to project team");
+            return projectTeam;
+        }
+
+        ProjectUserEnum role;
 
             for (Map.Entry<Integer, Integer> entry : teamMembers.entrySet()) {
                 UserEntity user = userDao.findUserById(entry.getKey());
@@ -380,9 +432,9 @@ public class ProjectBean implements Serializable {
         }
 
         DetailedProject detailedProject = new DetailedProject();
-        M2MProjectUser userInProject = null;
-        Set<M2MProjectUser> projectTeam = null;
-        Set<ChartTask> tasks = null;
+        M2MProjectUser userInProject = new M2MProjectUser();
+        Set<M2MProjectUser> projectTeam = new HashSet<>();
+        Set<ChartTask> tasks = new HashSet<>();
 
         try {
             userInProject = m2MProjectUserDao.findMainManagerInProject(projectEntity.getId());
@@ -390,9 +442,6 @@ public class ProjectBean implements Serializable {
             logger.error("Error finding main manager in project with id: {}", projectEntity.getId(), e);
         }
 
-        if (userInProject == null) {
-            logger.warn("No main manager found for project with id: {}", projectEntity.getId());
-        }
         ProjectUser mainManager = userBean.projectUserToProjectUserDto(userInProject);
 
         try {
@@ -407,15 +456,13 @@ public class ProjectBean implements Serializable {
         Set<ProjectUser> collaboratorsDto = userBean.projectUsersToListOfProjectUser(projectTeam);
 
         try {
-            tasks = (Set<ChartTask>) taskBean.findTaskByProjectId(projectEntity.getId());
+            List<ChartTask> taskList = taskBean.findTaskByProjectId(projectEntity.getId());
+            tasks = new HashSet<>(taskList);
         } catch (PersistenceException e) {
             logger.error("Error finding tasks for project with id: {}", projectEntity.getId(), e);
         }
 
-        if (tasks == null) {
-            logger.warn("No tasks found for project with id: {}", projectEntity.getId());
-        }
-
+        System.out.println("DATAS : " + projectEntity.getProjectedStartDate());
         detailedProject.setId(projectEntity.getId());
         detailedProject.setName(projectEntity.getName());
         detailedProject.setDescription(projectEntity.getDescription());
@@ -434,4 +481,27 @@ public class ProjectBean implements Serializable {
         return detailedProject;
     }
 
+    /**
+     * Extracts the new oroject DTO from the input.
+     * @param input The multipart form data input containing the new project DTO.
+     * @return The new project DTO extracted from the input.
+     * @throws IOException If an error occurs while extracting the new project DTO.
+     */
+    public NewProjectDto extractNewProjectDto(MultipartFormDataInput input) throws IOException {
+        InputPart part = input.getFormDataMap().get("project").get(0);
+        String userString = part.getBodyAsString();
+        ObjectMapper mapper = objectMapperContextResolver.getContext(null);
+        return mapper.readValue(userString, NewProjectDto.class);
+    }
+
+    /**
+     * Converts a DetailedProject object to a JSON string.
+     * @param detailedProject The DetailedProject object to convert.
+     * @return The JSON string representation of the DetailedProject object.
+     * @throws JsonProcessingException If an error occurs while converting the DetailedProject object to a JSON string.
+     */
+    public String convertProjectToJson(DetailedProject detailedProject) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.writeValueAsString(detailedProject);
+    }
 }

@@ -1,12 +1,13 @@
 package domcast.finalprojbackend.dto.projectDto;
 
-import domcast.finalprojbackend.dto.skillDto.SkillDto;
 import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
+import domcast.finalprojbackend.dto.skillDto.SkillDto;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -42,7 +43,7 @@ public class NewProjectDto extends ProjectDto implements Serializable {
     private Set<Integer> existentSkills;
 
     @XmlElement
-    private Set<Integer> existentResources;
+    private Map<Integer, Integer> existentResources;
 
     /**
      * Empty constructor
@@ -60,7 +61,7 @@ public class NewProjectDto extends ProjectDto implements Serializable {
      * @param existentResources the resources of the project that already exist in the database
 
      */
-    public NewProjectDto(String name, String description, int labId, Set<String> keywords, Set<Integer> existentSkills, Set<Integer> existentResources, Set<SkillDto> newSkills, Set<DetailedCR> newResources) {
+    public NewProjectDto(String name, String description, int labId, Set<String> keywords, Set<Integer> existentSkills, Map<Integer, Integer> existentResources, Set<SkillDto> newSkills, Set<DetailedCR> newResources) {
         super(name, description, labId);
         this.keywords = keywords;
         this.existentSkills = existentSkills;
@@ -101,11 +102,11 @@ public class NewProjectDto extends ProjectDto implements Serializable {
         this.existentSkills = existentSkills;
     }
 
-    public Set<Integer> getExistentResources() {
+    public Map<Integer, Integer> getExistentResources() {
         return existentResources;
     }
 
-    public void setExistentResources(Set<Integer> existentResources) {
+    public void setExistentResources(Map<Integer, Integer> existentResources) {
         this.existentResources = existentResources;
     }
 }

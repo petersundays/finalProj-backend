@@ -33,18 +33,24 @@ public class M2MProjectUserDao extends AbstractDao<M2MProjectUser> {
      */
     public M2MProjectUser findMainManagerInProject(int projectId) {
         try {
-            return (M2MProjectUser) em.createNamedQuery("M2MProjectUser.findMainManagerInProject")
+            logger.info("Attempting to find main manager for project with id: {}", projectId);
+            M2MProjectUser user = (M2MProjectUser) em.createNamedQuery("M2MProjectUser.findMainManagerInProject")
                     .setParameter("projectId", projectId)
                     .getSingleResult();
+            logger.info("Found main manager for project with id: {}. Main manager role: {}", projectId, user.getRole());
+            return user;
         } catch (NoResultException e) {
             logger.error("No main manager found for project with id: {}", projectId, e);
             return null;
         } catch (NonUniqueResultException e) {
             logger.error("More than one main manager found for project with id: {}", projectId, e);
             return null;
+        } catch (Exception e) {
+            logger.error("An unexpected error occurred while finding main manager for project with id: {}", projectId, e);
+            return null;
         }
     }
-
+    
     /**
      * Method to find the project team, excluding the main manager.
      *

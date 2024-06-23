@@ -1,5 +1,7 @@
 package domcast.finalprojbackend.bean;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import domcast.finalprojbackend.dao.SkillDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.skillDto.SkillDto;
@@ -12,7 +14,10 @@ import jakarta.ejb.Stateless;
 import jakarta.persistence.NoResultException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jboss.resteasy.plugins.providers.multipart.InputPart;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -33,9 +38,10 @@ public class SkillBean implements Serializable {
 
     /**
      * Creates new skills in the database based on a list of SkillDTOs passed as parameter
+     *
      * @param skillsList List of SkillDto with the skills to be created.
-        * Return boolean true if all skills were created successfully, false otherwise.
-        */
+     *                   Return boolean true if all skills were created successfully, false otherwise.
+     */
     public boolean createSkills(ArrayList<SkillDto> skillsList) {
         logger.info("Entering createSkills");
 
@@ -85,7 +91,8 @@ public class SkillBean implements Serializable {
 
     /**
      * Adds skills to a user
-     * @param userId User ID to add skills to
+     *
+     * @param userId     User ID to add skills to
      * @param skillsList List of skills to add
      */
     public void addSkillToUser(int userId, ArrayList<String> skillsList) {
@@ -144,6 +151,7 @@ public class SkillBean implements Serializable {
 
     /**
      * Converts a skill type from an integer to a SkillTypeEnum
+     *
      * @param type The integer representing the skill type
      * @return The SkillTypeEnum corresponding to the integer
      */
@@ -156,8 +164,9 @@ public class SkillBean implements Serializable {
      * This method iterates over the user's existing skills and updates them based on the new list of skills.
      * If a skill is in the new list, it is set to active. If a skill is not in the new list, it is set to inactive.
      * If a skill is in the new list but not in the existing list, it is added to the user's skills.
+     *
      * @param userEntity The user entity to update.
-     * @param user The user DTO containing the new information.
+     * @param user       The user DTO containing the new information.
      * @return The updated user entity.
      */
     public UserEntity updateUserSkillsIfChanged(UserEntity userEntity, UpdateUserDto user) {
@@ -198,6 +207,7 @@ public class SkillBean implements Serializable {
 
     /**
      * Gets the ids of the skills based on their names
+     *
      * @param skills The names of the skills
      * @return The ids of the skills
      */
@@ -223,7 +233,7 @@ public class SkillBean implements Serializable {
         }
     }
 
-    public Set<M2MProjectSkill> createRelationshipToProject (Set<Integer> skillsIds, ProjectEntity project) {
+    public Set<M2MProjectSkill> createRelationshipToProject(Set<Integer> skillsIds, ProjectEntity project) {
         logger.info("Entering createRelationshipToProject for project");
 
         Set<M2MProjectSkill> m2MProjectSkills = new HashSet<>();
@@ -292,5 +302,20 @@ public class SkillBean implements Serializable {
         }
 
         return skills;
+    }
+
+    /**
+     * Extracts the new skills from the input
+     *
+     * @param input The input containing the new skills
+     * @return The list of new skills
+     * @throws IOException If there is an error reading the input
+     */
+    public ArrayList<SkillDto> extractNewSkills(MultipartFormDataInput input) throws IOException {
+        InputPart part = input.getFormDataMap().get("skills").get(0);
+        String newSkillsString = part.getBodyAsString();
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(newSkillsString, new TypeReference<ArrayList<SkillDto>>() {
+        });
     }
 }
