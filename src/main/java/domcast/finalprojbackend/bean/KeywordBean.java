@@ -14,6 +14,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Stateless
@@ -24,6 +25,9 @@ public class KeywordBean implements Serializable {
 
     @EJB
     private KeywordDao keywordDao;
+
+    @EJB
+    private InterestBean interestBean;
 
     /**
      * Default constructor for KeywordBean.
@@ -37,7 +41,7 @@ public class KeywordBean implements Serializable {
      * @param keywords the list of keywords
      * @return the set of KeywordEntity objects
      */
-    public Set<KeywordEntity> createAndGetKeywords (Set<String> keywords) {
+    public Set<KeywordEntity> createAndGetKeywords(Set<String> keywords) {
 
         logger.info("Entering createAndGetKeywords");
 
@@ -77,11 +81,11 @@ public class KeywordBean implements Serializable {
     /**
      * Creates a relationship between a project and a set of keywords.
      *
-     * @param project the project
+     * @param project  the project
      * @param keywords the set of keywords
      * @return the set of M2MKeyword objects
      */
-    public Set<M2MKeyword> createRelationship (ProjectEntity project, Set<KeywordEntity> keywords) {
+    public Set<M2MKeyword> createRelationship(ProjectEntity project, Set<KeywordEntity> keywords) {
 
         logger.info("Entering createRelationship for new project and keywords");
 
@@ -115,7 +119,7 @@ public class KeywordBean implements Serializable {
      * @param m2MKeywords the set of M2MKeyword objects
      * @return the set of KeywordDto objects
      */
-    public Set<KeywordDto> m2mToKeywordDto (Set<M2MKeyword> m2MKeywords) {
+    public Set<KeywordDto> m2mToKeywordDto(Set<M2MKeyword> m2MKeywords) {
 
         logger.info("Entering m2mToKeywordDto");
 
@@ -144,5 +148,53 @@ public class KeywordBean implements Serializable {
         logger.info("Exiting m2mToKeywordDto");
 
         return keywordDtos;
+    }
+
+    /**
+     * Gets all keyword names.
+     *
+     * @return the list of keyword names
+     */
+    public List<String> getAllKeywordNames() {
+        logger.info("Entering getAllKeywordNames");
+
+        List<String> keywordNames;
+
+        try {
+            keywordNames = keywordDao.findAllKeywordsNames();
+        } catch (Exception e) {
+            logger.error("Error getting all keyword names: {}", e.getMessage());
+            throw new RuntimeException("Error getting all keyword names", e);
+        }
+
+        logger.info("Exiting getAllKeywordNames");
+
+        return keywordNames;
+    }
+
+    /**
+     * Gets all keyword and interest names.
+     *
+     * @return the list of keyword and interest names
+     */
+    public List<String> keywordsAndInterestsNames() {
+        logger.info("Entering keywordsAndInterestsNames");
+
+        List<String> keywordNames;
+
+        try {
+            keywordNames = keywordDao.findAllKeywordsNames();
+            keywordNames.addAll(interestBean.getAllInterestNames());
+        } catch (Exception e) {
+            logger.error("Error getting all keyword and interest names: {}", e.getMessage());
+            throw new RuntimeException("Error getting all keyword and interest names", e);
+        }
+
+        // Order the list of names, ascending
+        keywordNames.sort(String::compareToIgnoreCase);
+
+        logger.info("Exiting keywordsAndInterestsNames");
+
+        return keywordNames;
     }
 }

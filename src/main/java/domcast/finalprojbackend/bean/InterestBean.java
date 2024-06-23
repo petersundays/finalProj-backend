@@ -269,4 +269,25 @@ public class InterestBean implements Serializable {
 
         return interestsList;
     }
+
+    /**
+     * Gets all interest names from the database.
+     * @return A list of all interest names in the database.
+     */
+    public List<String> getAllInterestNames() {
+        logger.info("Entering getAllInterestNames");
+
+        List<String> interestNames;
+
+        try {
+            interestNames = interestDao.findAllInterestsNames();
+        } catch (Exception e) {
+            logger.error("Error while finding all interest names: {}", e.getMessage());
+            throw e;
+        }
+
+        logger.info("All interest names found");
+
+        return interestNames;
+    }
 }
