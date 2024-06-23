@@ -1,6 +1,7 @@
 package domcast.finalprojbackend.bean.user;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.InterestBean;
@@ -1225,6 +1226,31 @@ public class UserBean implements Serializable {
         InputPart part = input.getFormDataMap().get("team").get(0);
         String userString = part.getBodyAsString();
         ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue(userString, ProjectTeam.class);
+
+        // Convert the JSON string into a Map<String, Integer>
+        Map<String, Integer> stringMap = mapper.readValue(userString, new TypeReference<Map<String, Integer>>() {});
+
+        // Use the convertKeysToList method to get a List of the keys
+        List<String> keys = convertKeysToList(stringMap);
+
+        // Create a new Map<Integer, Integer> and populate it with the entries from stringMap,
+        // converting the keys from strings to integers
+        Map<Integer, Integer> integerMap = new HashMap<>();
+        for (String key : keys) {
+            integerMap.put(Integer.parseInt(key), stringMap.get(key));
+        }
+
+        // Create a new ProjectTeam object and set the projectUsers field to integerMap
+        ProjectTeam projectTeam = new ProjectTeam();
+        projectTeam.setProjectUsers(integerMap);
+
+        return projectTeam;
+    }
+
+    public List<String> convertKeysToList(Map<String, ?> map) {
+        if (map == null) {
+            throw new IllegalArgumentException("Map cannot be null");
+        }
+        return new ArrayList<>(map.keySet());
     }
 }

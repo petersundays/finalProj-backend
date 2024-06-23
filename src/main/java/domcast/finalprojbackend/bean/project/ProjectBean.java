@@ -466,6 +466,7 @@ public class ProjectBean implements Serializable {
         detailedProject.setId(projectEntity.getId());
         detailedProject.setName(projectEntity.getName());
         detailedProject.setDescription(projectEntity.getDescription());
+        detailedProject.setLabId(projectEntity.getLab().getCity().getId());
         detailedProject.setState(ProjectStateEnum.getProjectStateValue(projectEntity.getState()));
         detailedProject.setProjectedStartDate(projectEntity.getProjectedStartDate());
         detailedProject.setDeadline(projectEntity.getDeadline());
@@ -501,7 +502,7 @@ public class ProjectBean implements Serializable {
      * @throws JsonProcessingException If an error occurs while converting the DetailedProject object to a JSON string.
      */
     public String convertProjectToJson(DetailedProject detailedProject) throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = objectMapperContextResolver.getContext(null);
         return mapper.writeValueAsString(detailedProject);
     }
 }

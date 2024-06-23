@@ -106,7 +106,7 @@ public class ProjectService {
             // Convert the registeredUser object to a JSON string
             String detailedProjectJson = projectBean.convertProjectToJson(detailedProject);
 
-            response = Response.status(201).entity(detailedProject).build();
+            response = Response.status(201).entity(detailedProjectJson).build();
             logger.info("User with session token {} and id {} created a new project", token, id);
         } catch (Exception e) {
             logger.error("Error creating new project: {}", e.getMessage());
