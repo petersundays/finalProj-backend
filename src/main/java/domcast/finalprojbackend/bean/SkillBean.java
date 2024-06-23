@@ -365,7 +365,11 @@ public class SkillBean implements Serializable {
         return skill;
     }
 
-
+    /**
+     * Gets all skills
+     *
+     * @return The list of all SkillToList objects
+     */
     public List<SkillToList> getAllSkills() {
         logger.info("Entering getAllSkills");
 
