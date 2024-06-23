@@ -5,6 +5,8 @@ import jakarta.ejb.Stateless;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.List;
+
 @Stateless
 public class KeywordDao extends AbstractDao<KeywordEntity> {
 
@@ -33,6 +35,23 @@ public class KeywordDao extends AbstractDao<KeywordEntity> {
                     .getSingleResult();
         } catch (Exception e) {
             logger.error("Error finding keyword by name: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Finds all keyword's names.
+     *
+     * @return the list of keyword names
+     */
+    public List<String> findAllKeywordsNames() {
+        logger.info("Entering findAllKeywordsNames");
+
+        try {
+            return em.createNamedQuery("Keyword.findAllKeywordsNames", String.class)
+                    .getResultList();
+        } catch (Exception e) {
+            logger.error("Error finding all keywords names: {}", e.getMessage());
             return null;
         }
     }

@@ -10,6 +10,8 @@ import java.util.Set;
 @Table(name = "keyword")
 
 @NamedQuery(name = "Keyword.findKeywordByName", query = "SELECT k FROM KeywordEntity k WHERE k.name = :name")
+@NamedQuery(name = "Keyword.findAllKeywordsNames", query = "SELECT k.name FROM KeywordEntity k ORDER BY k.name ASC")
+
 
 public class KeywordEntity implements Serializable {
 

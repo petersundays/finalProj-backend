@@ -85,4 +85,20 @@ public class InterestDao extends AbstractDao<InterestEntity> {
             return new ArrayList<>();
         }
     }
+
+    /**
+     * Finds all interest names in the database.
+     *
+     * @return the list of interest's names if found, ordered by name ascending, null otherwise
+     */
+    public List<String> findAllInterestsNames() {
+        logger.info("Finding all interest names");
+        try {
+            return em.createNamedQuery("Interest.findAllInterestsNames", String.class)
+                    .getResultList();
+        } catch (NoResultException e) {
+            logger.error("No interest names found");
+            return new ArrayList<>();
+        }
+    }
 }

@@ -14,10 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -291,5 +288,37 @@ public class InterestBeanTest {
 
         // Act & Assert
         assertThrows(RuntimeException.class, () -> interestBean.getAllInterests());
+    }
+
+    /**
+     * Test method for getAllInterestNames
+     * This test checks the successful case where all interest names are retrieved correctly.
+     */
+    @Test
+    public void testGetAllInterestNames_Success() {
+        // Arrange
+        List<String> interestNames = Arrays.asList("Interest1", "Interest2");
+        when(interestDao.findAllInterestsNames()).thenReturn(interestNames);
+
+        // Act
+        List<String> result = interestBean.getAllInterestNames();
+
+        // Assert
+        assertEquals(interestNames, result);
+    }
+
+    /**
+     * Test method for getAllInterestNames
+     * This test checks the failure case where an exception is thrown.
+     */
+    @Test
+    public void testGetAllInterestNames_Failure() {
+        // Arrange
+        when(interestDao.findAllInterestsNames()).thenThrow(new RuntimeException());
+
+        // Act and Assert
+        assertThrows(RuntimeException.class, () -> {
+            interestBean.getAllInterestNames();
+        });
     }
 }

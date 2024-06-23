@@ -1,3 +1,4 @@
+import domcast.finalprojbackend.bean.InterestBean;
 import domcast.finalprojbackend.bean.KeywordBean;
 import domcast.finalprojbackend.dao.KeywordDao;
 import domcast.finalprojbackend.dto.KeywordDto;
@@ -10,8 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.anyString;
@@ -24,6 +24,9 @@ public class KeywordBeanTest {
 
     @Mock
     KeywordDao keywordDao;
+
+    @Mock
+    private InterestBean interestBean;
 
     @BeforeEach
     public void setup() {
@@ -113,5 +116,72 @@ public class KeywordBeanTest {
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
+    }
+
+    /**
+     * Test method for getAllKeywordNames
+     * This test checks the successful case where all keyword names are retrieved correctly.
+     */
+    @Test
+    public void testGetAllKeywordNames_Success() {
+        // Arrange
+        List<String> keywordNames = Arrays.asList("Keyword1", "Keyword2");
+        when(keywordDao.findAllKeywordsNames()).thenReturn(keywordNames);
+
+        // Act
+        List<String> result = keywordBean.getAllKeywordNames();
+
+        // Assert
+        assertEquals(keywordNames, result);
+    }
+
+    /**
+     * Test method for getAllKeywordNames
+     * This test checks the failure case where an exception is thrown.
+     */
+    @Test
+    public void testGetAllKeywordNames_Failure() {
+        // Arrange
+        when(keywordDao.findAllKeywordsNames()).thenThrow(new RuntimeException());
+
+        // Act and Assert
+        assertThrows(RuntimeException.class, () -> {
+            keywordBean.getAllKeywordNames();
+        });
+    }
+
+    /**
+     * Test method for keywordsAndInterestsNames
+     * This test checks the successful case where all keyword and interest names are retrieved correctly.
+     */
+    @Test
+    public void testKeywordsAndInterestsNames_Success() {
+        // Arrange
+        List<String> keywordNames = new ArrayList<>(Arrays.asList("Keyword1", "Keyword2"));
+        List<String> interestNames = new ArrayList<>(Arrays.asList("Interest1", "Interest2"));
+        when(keywordDao.findAllKeywordsNames()).thenReturn(keywordNames);
+        when(interestBean.getAllInterestNames()).thenReturn(interestNames);
+
+        // Act
+        List<String> result = keywordBean.keywordsAndInterestsNames();
+
+        // Assert
+        assertTrue(result.containsAll(keywordNames));
+        assertTrue(result.containsAll(interestNames));
+    }
+
+    /**
+     * Test method for keywordsAndInterestsNames
+     * This test checks the failure case where an exception is thrown.
+     */
+    @Test
+    public void testKeywordsAndInterestsNames_Failure() {
+        // Arrange
+        when(keywordDao.findAllKeywordsNames()).thenThrow(new RuntimeException());
+
+        // Act and Assert
+        assertThrows(RuntimeException.class, () -> {
+            keywordBean.keywordsAndInterestsNames();
+        });
     }
 }
