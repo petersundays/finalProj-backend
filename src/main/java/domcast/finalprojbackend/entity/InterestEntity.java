@@ -25,6 +25,7 @@ import java.util.Set;
 
 @NamedQuery(name = "Interest.findInterestByName", query = "SELECT i FROM InterestEntity i WHERE i.name = :name")
 @NamedQuery(name = "Interest.findInterestsByListOfNames", query = "SELECT i FROM InterestEntity i WHERE i.name IN :names")
+@NamedQuery(name = "Interest.findAllInterests", query = "SELECT i FROM InterestEntity i ORDER BY i.name ASC")
 
 public class InterestEntity implements Serializable {
     private static final long serialVersionUID = 1L;

@@ -3,6 +3,7 @@ import domcast.finalprojbackend.bean.SkillBean;
 import domcast.finalprojbackend.dao.SkillDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.skillDto.SkillDto;
+import domcast.finalprojbackend.dto.skillDto.SkillToList;
 import domcast.finalprojbackend.dto.skillDto.SkillToProject;
 import domcast.finalprojbackend.dto.userDto.UpdateUserDto;
 import domcast.finalprojbackend.entity.M2MProjectSkill;
@@ -389,4 +390,85 @@ public class SkillBeanTest {
             skillBean.extractNewSkills(input);
         });
     }
+
+
+    /**
+     * Test method for convertSkillEntityToSkillToList
+     * This test checks the successful case where the SkillEntity is converted correctly.
+     */
+    @Test
+    public void testConvertSkillEntityToSkillToList_Success() {
+        // Arrange
+        SkillEntity skillEntity = new SkillEntity();
+        skillEntity.setId(1);
+        skillEntity.setName("Test Skill");
+        skillEntity.setType(SkillTypeEnum.HARDWARE);
+
+        // Act
+        SkillToList result = skillBean.convertSkillEntityToSkillToList(skillEntity);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(skillEntity.getId(), result.getId());
+        assertEquals(skillEntity.getName(), result.getName());
+        assertEquals(skillEntity.getType().getId(), result.getType());
+    }
+
+    /**
+     * Test method for convertSkillEntityToSkillToList
+     * This test checks the failure case where the SkillEntity is null.
+     */
+    @Test
+    public void testConvertSkillEntityToSkillToList_Failure() {
+        // Arrange
+        SkillEntity skillEntity = null;
+
+        // Act
+        SkillToList result = skillBean.convertSkillEntityToSkillToList(skillEntity);
+
+        // Assert
+        assertNull(result);
+    }
+
+    /**
+     * Test method for getAllSkills
+     * This test checks the successful case where all skills are retrieved correctly.
+     */
+    @Test
+    public void testGetAllSkills_Success() {
+        // Arrange
+        List<SkillEntity> skillEntities = new ArrayList<>();
+        SkillEntity skillEntity = new SkillEntity();
+        skillEntity.setId(1);
+        skillEntity.setName("Test Skill");
+        skillEntity.setType(SkillTypeEnum.HARDWARE);
+        skillEntities.add(skillEntity);
+        when(skillDao.findAllSkills()).thenReturn(skillEntities);
+
+        // Act
+        List<SkillToList> result = skillBean.getAllSkills();
+
+        // Assert
+        assertEquals(1, result.size());
+        SkillToList skillToList = result.get(0);
+        assertEquals(skillEntity.getId(), skillToList.getId());
+        assertEquals(skillEntity.getName(), skillToList.getName());
+        assertEquals(skillEntity.getType().getId(), skillToList.getType());
+    }
+
+    /**
+     * Test method for getAllSkills
+     * This test checks the failure case where an exception is thrown.
+     */
+    @Test
+    public void testGetAllSkills_Failure() {
+        // Arrange
+        when(skillDao.findAllSkills()).thenThrow(new RuntimeException());
+
+        // Act and Assert
+        assertThrows(RuntimeException.class, () -> {
+            skillBean.getAllSkills();
+        });
+    }
+
 }

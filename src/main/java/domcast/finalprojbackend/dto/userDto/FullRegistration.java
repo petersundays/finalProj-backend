@@ -1,6 +1,6 @@
 package domcast.finalprojbackend.dto.userDto;
 
-import domcast.finalprojbackend.dto.InterestDto;
+import domcast.finalprojbackend.dto.interestDto.InterestDto;
 import domcast.finalprojbackend.dto.skillDto.SkillDto;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;

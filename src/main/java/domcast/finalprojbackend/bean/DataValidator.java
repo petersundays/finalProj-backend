@@ -2,7 +2,7 @@ package domcast.finalprojbackend.bean;
 
 import domcast.finalprojbackend.bean.user.PasswordBean;
 import domcast.finalprojbackend.dao.TaskDao;
-import domcast.finalprojbackend.dto.InterestDto;
+import domcast.finalprojbackend.dto.interestDto.InterestDto;
 import domcast.finalprojbackend.dto.skillDto.SkillDto;
 import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
 import domcast.finalprojbackend.dto.projectDto.NewProjectDto;

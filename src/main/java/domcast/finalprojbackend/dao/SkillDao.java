@@ -6,6 +6,7 @@ import jakarta.persistence.NoResultException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -107,6 +108,21 @@ public class SkillDao extends AbstractDao<SkillEntity> {
         } catch (NoResultException e) {
             logger.error("Skills ids with names {} not found", names);
             return null;
+        }
+    }
+
+    /**
+     * Finds all skills.
+     *
+     * @return the list of all SkillEntity objects
+     */
+    public List<SkillEntity> findAllSkills() {
+        logger.info("Finding all skills");
+        try {
+            return em.createNamedQuery("Skill.findAllSkills", SkillEntity.class).getResultList();
+        } catch (Exception e) {
+            logger.error("Error while finding all skills: {}", e.getMessage());
+            return new ArrayList<>();
         }
     }
 }

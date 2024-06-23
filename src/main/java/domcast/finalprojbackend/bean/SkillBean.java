@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import domcast.finalprojbackend.dao.SkillDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.skillDto.SkillDto;
+import domcast.finalprojbackend.dto.skillDto.SkillToList;
 import domcast.finalprojbackend.dto.skillDto.SkillToProject;
 import domcast.finalprojbackend.dto.userDto.UpdateUserDto;
 import domcast.finalprojbackend.entity.*;
@@ -21,6 +22,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Stateless
@@ -336,5 +338,67 @@ public class SkillBean implements Serializable {
         ObjectMapper mapper = new ObjectMapper();
         return mapper.readValue(newSkillsString, new TypeReference<ArrayList<SkillDto>>() {
         });
+    }
+
+    /**
+     * Converts a SkillEntity object to a SkillToList object
+     *
+     * @param skillEntity The SkillEntity object
+     * @return The SkillToList object
+     */
+    public SkillToList convertSkillEntityToSkillToList(SkillEntity skillEntity) {
+        logger.info("Entering convertSkillEntityToSkillToList");
+
+        if (skillEntity == null) {
+            logger.error("SkillEntity is null");
+            return null;
+        }
+
+        SkillToList skill = new SkillToList();
+
+        skill.setId(skillEntity.getId());
+        skill.setName(skillEntity.getName());
+        skill.setType(skillEntity.getType().getId());
+
+        logger.info("Skill converted to SkillToList: {}", skill);
+
+        return skill;
+    }
+
+    /**
+     * Gets all skills
+     *
+     * @return The list of all SkillToList objects
+     */
+    public List<SkillToList> getAllSkills() {
+        logger.info("Entering getAllSkills");
+
+        List<SkillEntity> skills;
+
+        try {
+            skills = skillDao.findAllSkills();
+        } catch (Exception e) {
+            logger.error("Error while getting all skills: {}", e.getMessage());
+            throw e;
+        }
+
+        List<SkillToList> skillsList = new ArrayList<>();
+
+        for (SkillEntity skill : skills) {
+            try {
+                if (skill != null) {
+                    SkillToList skillToList = convertSkillEntityToSkillToList(skill);
+                    if (skillToList != null) {
+                        skillsList.add(skillToList);
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Error while converting skill to SkillToList: {}", e.getMessage());
+            }
+        }
+
+        logger.info("All skills converted to SkillToList: {}", skillsList);
+
+        return skillsList;
     }
 }

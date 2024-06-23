@@ -1,8 +1,9 @@
-import domcast.finalprojbackend.bean.InterestBean;
 import domcast.finalprojbackend.bean.DataValidator;
+import domcast.finalprojbackend.bean.InterestBean;
 import domcast.finalprojbackend.dao.InterestDao;
 import domcast.finalprojbackend.dao.UserDao;
-import domcast.finalprojbackend.dto.InterestDto;
+import domcast.finalprojbackend.dto.interestDto.InterestDto;
+import domcast.finalprojbackend.dto.interestDto.InterestToList;
 import domcast.finalprojbackend.dto.userDto.UpdateUserDto;
 import domcast.finalprojbackend.entity.InterestEntity;
 import domcast.finalprojbackend.entity.UserEntity;
@@ -15,6 +16,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -28,6 +30,9 @@ public class InterestBeanTest {
 
     @InjectMocks
     private InterestBean interestBean;
+
+    @Mock
+    private InterestEntity interestEntity;
 
     @Mock
     private UserDao userDao;
@@ -214,5 +219,77 @@ public class InterestBeanTest {
         assertThrows(RuntimeException.class, () -> {
             interestBean.updateUserInterestsIfChanged(userEntity, updateUserDto);
         });
+    }
+
+    /**
+     * Test for convertInterestEntityToInterestToList method when the conversion is successful.
+     * The test is expected to pass.
+     */
+    @Test
+    void convertInterestEntityToInterestToList_Success() {
+        // Arrange
+        when(interestEntity.getId()).thenReturn(1);
+        when(interestEntity.getName()).thenReturn("Test Interest");
+        when(interestEntity.getType()).thenReturn(InterestEnum.CAUSE);
+
+        // Act
+        InterestToList result = interestBean.convertInterestEntityToInterestToList(interestEntity);
+
+        // Assert
+        assertEquals(interestEntity.getId(), result.getId());
+        assertEquals(interestEntity.getName(), result.getName());
+        assertEquals(interestEntity.getType().getId(), result.getType());
+    }
+
+    /**
+     * Test for convertInterestEntityToInterestToList method when the conversion fails due to a null InterestEntity.
+     * The test is expected to throw an IllegalArgumentException.
+     */
+    @Test
+    void convertInterestEntityToInterestToList_Failure() {
+        // Arrange
+        InterestEntity interestEntity = null;
+
+        // Act & Assert
+        assertThrows(IllegalArgumentException.class, () -> interestBean.convertInterestEntityToInterestToList(interestEntity));
+    }
+
+    /**
+     * Test for getAllInterests method when the retrieval is successful.
+     * The test is expected to pass.
+     */
+    @Test
+    void getAllInterests_Success() {
+        // Arrange
+        List<InterestEntity> interestEntities = new ArrayList<>();
+        InterestEntity interestEntity = new InterestEntity();
+        interestEntity.setId(1);
+        interestEntity.setName("Test Interest");
+        interestEntity.setType(InterestEnum.THEME);
+        interestEntities.add(interestEntity);
+        when(interestDao.findAllInterests()).thenReturn(interestEntities);
+
+        // Act
+        List<InterestToList> result = interestBean.getAllInterests();
+
+        // Assert
+        assertEquals(1, result.size());
+        InterestToList interestToList = result.iterator().next();
+        assertEquals(interestEntity.getId(), interestToList.getId());
+        assertEquals(interestEntity.getName(), interestToList.getName());
+        assertEquals(interestEntity.getType().getId(), interestToList.getType());
+    }
+
+    /**
+     * Test for getAllInterests method when the retrieval fails.
+     * The test is expected to throw an Exception.
+     */
+    @Test
+    void getAllInterests_Failure() {
+        // Arrange
+        when(interestDao.findAllInterests()).thenThrow(new RuntimeException());
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> interestBean.getAllInterests());
     }
 }

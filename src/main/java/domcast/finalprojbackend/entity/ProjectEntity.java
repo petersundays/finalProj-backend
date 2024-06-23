@@ -81,7 +81,7 @@ public class ProjectEntity implements Serializable {
 
     // Creation date of the project
     @Column(name = "creation_date", nullable = false)
-    private LocalDateTime creationDate = LocalDateTime.now();
+    private LocalDateTime creationDate;
 
     // Projected start date of the project
     @Column(name = "projected_start_date", nullable = false)
@@ -162,7 +162,9 @@ public class ProjectEntity implements Serializable {
     }
 
     public void setState(ProjectStateEnum state) {
-        if (state == ProjectStateEnum.IN_PROGRESS) {
+        if (state == ProjectStateEnum.READY) {
+            this.creationDate = LocalDateTime.now();
+        } else if (state == ProjectStateEnum.IN_PROGRESS) {
             this.realStartDate = LocalDateTime.now();
         } else if (state == ProjectStateEnum.FINISHED) {
             this.realEndDate = LocalDateTime.now();

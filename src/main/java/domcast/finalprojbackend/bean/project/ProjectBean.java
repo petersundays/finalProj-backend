@@ -2,10 +2,7 @@ package domcast.finalprojbackend.bean.project;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import domcast.finalprojbackend.bean.ComponentResourceBean;
-import domcast.finalprojbackend.bean.DataValidator;
-import domcast.finalprojbackend.bean.KeywordBean;
-import domcast.finalprojbackend.bean.SkillBean;
+import domcast.finalprojbackend.bean.*;
 import domcast.finalprojbackend.bean.task.TaskBean;
 import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.dao.*;
@@ -73,9 +70,11 @@ public class ProjectBean implements Serializable {
     @EJB
     private M2MComponentProjectDao m2MComponentProjectDao;
 
+    @EJB
+    private SystemBean systemBean;
+
     @Inject
     private ObjectMapperContextResolver objectMapperContextResolver;
-
 
     /**
      * Default constructor for ProjectBean.
@@ -391,6 +390,23 @@ public class ProjectBean implements Serializable {
 
         if (teamMembers == null || teamMembers.isEmpty()) {
             logger.info("No team members to add to project team");
+            return projectTeam;
+        }
+
+        int maxMembers;
+
+        try {
+            maxMembers = systemBean.getProjectMaxUsers();
+        } catch (Exception e) {
+            logger.error("Error getting project max members while creating project team: {}", e.getMessage());
+            throw new RuntimeException(e);
+        }
+
+        // Check if the number of team members plus the responsible user exceeds the maximum number of members
+            // allowed for a project.
+            // If it does, log an error and return the project team with only the responsible user
+        if (teamMembers.size() > maxMembers - 1) {
+            logger.error("Number of team members plus responsible user exceeds the maximum number of members allowed for a project, which is {}", maxMembers);
             return projectTeam;
         }
 

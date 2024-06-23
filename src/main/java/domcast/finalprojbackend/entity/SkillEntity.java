@@ -27,6 +27,7 @@ import java.util.Set;
 @NamedQuery(name = "Skill.findSkillsByListOfNames", query = "SELECT s FROM SkillEntity s WHERE s.name IN :names")
 @NamedQuery(name = "Skill.findSkillById", query = "SELECT s FROM SkillEntity s WHERE s.id = :id")
 @NamedQuery(name = "Skill.findSkillsIdsByListOfNames", query = "SELECT s.id FROM SkillEntity s WHERE s.name IN :names")
+@NamedQuery(name = "Skill.findAllSkills", query = "SELECT s FROM SkillEntity s ORDER BY s.name ASC")
 
 public class SkillEntity implements Serializable {
     private static final long serialVersionUID = 1L;
