@@ -27,7 +27,7 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Map;
+import java.util.Set;
 
 @Path("/project")
 public class ProjectService {
@@ -84,8 +84,9 @@ public class ProjectService {
 
         DetailedProject detailedProject;
         ProjectTeam projectTeam = null;
-        Map<DetailedCR, Integer> cRDtos = null;
+        Set<DetailedCR> cRDtos = null;
         ArrayList<SkillDto> newSkills = null;
+
         try {
             NewProjectDto newProjectDto = projectBean.extractNewProjectDto(input);
 
@@ -106,7 +107,7 @@ public class ProjectService {
             // Convert the registeredUser object to a JSON string
             String detailedProjectJson = projectBean.convertProjectToJson(detailedProject);
 
-            response = Response.status(201).entity(detailedProject).build();
+            response = Response.status(201).entity(detailedProjectJson).build();
             logger.info("User with session token {} and id {} created a new project", token, id);
         } catch (Exception e) {
             logger.error("Error creating new project: {}", e.getMessage());

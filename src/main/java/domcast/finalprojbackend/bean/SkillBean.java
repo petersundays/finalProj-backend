@@ -233,6 +233,13 @@ public class SkillBean implements Serializable {
         }
     }
 
+    /**
+     * Creates a relationship between a project and a set of skills
+     *
+     * @param skillsIds The ids of the skills
+     * @param project   The project to create the relationship with
+     * @return The set of M2MProjectSkill objects
+     */
     public Set<M2MProjectSkill> createRelationshipToProject(Set<Integer> skillsIds, ProjectEntity project) {
         logger.info("Entering createRelationshipToProject for project");
 
@@ -264,6 +271,12 @@ public class SkillBean implements Serializable {
         return m2MProjectSkills;
     }
 
+    /**
+     * Finds the ids of the skills based on their names
+     *
+     * @param names The names of the skills
+     * @return The ids of the skills
+     */
     public Set<Integer> findSkillsIdsByListOfNames(Set<String> names) {
         logger.info("Entering findSkillsIdsByListOfNames");
 
@@ -280,6 +293,12 @@ public class SkillBean implements Serializable {
         }
     }
 
+    /**
+     * Converts a set of M2MProjectSkill objects to a set of SkillToProject objects
+     *
+     * @param m2MProjectSkills The set of M2MProjectSkill objects
+     * @return The set of SkillToProject objects
+     */
     public Set<SkillToProject> projectSkillToDto(Set<M2MProjectSkill> m2MProjectSkills) {
         logger.info("Entering m2mProjectSkillToSkillToProject");
 

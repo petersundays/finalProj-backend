@@ -1,21 +1,25 @@
-import domcast.finalprojbackend.bean.SkillBean;
 import domcast.finalprojbackend.bean.DataValidator;
+import domcast.finalprojbackend.bean.SkillBean;
 import domcast.finalprojbackend.dao.SkillDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.skillDto.SkillDto;
+import domcast.finalprojbackend.dto.skillDto.SkillToProject;
 import domcast.finalprojbackend.dto.userDto.UpdateUserDto;
+import domcast.finalprojbackend.entity.M2MProjectSkill;
+import domcast.finalprojbackend.entity.ProjectEntity;
 import domcast.finalprojbackend.entity.SkillEntity;
 import domcast.finalprojbackend.entity.UserEntity;
 import domcast.finalprojbackend.enums.SkillTypeEnum;
+import org.jboss.resteasy.plugins.providers.multipart.InputPart;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
+import java.io.IOException;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -52,12 +56,20 @@ public class SkillBeanTest {
         // Arrange
         ArrayList<SkillDto> skillsList = new ArrayList<>();
         SkillDto skillDto = new SkillDto();
-        skillDto.setName("Skill1");
+        skillDto.setName("Test Skill");
         skillDto.setType(1);
         skillsList.add(skillDto);
 
-        when(dataValidator.validateAndExtractSkillNames(skillsList)).thenReturn(new ArrayList<>());
-        when(skillDao.findSkillsByListOfNames(anyList())).thenReturn(new HashSet<>());
+        ArrayList<String> skillsNames = new ArrayList<>();
+        skillsNames.add("Test Skill");
+
+        Set<SkillEntity> skills = new HashSet<>();
+        SkillEntity skillEntity = new SkillEntity();
+        skillEntity.setName("Test Skill");
+        skills.add(skillEntity);
+
+        when(dataValidator.validateAndExtractSkillNames(skillsList)).thenReturn(skillsNames);
+        when(skillDao.findSkillsByListOfNames(skillsNames)).thenReturn(skills);
 
         // Act
         boolean result = skillBean.createSkills(skillsList);
@@ -212,6 +224,169 @@ public class SkillBeanTest {
         // Act and Assert
         assertThrows(RuntimeException.class, () -> {
             skillBean.updateUserSkillsIfChanged(userEntity, updateUserDto);
+        });
+    }
+
+    @Test
+    public void testGetSkillsIds_Success() {
+        // Arrange
+        Set<SkillDto> skills = new HashSet<>();
+        SkillDto skillDto = new SkillDto();
+        skillDto.setName("Test Skill");
+        skills.add(skillDto);
+
+        SkillEntity skillEntity = new SkillEntity();
+        skillEntity.setId(1);
+        when(skillDao.findSkillByName(skillDto.getName())).thenReturn(skillEntity);
+
+        // Act
+        Set<Integer> result = skillBean.getSkillsIds(skills);
+
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.contains(skillEntity.getId()));
+    }
+
+    @Test
+    public void testGetSkillsIds_Failure() {
+        // Arrange
+        Set<SkillDto> skills = null;
+
+        // Act
+        Set<Integer> result = skillBean.getSkillsIds(skills);
+
+        // Assert
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void testCreateRelationshipToProject_Success() {
+        // Arrange
+        Set<Integer> skillsIds = new HashSet<>();
+        skillsIds.add(1);
+
+        ProjectEntity project = new ProjectEntity();
+        project.setId(1);
+
+        SkillEntity skillEntity = new SkillEntity();
+        skillEntity.setId(1);
+        when(skillDao.findSkillById(1)).thenReturn(skillEntity);
+
+        // Act
+        Set<M2MProjectSkill> result = skillBean.createRelationshipToProject(skillsIds, project);
+
+        // Assert
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+    }
+
+    @Test
+    public void testCreateRelationshipToProject_Failure() {
+        // Arrange
+        Set<Integer> skillsIds = null;
+        ProjectEntity project = null;
+
+        // Act
+        Set<M2MProjectSkill> result = skillBean.createRelationshipToProject(skillsIds, project);
+
+        // Assert
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void testFindSkillsIdsByListOfNames_Success() {
+        // Arrange
+        Set<String> names = new HashSet<>();
+        names.add("Test Skill");
+
+        List<Integer> expectedIdsList = new ArrayList<>();
+        expectedIdsList.add(1);
+        Set<Integer> expectedIdsSet = new HashSet<>(expectedIdsList);
+        when(skillDao.findSkillsIdsByListOfNames(anyList())).thenReturn(expectedIdsSet);
+
+        // Act
+        Set<Integer> result = skillBean.findSkillsIdsByListOfNames(names);
+
+        // Assert
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+    }
+
+    @Test
+    public void testFindSkillsIdsByListOfNames_Failure() {
+        // Arrange
+        Set<String> names = null;
+
+        // Act
+        Set<Integer> result = skillBean.findSkillsIdsByListOfNames(names);
+
+        // Assert
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void testProjectSkillToDto_Success() {
+        // Arrange
+        Set<M2MProjectSkill> m2MProjectSkills = new HashSet<>();
+        M2MProjectSkill m2MProjectSkill = new M2MProjectSkill();
+        SkillEntity skillEntity = new SkillEntity();
+        skillEntity.setId(1);
+        skillEntity.setName("Test Skill");
+        skillEntity.setType(SkillTypeEnum.HARDWARE);
+        m2MProjectSkill.setSkill(skillEntity);
+        m2MProjectSkills.add(m2MProjectSkill);
+
+        // Act
+        Set<SkillToProject> result = skillBean.projectSkillToDto(m2MProjectSkills);
+
+        // Assert
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+    }
+
+    @Test
+    public void testProjectSkillToDto_Failure() {
+        // Arrange
+        Set<M2MProjectSkill> m2MProjectSkills = null;
+
+        // Act
+        Set<SkillToProject> result = skillBean.projectSkillToDto(m2MProjectSkills);
+
+        // Assert
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void testExtractNewSkills_Success() throws IOException {
+        // Arrange
+        MultipartFormDataInput input = mock(MultipartFormDataInput.class);
+        Map<String, List<InputPart>> formDataMap = new HashMap<>();
+        List<InputPart> inputParts = new ArrayList<>();
+        InputPart inputPart = mock(InputPart.class);
+        inputParts.add(inputPart);
+        formDataMap.put("skills", inputParts);
+        when(input.getFormDataMap()).thenReturn(formDataMap);
+        when(inputPart.getBodyAsString()).thenReturn("[{\"name\":\"Test Skill\",\"type\":1}]");
+
+        // Act
+        ArrayList<SkillDto> result = skillBean.extractNewSkills(input);
+
+        // Assert
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+    }
+
+
+    @Test
+    public void testExtractNewSkills_Failure() throws IOException {
+        // Arrange
+        MultipartFormDataInput input = mock(MultipartFormDataInput.class);
+        Map<String, List<InputPart>> formDataMap = new HashMap<>();
+        when(input.getFormDataMap()).thenReturn(formDataMap);
+
+        // Act & Assert
+        assertThrows(NullPointerException.class, () -> {
+            skillBean.extractNewSkills(input);
         });
     }
 }
