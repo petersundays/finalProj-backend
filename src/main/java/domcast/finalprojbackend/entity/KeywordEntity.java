@@ -11,6 +11,7 @@ import java.util.Set;
 
 @NamedQuery(name = "Keyword.findKeywordByName", query = "SELECT k FROM KeywordEntity k WHERE k.name = :name")
 @NamedQuery(name = "Keyword.findAllKeywordsNames", query = "SELECT k.name FROM KeywordEntity k ORDER BY k.name ASC")
+@NamedQuery(name = "Keyword.findKewyordById", query = "SELECT k FROM KeywordEntity k WHERE k.id = :id")
 
 
 public class KeywordEntity implements Serializable {

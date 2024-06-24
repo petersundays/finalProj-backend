@@ -528,6 +528,15 @@ public class ProjectBean implements Serializable {
         return mapper.writeValueAsString(detailedProject);
     }
 
+    /**
+     * Edits a project with the given information.
+     *
+     * @param editProject The information to edit the project with.
+     * @param projectId The ID of the project to edit.
+     * @param cRDtos The new component resources to create and add to the project.
+     * @param newSkills The new skills to add to the project.
+     * @return The edited project as a DetailedProject object.
+     */
     public DetailedProject editProject (EditProject editProject, int projectId, Set<DetailedCR> cRDtos, ArrayList<SkillDto> newSkills) {
 
         if (!dataValidator.isIdValid(projectId)) {
@@ -604,6 +613,8 @@ public class ProjectBean implements Serializable {
             }
         }
 
+        Set<KeywordEntity> keywordEntities = new HashSet<>();
+
         if (editProject != null) {
             try {
                 projectEntity = updateBasicInfo(editProject, projectEntity);
@@ -623,7 +634,12 @@ public class ProjectBean implements Serializable {
                     componentResources.put(crQuantity.getId(), crQuantity.getQuantity());
                 }
             }
+
+            if (editProject.getKeywords() != null && !editProject.getKeywords().isEmpty()) {
+                keywordEntities = keywordBean.createAndGetKeywords(editProject.getKeywords());
+            }
         }
+
 
         if (newSkillsIds != null && !newSkillsIds.isEmpty()) {
             try {
@@ -638,14 +654,28 @@ public class ProjectBean implements Serializable {
             }
         }
 
+
         if (componentResources != null && !componentResources.isEmpty()) {
             try {
-                Set<M2MComponentProject> m2MComponentProject = componentResourceBean.relationInProjectCreation(componentResources, projectEntity);
+                Set<M2MComponentProject> m2MComponentProject = componentResourceBean.updateRelationshipToProject(componentResources, projectEntity);
                 if (m2MComponentProject != null && !m2MComponentProject.isEmpty()) {
                     projectEntity.setComponentResources(m2MComponentProject);
                 }
             } catch (RuntimeException e) {
                 logger.error("Error creating relationship between project and component resources while editing project: {}", e.getMessage());
+                // Rethrow the exception to the caller method
+                throw e;
+            }
+        }
+
+        if (keywordEntities != null && !keywordEntities.isEmpty()) {
+            try {
+                Set<M2MKeyword> projectKeywords = keywordBean.updateRelationshipToProject(keywordEntities, projectEntity);
+                if (projectKeywords != null && !projectKeywords.isEmpty()) {
+                    projectEntity.setKeywords(projectKeywords);
+                }
+            } catch (RuntimeException e) {
+                logger.error("Error creating relationship between project and keywords while editing project: {}", e.getMessage());
                 // Rethrow the exception to the caller method
                 throw e;
             }

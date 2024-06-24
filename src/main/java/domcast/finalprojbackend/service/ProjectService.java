@@ -160,9 +160,12 @@ public class ProjectService {
         DetailedProject detailedProject;
         Set<DetailedCR> cRDtos = null;
         ArrayList<SkillDto> newSkills = null;
+        EditProject editProject = null;
 
         try {
-            EditProject editProject = projectBean.extractEditProjectDto(input);
+            if (input.getFormDataMap().containsKey("project")) {
+                editProject = projectBean.extractEditProjectDto(input);
+            }
 
             if (input.getFormDataMap().containsKey("components")) {
                 cRDtos = componentResourceBean.extractCRDtos(input);

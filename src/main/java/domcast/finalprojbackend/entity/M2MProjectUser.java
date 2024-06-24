@@ -32,7 +32,7 @@ import java.io.Serializable;
 @NamedQuery(name = "M2MProjectUser.findProjectTeam",
         query = "SELECT pu FROM M2MProjectUser pu WHERE pu.project.id = :projectId AND pu.role != 300")
 @NamedQuery(name = "M2MProjectUser.isUserPartOfProjectAndActive",
-        query = "SELECT CASE WHEN (COUNT(pu) > 0) THEN true ELSE false END FROM M2MProjectUser pu WHERE pu.user.id = :userId AND pu.project.id = :projectId AND pu.active = true")
+        query = "SELECT COUNT(pu) FROM M2MProjectUser pu WHERE pu.user.id = :userId AND pu.project.id = :projectId AND pu.active = true")
 
 public class M2MProjectUser implements Serializable {
     private static final long serialVersionUID = 1L;

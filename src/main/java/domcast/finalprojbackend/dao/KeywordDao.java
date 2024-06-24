@@ -55,4 +55,23 @@ public class KeywordDao extends AbstractDao<KeywordEntity> {
             return null;
         }
     }
+
+    /**
+     * Finds a keyword by its id.
+     *
+     * @param id the id of the keyword
+     * @return the KeywordEntity object if found, null otherwise
+     */
+    public KeywordEntity findKeywordById(int id) {
+        logger.info("Entering findKeywordById");
+
+        try {
+            return (KeywordEntity) em.createNamedQuery("Keyword.findKewyordById")
+                    .setParameter("id", id)
+                    .getSingleResult();
+        } catch (Exception e) {
+            logger.error("Error finding keyword by id: {}", e.getMessage());
+            return null;
+        }
+    }
 }
