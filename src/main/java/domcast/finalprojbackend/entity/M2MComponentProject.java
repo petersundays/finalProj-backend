@@ -26,6 +26,13 @@ import java.io.Serializable;
         query = "SELECT m FROM M2MComponentProject m WHERE m.project.id = :projectId AND m.componentResource.id = :componentId")
 @NamedQuery(name = "M2MComponentProject.findComponentResourceIdsByProjectId",
         query = "SELECT m.componentResource.id FROM M2MComponentProject m WHERE m.project.id = :projectId")
+@NamedQuery(name = "M2MComponentProject.findAllByProjectId",
+        query = "SELECT m FROM M2MComponentProject m WHERE m.project.id = :projectId")
+@NamedQuery(name = "M2MComponentProject.setActiveByProjectIdAndComponentId",
+        query = "UPDATE M2MComponentProject m SET m.active = true WHERE m.project.id = :projectId AND m.componentResource.id = :componentId")
+@NamedQuery(name = "M2MComponentProject.setInactiveByProjectIdAndComponentId",
+        query = "UPDATE M2MComponentProject m SET m.active = false WHERE m.project.id = :projectId AND m.componentResource.id = :componentId")
+
 
 public class M2MComponentProject implements Serializable {
 

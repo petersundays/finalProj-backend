@@ -20,6 +20,12 @@ import java.io.Serializable;
 @Entity
 @Table(name = "project_skill")
 
+@NamedQuery(name = "M2MProjectSkill.findAllActiveForProject", query = "SELECT ps FROM M2MProjectSkill ps WHERE ps.project.id = :projectId AND ps.active = true")
+@NamedQuery(name = "M2MProjectSkill.findAllInactiveForProject", query = "SELECT ps FROM M2MProjectSkill ps WHERE ps.project.id = :projectId AND ps.active = false")
+@NamedQuery(name = "M2MProjectSkill.findAllforProject", query = "SELECT ps FROM M2MProjectSkill ps WHERE ps.project.id = :projectId")
+@NamedQuery(name = "M2MProjectSkill.setSkillInactiveForProject", query = "UPDATE M2MProjectSkill ps SET ps.active = false WHERE ps.project.id = :projectId AND ps.skill.id = :skillId")
+@NamedQuery(name = "M2MProjectSkill.setSkillActiveForProject", query = "UPDATE M2MProjectSkill ps SET ps.active = true WHERE ps.project.id = :projectId AND ps.skill.id = :skillId")
+
 public class M2MProjectSkill implements Serializable {
     private static final long serialVersionUID = 1L;
 

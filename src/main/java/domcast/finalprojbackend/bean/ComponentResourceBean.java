@@ -825,4 +825,88 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
         ObjectMapper mapper = new ObjectMapper();
         return mapper.readValue(cRDtosString, new TypeReference<Set<DetailedCR>>() {});
     }
+
+    public Set<M2MComponentProject> updateRelationshipToProject(Map<Integer, Integer> componentResources, ProjectEntity projectEntity) {
+        logger.info("Updating many-to-many relations between component resources and project");
+
+        Set<M2MComponentProject> newRelations = new HashSet<>();
+        Set<M2MComponentProject> oldRelations;
+
+        if (componentResources == null || componentResources.isEmpty()) {
+            logger.error("Component resources is null or empty while updating relations");
+            return newRelations;
+        }
+
+        if (projectEntity == null) {
+            logger.error("Project entity is null while updating relations");
+            throw new IllegalArgumentException("Project entity is null while updating relations");
+        }
+
+        try {
+            oldRelations = m2MComponentProjectDao.findAllByProjectId(projectEntity.getId());
+        } catch (Exception e) {
+            logger.error("Error finding all many-to-many relations by project id while updating relation: {}", e.getMessage());
+            throw new RuntimeException("Error finding all many-to-many relations by project id", e);
+        }
+
+        for (Map.Entry<Integer, Integer> entry : componentResources.entrySet()) {
+            ComponentResourceEntity componentResource;
+            Integer quantity = entry.getValue();
+
+            try {
+                if (dataValidator.isIdValid(entry.getKey())) {
+                    componentResource = componentResourceDao.findCREntityById(entry.getKey());
+                } else {
+                    throw new RuntimeException("Invalid component resource id");
+                }
+            } catch (Exception e) {
+                logger.error("Error finding component resource entity by id while updating relation: {}", e.getMessage());
+                throw new RuntimeException("Error finding component resource entity by id", e);
+            }
+
+            if (componentResource == null || quantity == null || quantity <= 0) {
+                logger.error("Component resource or quantity is null or invalid while updating relation");
+                continue;
+            }
+
+            if (oldRelations != null && !oldRelations.isEmpty()) {
+                M2MComponentProject existingRelation = oldRelations.stream()
+                        .filter(i -> i.getComponentResource().equals(componentResource))
+                        .findFirst()
+                        .orElse(null);
+
+                if (existingRelation != null) {
+                    if (!existingRelation.isActive() || existingRelation.getQuantity() != (quantity)) {
+                        try {
+                            m2MComponentProjectDao.setActiveByComponentIdAndProjectId(componentResource.getId(), projectEntity.getId());
+                            existingRelation.setQuantity(quantity);
+                            newRelations.add(existingRelation);
+                        } catch (Exception e) {
+                            logger.error("Error while setting quantity for project: {}", e.getMessage());
+                        }
+                    }
+                } else {
+                    M2MComponentProject newRelation = new M2MComponentProject();
+                    newRelation.setProject(projectEntity);
+                    newRelation.setComponentResource(componentResource);
+                    newRelation.setQuantity(quantity);
+                    newRelations.add(newRelation);
+                }
+            }
+        }
+
+        if (oldRelations != null && !oldRelations.isEmpty()) {
+            for (M2MComponentProject oldRelation : oldRelations) {
+                if (componentResources.keySet().stream().noneMatch(i -> i.equals(oldRelation.getComponentResource().getId()))) {
+                    try {
+                        m2MComponentProjectDao.setInactiveByComponentIdAndProjectId(oldRelation.getComponentResource().getId(), projectEntity.getId());
+                    } catch (Exception e) {
+                        logger.error("Error while setting component resource inactive for project: {}", e.getMessage());
+                    }
+                }
+            }
+        }
+
+        return newRelations;
+    }
 }

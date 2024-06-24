@@ -1,5 +1,8 @@
 package domcast.finalprojbackend.enums;
 
+import domcast.finalprojbackend.dto.userDto.EnumDTO;
+import domcast.finalprojbackend.enums.intefarce.ConvertibleToEnumDTO;
+
 /**
  * Enum class for the task state.
  * Contains the possible states of a task.
@@ -14,7 +17,7 @@ package domcast.finalprojbackend.enums;
  * @author Pedro Domingos
  */
 
-public enum TaskStateEnum {
+public enum TaskStateEnum implements ConvertibleToEnumDTO {
     // The values are the possible states of a task.
     PLANNED (1, 100),
     IN_PROGRESS (2, 200),
@@ -73,5 +76,16 @@ public enum TaskStateEnum {
             }
         }
         return false;
+    }
+
+    /**
+     * Converts the Enum to an EnumDTO
+     * @return the EnumDTO
+     */
+    @Override
+    public EnumDTO toEnumDTO() {
+        // if value is a String, pass it to the forth parameter and leave the third parameter as 0
+        // if value is an int, pass it to the third parameter and leave the forth parameter as null
+        return new EnumDTO(id, name(), value, name());
     }
 }

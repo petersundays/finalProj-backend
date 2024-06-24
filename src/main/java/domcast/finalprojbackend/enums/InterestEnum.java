@@ -1,6 +1,7 @@
 package domcast.finalprojbackend.enums;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
+import domcast.finalprojbackend.dto.userDto.EnumDTO;
+import domcast.finalprojbackend.enums.intefarce.ConvertibleToEnumDTO;
 
 /**
  * Enum that represents the subjects of interest of the user.
@@ -9,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
  * @author Pedro Domingos
  */
 
-public enum InterestEnum {
+public enum InterestEnum implements ConvertibleToEnumDTO {
 
     // The values are the subjects of interest of the user.
 
@@ -61,14 +62,15 @@ public enum InterestEnum {
         }
         return false;
     }
-/*
-    @JsonCreator
-    public static InterestEnum forValue(String value) {
-        for (InterestEnum interestEnum : InterestEnum.values()) {
-            if (interestEnum.getValue().equals(value)) {
-                return interestEnum;
-            }
-        }
-        throw new IllegalArgumentException("Invalid InterestEnum value: " + value);
-    }*/
+
+    /**
+     * Method that converts the InterestEnum to an EnumDTO.
+     * @return the EnumDTO object
+     */
+    @Override
+    public EnumDTO toEnumDTO() {
+        // if value is a String, pass it to the forth parameter and leave the third parameter as 0
+        // if value is an int, pass it to the third parameter and leave the forth parameter as null
+        return new EnumDTO(id, name(), 0, value);
+    }
 }

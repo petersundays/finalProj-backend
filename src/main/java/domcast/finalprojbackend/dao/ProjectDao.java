@@ -55,4 +55,23 @@ public class ProjectDao extends AbstractDao<ProjectEntity> {
             return false;
         }
     }
+
+    /**
+     * Checks if a user is part of a project and active.
+     *
+     * @param userId the id of the user
+     * @param projectId the id of the project
+     * @return boolean value indicating if the user is part of the project and active
+     */
+    public boolean isUserPartOfProjectAndActive(int userId, int projectId) {
+        try {
+            M2MProjectUser result = em.createNamedQuery("M2MProjectUser.isUserPartOfProjectAndActive", M2MProjectUser.class)
+                    .setParameter("userId", userId)
+                    .setParameter("projectId", projectId)
+                    .getSingleResult();
+            return result != null;
+        } catch (NoResultException e) {
+            return false;
+        }
+    }
 }

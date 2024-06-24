@@ -73,7 +73,6 @@ public class DetailedProject extends ProjectDto implements Serializable {
 
     // Getters and setters
 
-
     public int getId() {
         return id;
     }

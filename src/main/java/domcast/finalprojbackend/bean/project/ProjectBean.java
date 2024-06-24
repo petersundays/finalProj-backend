@@ -6,8 +6,10 @@ import domcast.finalprojbackend.bean.*;
 import domcast.finalprojbackend.bean.task.TaskBean;
 import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.dao.*;
+import domcast.finalprojbackend.dto.componentResourceDto.CRQuantity;
 import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
 import domcast.finalprojbackend.dto.projectDto.DetailedProject;
+import domcast.finalprojbackend.dto.projectDto.EditProject;
 import domcast.finalprojbackend.dto.projectDto.NewProjectDto;
 import domcast.finalprojbackend.dto.skillDto.SkillDto;
 import domcast.finalprojbackend.dto.taskDto.ChartTask;
@@ -516,6 +518,221 @@ public class ProjectBean implements Serializable {
     }
 
     /**
+     * Converts a DetailedProject object to a JSON string.
+     * @param detailedProject The DetailedProject object to convert.
+     * @return The JSON string representation of the DetailedProject object.
+     * @throws JsonProcessingException If an error occurs while converting the DetailedProject object to a JSON string.
+     */
+    public String convertProjectToJson(DetailedProject detailedProject) throws JsonProcessingException {
+        ObjectMapper mapper = objectMapperContextResolver.getContext(null);
+        return mapper.writeValueAsString(detailedProject);
+    }
+
+    public DetailedProject editProject (EditProject editProject, int projectId, Set<DetailedCR> cRDtos, ArrayList<SkillDto> newSkills) {
+
+        if (!dataValidator.isIdValid(projectId)) {
+            logger.error("Project ID is invalid");
+            throw new IllegalArgumentException("Project ID is invalid");
+        }
+
+        logger.info("Editing project with ID {}", projectId);
+
+        ProjectEntity projectEntity;
+
+        try {
+            projectEntity = projectDao.findProjectById(projectId);
+        } catch (PersistenceException e) {
+            logger.error("Error finding project with ID {}", projectId, e);
+            throw new RuntimeException(e);
+        }
+
+        if (projectEntity == null) {
+            logger.error("Project not found with ID {}", projectId);
+            throw new IllegalArgumentException("Project not found with ID " + projectId);
+        }
+
+        Map<Integer, Integer> componentResources = new HashMap<>();
+
+        if (cRDtos != null && !cRDtos.isEmpty()) {
+            try {
+                for (DetailedCR detailedCR : cRDtos) {
+                    componentResourceBean.createComponentResource(detailedCR);
+                }
+            } catch (RuntimeException e) {
+                logger.error("Error creating component resources while editing project: {}", e.getMessage());
+                // Rethrow the exception to the caller method
+                throw e;
+            }
+
+            try {
+                componentResources = componentResourceBean.findEntityAndSetQuantity(cRDtos);
+            } catch (RuntimeException e) {
+                logger.error("Error finding component resources while editing project: {}", e.getMessage());
+                // Rethrow the exception to the caller method
+                throw e;
+            }
+        }
+
+        boolean newSkillsCreated;
+        Set<String> newSkillsNames = new HashSet<>();
+        Set<Integer> newSkillsIds = new HashSet<>();
+
+        if (newSkills != null && !newSkills.isEmpty()) {
+            try {
+                newSkillsCreated = skillBean.createSkills(newSkills);
+            } catch (RuntimeException e) {
+                logger.error("Error creating new skills while editing project: {}", e.getMessage());
+                // Rethrow the exception to the caller method
+                throw e;
+            }
+
+            if (!newSkillsCreated) {
+                logger.error("Error creating new skills while editing project");
+                throw new RuntimeException("Error creating new skills");
+            }
+
+            try {
+                for (SkillDto skill : newSkills) {
+                    newSkillsNames.add(skill.getName());
+                }
+
+                newSkillsIds = skillBean.findSkillsIdsByListOfNames(newSkillsNames);
+            } catch (RuntimeException e) {
+                logger.error("Error finding new skills ids while editing project: {}", e.getMessage());
+                // Rethrow the exception to the caller method
+                throw e;
+            }
+        }
+
+        if (editProject != null) {
+            try {
+                projectEntity = updateBasicInfo(editProject, projectEntity);
+            } catch (RuntimeException e) {
+                logger.error("Error updating basic info while editing project: {}", e.getMessage());
+                // Rethrow the exception to the caller method
+                throw e;
+            }
+
+            if (editProject.getSkills() != null && !editProject.getSkills().isEmpty()) {
+                newSkillsIds.addAll(editProject.getSkills());
+            }
+
+
+            if (editProject.getResources() != null && !editProject.getResources().isEmpty()) {
+                for (CRQuantity crQuantity : editProject.getResources()) {
+                    componentResources.put(crQuantity.getId(), crQuantity.getQuantity());
+                }
+            }
+        }
+
+        if (newSkillsIds != null && !newSkillsIds.isEmpty()) {
+            try {
+                Set<M2MProjectSkill> projectSkills = skillBean.updateRelationshipToProject(newSkillsIds, projectEntity);
+                if (projectSkills != null && !projectSkills.isEmpty()) {
+                    projectEntity.setSkills(projectSkills);
+                }
+            } catch (RuntimeException e) {
+                logger.error("Error creating relationship between project and skills while editing project: {}", e.getMessage());
+                // Rethrow the exception to the caller method
+                throw e;
+            }
+        }
+
+        if (componentResources != null && !componentResources.isEmpty()) {
+            try {
+                Set<M2MComponentProject> m2MComponentProject = componentResourceBean.relationInProjectCreation(componentResources, projectEntity);
+                if (m2MComponentProject != null && !m2MComponentProject.isEmpty()) {
+                    projectEntity.setComponentResources(m2MComponentProject);
+                }
+            } catch (RuntimeException e) {
+                logger.error("Error creating relationship between project and component resources while editing project: {}", e.getMessage());
+                // Rethrow the exception to the caller method
+                throw e;
+            }
+        }
+
+        try {
+            projectDao.merge(projectEntity);
+            projectDao.flush();
+        } catch (PersistenceException e) {
+            logger.error("Error merging project while editing project: {}", e.getMessage());
+            // Rethrow the exception to the caller method
+            throw e;
+        }
+
+        DetailedProject detailedProject = entityToDetailedProject(projectEntity);
+
+        if (detailedProject == null) {
+            logger.error("Error converting project entity to detailed project while editing project");
+            throw new RuntimeException("Error converting project entity to detailed project while editing project");
+        }
+
+        logger.info("Successfully edited project with ID {}", projectId);
+        return detailedProject;
+
+    }
+
+
+    public ProjectEntity updateBasicInfo (EditProject editProject, ProjectEntity projectEntity) {
+
+        if (projectEntity == null || editProject == null) {
+            logger.error("Project entity or edit project is null while updating basic info");
+            throw new IllegalArgumentException("Project entity or edit project is null");
+        }
+
+        logger.info("Updating basic info for project with ID {}", projectEntity.getId());
+
+        if (editProject.getName() != null) {
+            projectEntity.setName(editProject.getName());
+        }
+
+        if (editProject.getDescription() != null) {
+            projectEntity.setDescription(editProject.getDescription());
+        }
+
+        if (editProject.getLabId() != 0) {
+            try {
+                LabEntity labEntity = labDao.findLabByCity(LabEnum.fromId(editProject.getLabId()).getValue());
+                if (labEntity != null) {
+                    projectEntity.setLab(labEntity);
+                } else {
+                    logger.error("Lab not found with ID: {}", editProject.getLabId());
+                }
+            } catch (RuntimeException e) {
+                logger.error("Error finding lab by city while updating basic info: {}", e.getMessage());
+            }
+        }
+
+        if (editProject.getProjectedStartDate() != null) {
+            projectEntity.setProjectedStartDate(editProject.getProjectedStartDate());
+        }
+
+        if (editProject.getDeadline() != null) {
+            projectEntity.setDeadline(editProject.getDeadline());
+        }
+
+        return projectEntity;
+
+    }
+
+    /**
+     * Checks if a user is part of a project and active.
+     *
+     * @param userId    the id of the user
+     * @param projectId the id of the project
+     * @return boolean value indicating if the user is part of the project and active
+     */
+    public boolean isUserPartOfProjectAndActive(int userId, int projectId) {
+        try {
+            return projectDao.isUserPartOfProjectAndActive(userId, projectId);
+        } catch (PersistenceException e) {
+            logger.error("Error checking if user with ID {} is part of project with ID {}: {}", userId, projectId, e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    /**
      * Extracts the new oroject DTO from the input.
      * @param input The multipart form data input containing the new project DTO.
      * @return The new project DTO extracted from the input.
@@ -529,13 +746,15 @@ public class ProjectBean implements Serializable {
     }
 
     /**
-     * Converts a DetailedProject object to a JSON string.
-     * @param detailedProject The DetailedProject object to convert.
-     * @return The JSON string representation of the DetailedProject object.
-     * @throws JsonProcessingException If an error occurs while converting the DetailedProject object to a JSON string.
+     * Extracts the EditProject DTO from the input.
+     * @param input The multipart form data input containing the EditProject DTO.
+     * @return The EditProject DTO extracted from the input.
+     * @throws IOException If an error occurs while extracting the EditProject DTO.
      */
-    public String convertProjectToJson(DetailedProject detailedProject) throws JsonProcessingException {
+    public EditProject extractEditProjectDto(MultipartFormDataInput input) throws IOException {
+        InputPart part = input.getFormDataMap().get("project").get(0);
+        String projectString = part.getBodyAsString();
         ObjectMapper mapper = objectMapperContextResolver.getContext(null);
-        return mapper.writeValueAsString(detailedProject);
+        return mapper.readValue(projectString, EditProject.class);
     }
 }
