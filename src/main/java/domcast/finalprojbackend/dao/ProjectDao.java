@@ -65,11 +65,11 @@ public class ProjectDao extends AbstractDao<ProjectEntity> {
      */
     public boolean isUserPartOfProjectAndActive(int userId, int projectId) {
         try {
-            M2MProjectUser result = em.createNamedQuery("M2MProjectUser.isUserPartOfProjectAndActive", M2MProjectUser.class)
+            Long count = em.createNamedQuery("M2MProjectUser.isUserPartOfProjectAndActive", Long.class)
                     .setParameter("userId", userId)
                     .setParameter("projectId", projectId)
                     .getSingleResult();
-            return result != null;
+            return count > 0;
         } catch (NoResultException e) {
             return false;
         }

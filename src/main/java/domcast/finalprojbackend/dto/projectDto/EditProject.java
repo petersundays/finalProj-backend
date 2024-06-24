@@ -18,7 +18,7 @@ public class EditProject extends ProjectDto implements Serializable {
     private LocalDateTime deadline;
 
     @XmlElement
-    private Set<Integer> keywords;
+    private Set<String> keywords;
 
     @XmlElement
     private Set<Integer> skills;
@@ -43,7 +43,7 @@ public class EditProject extends ProjectDto implements Serializable {
      * @param resources the resources of the project
      */
 
-    public EditProject(String name, String description, int labId, LocalDateTime projectedStartDate, LocalDateTime deadline, Set<Integer> keywords, Set<Integer> skills, Set<CRQuantity> resources) {
+    public EditProject(String name, String description, int labId, LocalDateTime projectedStartDate, LocalDateTime deadline, Set<String> keywords, Set<Integer> skills, Set<CRQuantity> resources) {
         super(name, description, labId);
         this.projectedStartDate = projectedStartDate;
         this.deadline = deadline;
@@ -70,11 +70,11 @@ public class EditProject extends ProjectDto implements Serializable {
         this.deadline = deadline;
     }
 
-    public Set<Integer> getKeywords() {
+    public Set<String> getKeywords() {
         return keywords;
     }
 
-    public void setKeywords(Set<Integer> keywords) {
+    public void setKeywords(Set<String> keywords) {
         this.keywords = keywords;
     }
 
