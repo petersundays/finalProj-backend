@@ -80,8 +80,12 @@ public class ProjectEntity implements Serializable {
     private Set<M2MProjectSkill> skills = new HashSet<>();
 
     // Creation date of the project
-    @Column(name = "creation_date", nullable = false)
-    private LocalDateTime creationDate;
+    @Column(name = "creation_date")
+    private LocalDateTime creationDate = LocalDateTime.now();
+
+    // Creation date of the project
+    @Column(name = "ready_date")
+    private LocalDateTime readyDate = LocalDateTime.now();
 
     // Projected start date of the project
     @Column(name = "projected_start_date", nullable = false)
@@ -163,7 +167,7 @@ public class ProjectEntity implements Serializable {
 
     public void setState(ProjectStateEnum state) {
         if (state == ProjectStateEnum.READY) {
-            this.creationDate = LocalDateTime.now();
+            this.readyDate = LocalDateTime.now();
         } else if (state == ProjectStateEnum.IN_PROGRESS) {
             this.realStartDate = LocalDateTime.now();
         } else if (state == ProjectStateEnum.FINISHED) {
@@ -195,6 +199,14 @@ public class ProjectEntity implements Serializable {
 
     public void setCreationDate(LocalDateTime creationDate) {
         this.creationDate = creationDate;
+    }
+
+    public LocalDateTime getReadyDate() {
+        return readyDate;
+    }
+
+    public void setReadyDate(LocalDateTime readyDate) {
+        this.readyDate = readyDate;
     }
 
     public LocalDateTime getProjectedStartDate() {

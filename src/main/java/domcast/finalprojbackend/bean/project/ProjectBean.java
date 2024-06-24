@@ -8,6 +8,7 @@ import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.dao.*;
 import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
 import domcast.finalprojbackend.dto.projectDto.DetailedProject;
+import domcast.finalprojbackend.dto.projectDto.EditProject;
 import domcast.finalprojbackend.dto.projectDto.NewProjectDto;
 import domcast.finalprojbackend.dto.skillDto.SkillDto;
 import domcast.finalprojbackend.dto.taskDto.ChartTask;
@@ -537,5 +538,154 @@ public class ProjectBean implements Serializable {
     public String convertProjectToJson(DetailedProject detailedProject) throws JsonProcessingException {
         ObjectMapper mapper = objectMapperContextResolver.getContext(null);
         return mapper.writeValueAsString(detailedProject);
+    }
+
+    public DetailedProject editProject (EditProject editProject, int projectId, Set<DetailedCR> cRDtos, ArrayList<SkillDto> newSkills) {
+
+        if (!dataValidator.isIdValid(projectId)) {
+            logger.error("Project ID is invalid");
+            throw new IllegalArgumentException("Project ID is invalid");
+        }
+
+        logger.info("Editing project with ID {}", projectId);
+
+        ProjectEntity projectEntity;
+
+        try {
+            projectEntity = projectDao.findProjectById(projectId);
+        } catch (PersistenceException e) {
+            logger.error("Error finding project with ID {}", projectId, e);
+            throw new RuntimeException(e);
+        }
+
+        if (projectEntity == null) {
+            logger.error("Project not found with ID {}", projectId);
+            throw new IllegalArgumentException("Project not found with ID " + projectId);
+        }
+
+        Map<Integer, Integer> componentResources = new HashMap<>();
+
+        if (cRDtos != null && !cRDtos.isEmpty()) {
+            try {
+                for (DetailedCR detailedCR : cRDtos) {
+                    componentResourceBean.createComponentResource(detailedCR);
+                }
+            } catch (RuntimeException e) {
+                logger.error("Error creating component resources while editing project: {}", e.getMessage());
+                // Rethrow the exception to the caller method
+                throw e;
+            }
+
+            try {
+                componentResources = componentResourceBean.findEntityAndSetQuantity(cRDtos);
+            } catch (RuntimeException e) {
+                logger.error("Error finding component resources while editing project: {}", e.getMessage());
+                // Rethrow the exception to the caller method
+                throw e;
+            }
+        }
+
+        boolean newSkillsCreated;
+        Set<String> newSkillsNames = new HashSet<>();
+        Set<Integer> newSkillsIds = new HashSet<>();
+
+        if (newSkills != null && !newSkills.isEmpty()) {
+            try {
+                newSkillsCreated = skillBean.createSkills(newSkills);
+            } catch (RuntimeException e) {
+                logger.error("Error creating new skills while editing project: {}", e.getMessage());
+                // Rethrow the exception to the caller method
+                throw e;
+            }
+
+            if (!newSkillsCreated) {
+                logger.error("Error creating new skills while editing project");
+                throw new RuntimeException("Error creating new skills");
+            }
+
+            try {
+                for (SkillDto skill : newSkills) {
+                    newSkillsNames.add(skill.getName());
+                }
+
+                newSkillsIds = skillBean.findSkillsIdsByListOfNames(newSkillsNames);
+            } catch (RuntimeException e) {
+                logger.error("Error finding new skills ids while editing project: {}", e.getMessage());
+                // Rethrow the exception to the caller method
+                throw e;
+            }
+        }
+
+        if (editProject != null) {
+            try {
+                projectEntity = updateBasicInfo(editProject, projectEntity);
+            } catch (RuntimeException e) {
+                logger.error("Error updating basic info while editing project: {}", e.getMessage());
+                // Rethrow the exception to the caller method
+                throw e;
+            }
+
+            if (editProject.getSkills() != null && !editProject.getSkills().isEmpty()) {
+                newSkillsIds.addAll(editProject.getSkills());
+            }
+
+            if (newSkillsIds != null && !newSkillsIds.isEmpty()) {
+                try {
+                    Set<M2MProjectSkill> projectSkills = skillBean.updateRelationshipToProject(newSkillsIds, projectEntity);
+                    projectEntity.setSkills(projectSkills);
+                } catch (RuntimeException e) {
+                    logger.error("Error creating relationship between project and skills while editing project: {}", e.getMessage());
+                    // Rethrow the exception to the caller method
+                    throw e;
+                }
+            }
+
+            //////////////////////// LIDAR COM CR DTO's ////////////////////////
+        }
+
+        return new DetailedProject();
+    }
+
+
+    public ProjectEntity updateBasicInfo (EditProject editProject, ProjectEntity projectEntity) {
+
+        if (projectEntity == null || editProject == null) {
+            logger.error("Project entity or edit project is null while updating basic info");
+            throw new IllegalArgumentException("Project entity or edit project is null");
+        }
+
+        logger.info("Updating basic info for project with ID {}", projectEntity.getId());
+
+        if (editProject.getName() != null) {
+            projectEntity.setName(editProject.getName());
+        }
+
+        if (editProject.getDescription() != null) {
+            projectEntity.setDescription(editProject.getDescription());
+        }
+
+        if (editProject.getLabId() != 0) {
+            try {
+                LabEntity labEntity = labDao.findLabByCity(LabEnum.fromId(editProject.getLabId()).getValue());
+                if (labEntity != null) {
+                    projectEntity.setLab(labEntity);
+                } else {
+                    logger.error("Lab not found with ID: {}", editProject.getLabId());
+                }
+            } catch (RuntimeException e) {
+                logger.error("Error finding lab by city while updating basic info: {}", e.getMessage());
+            }
+        }
+
+        if (editProject.getProjectedStartDate() != null) {
+            projectEntity.setProjectedStartDate(editProject.getProjectedStartDate());
+        }
+
+        if (editProject.getDeadline() != null) {
+            projectEntity.setDeadline(editProject.getDeadline());
+        }
+
+        return projectEntity;
+
     }
 }
