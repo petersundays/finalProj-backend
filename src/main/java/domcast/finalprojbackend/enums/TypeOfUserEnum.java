@@ -1,5 +1,8 @@
 package domcast.finalprojbackend.enums;
 
+import domcast.finalprojbackend.dto.userDto.EnumDTO;
+import domcast.finalprojbackend.enums.intefarce.ConvertibleToEnumDTO;
+
 /**
  * Enum class that represents the type of user in the system.
  * Each user type has an associated id and value.
@@ -14,12 +17,12 @@ package domcast.finalprojbackend.enums;
  * @author Pedro Domingos
  */
 
-public enum TypeOfUserEnum {
+public enum TypeOfUserEnum implements ConvertibleToEnumDTO {
 
     // The values are the types of users that can exist in the system.
-    ADMIN (1, 300),
-    STANDARD (2, 200),
-    NOT_CONFIRMED (3, 100);
+    ADMIN(1, 300),
+    STANDARD(2, 200),
+    NOT_CONFIRMED(3, 100);
 
     // The id of the type of user.
     private final int id;
@@ -44,6 +47,7 @@ public enum TypeOfUserEnum {
 
     /**
      * Method that returns the type of Enum by its id.
+     *
      * @param id the id of the Enum
      * @return the TypeOfUserEnum object if found, null otherwise
      */
@@ -58,6 +62,7 @@ public enum TypeOfUserEnum {
 
     /**
      * Method that returns the type of Enum by its value.
+     *
      * @param value the value of the Enum
      * @return the TypeOfUserEnum object if found, null otherwise
      */
@@ -72,6 +77,7 @@ public enum TypeOfUserEnum {
 
     /**
      * Method that checks if the id is valid.
+     *
      * @param id the id of the Enum
      * @return true if the id is valid, false otherwise
      */
@@ -86,10 +92,22 @@ public enum TypeOfUserEnum {
 
     /**
      * Method that checks if the id is NOT_CONFIRMED.
+     *
      * @param id the id of the Enum
      *           true if the id is NOT_CONFIRMED, false otherwise
      */
     public static boolean isNotConfirmed(int id) {
         return id == NOT_CONFIRMED.getId();
+    }
+
+    /**
+     * Converts the Enum to an EnumDTO object.
+     * @return the EnumDTO object
+     */
+    @Override
+    public EnumDTO toEnumDTO() {
+        // if value is a String, pass it to the forth parameter and leave the third parameter as 0
+        // if value is an int, pass it to the third parameter and leave the forth parameter as null
+        return new EnumDTO(id, name(), value, null);
     }
 }

@@ -1,8 +1,5 @@
 package domcast.finalprojbackend.bean;
 
-import java.io.Serializable;
-import java.util.List;
-
 import domcast.finalprojbackend.bean.user.TokenBean;
 import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.dao.SystemDao;
@@ -12,6 +9,9 @@ import jakarta.ejb.Schedule;
 import jakarta.ejb.Stateless;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.io.Serializable;
+import java.util.List;
 
 /**
  * SystemBean is a stateless EJB that provides an interface for interacting with system settings.
@@ -139,4 +139,6 @@ public class SystemBean implements Serializable {
             logger.info("Session timer ended");
         }
     }
+
+
 }

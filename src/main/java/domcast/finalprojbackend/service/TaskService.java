@@ -7,6 +7,9 @@ import domcast.finalprojbackend.dto.taskDto.ChartTask;
 import domcast.finalprojbackend.dto.taskDto.DetailedTask;
 import domcast.finalprojbackend.dto.taskDto.EditTask;
 import domcast.finalprojbackend.dto.taskDto.NewTask;
+import domcast.finalprojbackend.dto.userDto.EnumDTO;
+import domcast.finalprojbackend.enums.TaskStateEnum;
+import domcast.finalprojbackend.enums.util.EnumUtil;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.*;
@@ -56,7 +59,7 @@ public class TaskService  {
 
         // Check if the user is authorized to create the task
         if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, userId) &&
-                !authenticationAndAuthorization.isUserMemberOfTheProject(userId, newTask.getProjectId())) {
+                !authenticationAndAuthorization.isUserMemberOfTheProjectAndActive(userId, newTask.getProjectId())) {
             logger.info("User with session token {} tried to create a task unsuccessfully", token);
             return Response.status(401).entity("Unauthorized").build();
         }
@@ -104,7 +107,7 @@ public class TaskService  {
 
         // Check if the user is authorized to get the task
         if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, userId) &&
-                !authenticationAndAuthorization.isUserMemberOfTheProject(userId, projectId)) {
+                !authenticationAndAuthorization.isUserMemberOfTheProjectAndActive(userId, projectId)) {
             logger.info("User with session token {} tried to get the detailed information of a task unsuccessfully", token);
             return Response.status(401).entity("Unauthorized").build();
         }
@@ -154,7 +157,7 @@ public class TaskService  {
 
         // Check if the user is authorized to change the state of the task
         if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, userId) &&
-                !authenticationAndAuthorization.isUserMemberOfTheProject(userId, projectId)) {
+                !authenticationAndAuthorization.isUserMemberOfTheProjectAndActive(userId, projectId)) {
             logger.info("User with session token {} tried to change the state of a task unsuccessfully", token);
             return Response.status(401).entity("Unauthorized").build();
         }
@@ -193,7 +196,7 @@ public class TaskService  {
 
         // Check if the user is authorized to get the tasks
         if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, userId) &&
-                !authenticationAndAuthorization.isUserMemberOfTheProject(userId, projectId)) {
+                !authenticationAndAuthorization.isUserMemberOfTheProjectAndActive(userId, projectId)) {
             logger.info("User with session token {} tried to get the tasks unsuccessfully", token);
             return Response.status(401).entity("Unauthorized").build();
         }
@@ -233,7 +236,7 @@ public class TaskService  {
 
         // Check if the user is authorized to update the task
         if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, userId) &&
-                !authenticationAndAuthorization.isUserMemberOfTheProject(userId, editTask.getProjectId())) {
+                !authenticationAndAuthorization.isUserMemberOfTheProjectAndActive(userId, editTask.getProjectId())) {
             logger.info("User with session token {} tried to update a task unsuccessfully", token);
             return Response.status(401).entity("Unauthorized").build();
         }
@@ -252,6 +255,40 @@ public class TaskService  {
         } catch (RuntimeException e) {
             logger.error("Error updating task", e);
             response = Response.status(500).entity(e.getMessage()).build();
+        }
+
+        return response;
+    }
+
+    @GET
+    @Path("/enum")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getTaskStateEnum(@HeaderParam("token") String token, @HeaderParam("id") int id, @Context HttpServletRequest request) {
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with token {} and id {} is trying to get the task state enum from IP address {}", token, id, ipAddress);
+
+        // Check if the user's id is valid
+        if (!dataValidator.isIdValid(id)) {
+            logger.info("User with session token {} tried to get the task state enum but has an invalid id", token);
+            return Response.status(400).entity("Invalid id").build();
+        }
+
+        // Check if the user is authorized to get the component resource enum
+        if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, id)) {
+            logger.info("User with session token {} tried to get the task state enum but is not authorized", token);
+            return Response.status(401).entity("Unauthorized").build();
+        }
+
+        Response response;
+
+        try {
+            logger.info("User with session token {} and id {} is getting the task state enum", token, id);
+            List<EnumDTO> enumDTOs = EnumUtil.getAllEnumDTOs(TaskStateEnum.class);
+            response = Response.status(200).entity(enumDTOs).build();
+            logger.info("User with session token {} and id {} successfully got the task state enum", token, id);
+        } catch (Exception e) {
+            logger.error("Error getting task state enum", e);
+            response = Response.status(500).entity("Error getting task state enum").build();
         }
 
         return response;

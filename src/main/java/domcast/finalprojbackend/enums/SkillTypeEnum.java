@@ -1,6 +1,7 @@
 package domcast.finalprojbackend.enums;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
+import domcast.finalprojbackend.dto.userDto.EnumDTO;
+import domcast.finalprojbackend.enums.intefarce.ConvertibleToEnumDTO;
 
 /**
  * Enum class that represents the type of skill in the system.
@@ -16,7 +17,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
  * @author Pedro Domingos
  */
 
-public enum SkillTypeEnum {
+public enum SkillTypeEnum implements ConvertibleToEnumDTO {
 
     // The values are the types of skills that the user can have or a project can require.
     KNOWLEDGE (1, "Knowledge"),
@@ -74,13 +75,14 @@ public enum SkillTypeEnum {
         return false;
     }
 
-/*    @JsonCreator
-    public static SkillTypeEnum forValue(String value) {
-        for (SkillTypeEnum skillTypeEnum : SkillTypeEnum.values()) {
-            if (skillTypeEnum.getValue().equals(value)) {
-                return skillTypeEnum;
-            }
-        }
-        throw new IllegalArgumentException("Invalid SkillTypeEnum value: " + value);
-    }*/
+    /**
+     * Converts the enum to an EnumDTO object.
+     * @return the EnumDTO object
+     */
+    @Override
+    public EnumDTO toEnumDTO() {
+        // if value is a String, pass it to the forth parameter and leave the third parameter as 0
+        // if value is an int, pass it to the third parameter and leave the forth parameter as null
+        return new EnumDTO(id, name(), 0, value);
+    }
 }

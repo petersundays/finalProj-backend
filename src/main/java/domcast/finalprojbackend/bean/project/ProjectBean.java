@@ -6,6 +6,7 @@ import domcast.finalprojbackend.bean.*;
 import domcast.finalprojbackend.bean.task.TaskBean;
 import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.dao.*;
+import domcast.finalprojbackend.dto.componentResourceDto.CRQuantity;
 import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
 import domcast.finalprojbackend.dto.projectDto.DetailedProject;
 import domcast.finalprojbackend.dto.projectDto.EditProject;
@@ -517,19 +518,6 @@ public class ProjectBean implements Serializable {
     }
 
     /**
-     * Extracts the new oroject DTO from the input.
-     * @param input The multipart form data input containing the new project DTO.
-     * @return The new project DTO extracted from the input.
-     * @throws IOException If an error occurs while extracting the new project DTO.
-     */
-    public NewProjectDto extractNewProjectDto(MultipartFormDataInput input) throws IOException {
-        InputPart part = input.getFormDataMap().get("project").get(0);
-        String userString = part.getBodyAsString();
-        ObjectMapper mapper = objectMapperContextResolver.getContext(null);
-        return mapper.readValue(userString, NewProjectDto.class);
-    }
-
-    /**
      * Converts a DetailedProject object to a JSON string.
      * @param detailedProject The DetailedProject object to convert.
      * @return The JSON string representation of the DetailedProject object.
@@ -629,21 +617,59 @@ public class ProjectBean implements Serializable {
                 newSkillsIds.addAll(editProject.getSkills());
             }
 
-            if (newSkillsIds != null && !newSkillsIds.isEmpty()) {
-                try {
-                    Set<M2MProjectSkill> projectSkills = skillBean.updateRelationshipToProject(newSkillsIds, projectEntity);
-                    projectEntity.setSkills(projectSkills);
-                } catch (RuntimeException e) {
-                    logger.error("Error creating relationship between project and skills while editing project: {}", e.getMessage());
-                    // Rethrow the exception to the caller method
-                    throw e;
+
+            if (editProject.getResources() != null && !editProject.getResources().isEmpty()) {
+                for (CRQuantity crQuantity : editProject.getResources()) {
+                    componentResources.put(crQuantity.getId(), crQuantity.getQuantity());
                 }
             }
-
-            //////////////////////// LIDAR COM CR DTO's ////////////////////////
         }
 
-        return new DetailedProject();
+        if (newSkillsIds != null && !newSkillsIds.isEmpty()) {
+            try {
+                Set<M2MProjectSkill> projectSkills = skillBean.updateRelationshipToProject(newSkillsIds, projectEntity);
+                if (projectSkills != null && !projectSkills.isEmpty()) {
+                    projectEntity.setSkills(projectSkills);
+                }
+            } catch (RuntimeException e) {
+                logger.error("Error creating relationship between project and skills while editing project: {}", e.getMessage());
+                // Rethrow the exception to the caller method
+                throw e;
+            }
+        }
+
+        if (componentResources != null && !componentResources.isEmpty()) {
+            try {
+                Set<M2MComponentProject> m2MComponentProject = componentResourceBean.relationInProjectCreation(componentResources, projectEntity);
+                if (m2MComponentProject != null && !m2MComponentProject.isEmpty()) {
+                    projectEntity.setComponentResources(m2MComponentProject);
+                }
+            } catch (RuntimeException e) {
+                logger.error("Error creating relationship between project and component resources while editing project: {}", e.getMessage());
+                // Rethrow the exception to the caller method
+                throw e;
+            }
+        }
+
+        try {
+            projectDao.merge(projectEntity);
+            projectDao.flush();
+        } catch (PersistenceException e) {
+            logger.error("Error merging project while editing project: {}", e.getMessage());
+            // Rethrow the exception to the caller method
+            throw e;
+        }
+
+        DetailedProject detailedProject = entityToDetailedProject(projectEntity);
+
+        if (detailedProject == null) {
+            logger.error("Error converting project entity to detailed project while editing project");
+            throw new RuntimeException("Error converting project entity to detailed project while editing project");
+        }
+
+        logger.info("Successfully edited project with ID {}", projectId);
+        return detailedProject;
+
     }
 
 
@@ -687,5 +713,48 @@ public class ProjectBean implements Serializable {
 
         return projectEntity;
 
+    }
+
+    /**
+     * Checks if a user is part of a project and active.
+     *
+     * @param userId    the id of the user
+     * @param projectId the id of the project
+     * @return boolean value indicating if the user is part of the project and active
+     */
+    public boolean isUserPartOfProjectAndActive(int userId, int projectId) {
+        try {
+            return projectDao.isUserPartOfProjectAndActive(userId, projectId);
+        } catch (PersistenceException e) {
+            logger.error("Error checking if user with ID {} is part of project with ID {}: {}", userId, projectId, e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    /**
+     * Extracts the new oroject DTO from the input.
+     * @param input The multipart form data input containing the new project DTO.
+     * @return The new project DTO extracted from the input.
+     * @throws IOException If an error occurs while extracting the new project DTO.
+     */
+    public NewProjectDto extractNewProjectDto(MultipartFormDataInput input) throws IOException {
+        InputPart part = input.getFormDataMap().get("project").get(0);
+        String userString = part.getBodyAsString();
+        ObjectMapper mapper = objectMapperContextResolver.getContext(null);
+        return mapper.readValue(userString, NewProjectDto.class);
+    }
+
+    /**
+     * Extracts the EditProject DTO from the input.
+     * @param input The multipart form data input containing the EditProject DTO.
+     * @return The EditProject DTO extracted from the input.
+     * @throws IOException If an error occurs while extracting the EditProject DTO.
+     */
+    public EditProject extractEditProjectDto(MultipartFormDataInput input) throws IOException {
+        InputPart part = input.getFormDataMap().get("project").get(0);
+        String projectString = part.getBodyAsString();
+        ObjectMapper mapper = objectMapperContextResolver.getContext(null);
+        return mapper.readValue(projectString, EditProject.class);
     }
 }

@@ -1,5 +1,6 @@
 package domcast.finalprojbackend.dto.projectDto;
 
+import domcast.finalprojbackend.dto.componentResourceDto.CRQuantity;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 
@@ -23,7 +24,7 @@ public class EditProject extends ProjectDto implements Serializable {
     private Set<Integer> skills;
 
     @XmlElement
-    private Set<Integer> resources;
+    private Set<CRQuantity> resources;
 
     /**
      * Empty constructor
@@ -42,7 +43,7 @@ public class EditProject extends ProjectDto implements Serializable {
      * @param resources the resources of the project
      */
 
-    public EditProject(String name, String description, int labId, LocalDateTime projectedStartDate, LocalDateTime deadline, Set<Integer> keywords, Set<Integer> skills, Set<Integer> resources) {
+    public EditProject(String name, String description, int labId, LocalDateTime projectedStartDate, LocalDateTime deadline, Set<Integer> keywords, Set<Integer> skills, Set<CRQuantity> resources) {
         super(name, description, labId);
         this.projectedStartDate = projectedStartDate;
         this.deadline = deadline;
@@ -85,11 +86,11 @@ public class EditProject extends ProjectDto implements Serializable {
         this.skills = skills;
     }
 
-    public Set<Integer> getResources() {
+    public Set<CRQuantity> getResources() {
         return resources;
     }
 
-    public void setResources(Set<Integer> resources) {
+    public void setResources(Set<CRQuantity> resources) {
         this.resources = resources;
     }
 }

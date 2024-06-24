@@ -1,5 +1,8 @@
 package domcast.finalprojbackend.enums;
 
+import domcast.finalprojbackend.dto.userDto.EnumDTO;
+import domcast.finalprojbackend.enums.intefarce.ConvertibleToEnumDTO;
+
 /**
  * Enum class for the record_topic table in the database.
  * Contains all the possible values for the topic attribute of the record_topic table.
@@ -14,7 +17,7 @@ package domcast.finalprojbackend.enums;
  * @author Pedro Domingos
  */
 
-public enum RecordTopicEnum {
+public enum RecordTopicEnum implements ConvertibleToEnumDTO {
 
     // The record can have one of the following topics
     TEAM (1, "Team"),
@@ -45,7 +48,11 @@ public enum RecordTopicEnum {
         return value;
     }
 
-    // Method that returns the topic by its id
+    /**
+     * Returns the topic by its id.
+     * @param id the id of the topic.
+     * @return the topic.
+     */
     public static RecordTopicEnum fromId(int id) {
         for (RecordTopicEnum topic : RecordTopicEnum.values()) {
             if (topic.getId() == id) {
@@ -53,5 +60,16 @@ public enum RecordTopicEnum {
             }
         }
         throw new IllegalArgumentException("Invalid RecordTopicEnum id: " + id);
+    }
+
+    /**
+     * Converts the enum to an EnumDTO object.
+     * @return the EnumDTO object.
+     */
+    @Override
+    public EnumDTO toEnumDTO() {
+        // if value is a String, pass it to the forth parameter and leave the third parameter as 0
+        // if value is an int, pass it to the third parameter and leave the forth parameter as null
+        return new EnumDTO(id, name(), 0, value);
     }
 }

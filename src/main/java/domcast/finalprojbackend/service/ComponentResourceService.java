@@ -5,6 +5,9 @@ import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.user.AuthenticationAndAuthorization;
 import domcast.finalprojbackend.dto.componentResourceDto.CRPreview;
 import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
+import domcast.finalprojbackend.dto.userDto.EnumDTO;
+import domcast.finalprojbackend.enums.ComponentResourceEnum;
+import domcast.finalprojbackend.enums.util.EnumUtil;
 import jakarta.inject.Inject;
 import jakarta.persistence.PersistenceException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -109,7 +112,7 @@ public class ComponentResourceService {
 
         // Check if the user is authorized to create the component-resource for this project
         if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, userId) &&
-                !authenticationAndAuthorization.isUserMemberOfTheProject(userId, projectId)) {
+                !authenticationAndAuthorization.isUserMemberOfTheProjectAndActive(userId, projectId)) {
             logger.info("User with session token {} tried to change the state of a task unsuccessfully", token);
             return Response.status(401).entity("Unauthorized").build();
         }
@@ -200,7 +203,7 @@ public class ComponentResourceService {
 
         // Check if the user is authorized to edit the component-resource
         if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, userId) &&
-                !authenticationAndAuthorization.isUserMemberOfTheProject(userId, projectId)) {
+                !authenticationAndAuthorization.isUserMemberOfTheProjectAndActive(userId, projectId)) {
             logger.info("User with session token {} tried to edit a component-resource with id {} for project with id {} unsuccessfully", token, cRId, projectId);
             return Response.status(401).entity("Unauthorized").build();
         }
@@ -242,7 +245,7 @@ public class ComponentResourceService {
 
         // Check if the user is authorized to get the component-resources for this project
         if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, userId) &&
-                !authenticationAndAuthorization.isUserMemberOfTheProject(userId, projectId)) {
+                !authenticationAndAuthorization.isUserMemberOfTheProjectAndActive(userId, projectId)) {
             logger.info("User with session token {} tried to get component-resources for project with id {} unsuccessfully", token, projectId);
             return Response.status(401).entity("Unauthorized").build();
         }
@@ -314,6 +317,40 @@ public class ComponentResourceService {
         } catch (Exception e) {
             logger.error("Error getting component resources with name: {}, brand: {}, partNumber: {}, supplier: {}, orderBy: {}, orderAsc: {}, pageNumber: {}, pageSize: {}", name, brand, partNumber, supplier, orderBy, orderAsc, pageNumber, pageSize, e);
             response = Response.status(500).entity("Error getting component resources. Please try again later").build();
+        }
+
+        return response;
+    }
+
+    @GET
+    @Path("/enum")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getComponentResourceEnum(@HeaderParam("token") String token, @HeaderParam("id") int id, @Context HttpServletRequest request) {
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with token {} and id {} is trying to get the component resource enum from IP address {}", token, id, ipAddress);
+
+        // Check if the user's id is valid
+        if (!dataValidator.isIdValid(id)) {
+            logger.info("User with session token {} tried to get the component resource enum unsuccessfully", token);
+            return Response.status(400).entity("Invalid id").build();
+        }
+
+        // Check if the user is authorized to get the component resource enum
+        if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, id)) {
+            logger.info("User with session token {} tried to get the component resource enum unsuccessfully", token);
+            return Response.status(401).entity("Unauthorized").build();
+        }
+
+        Response response;
+
+        try {
+            logger.info("User with session token {} and id {} is getting the component resource enum", token, id);
+            List<EnumDTO> enumDTOs = EnumUtil.getAllEnumDTOs(ComponentResourceEnum.class);
+            response = Response.status(200).entity(enumDTOs).build();
+            logger.info("User with session token {} and id {} successfully got the component resource enum", token, id);
+        } catch (Exception e) {
+            logger.error("Error getting component resource enum", e);
+            response = Response.status(500).entity("Error getting component resource enum").build();
         }
 
         return response;

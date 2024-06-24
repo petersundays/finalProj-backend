@@ -1,5 +1,8 @@
 package domcast.finalprojbackend.enums;
 
+import domcast.finalprojbackend.dto.userDto.EnumDTO;
+import domcast.finalprojbackend.enums.intefarce.ConvertibleToEnumDTO;
+
 /**
  * Enum class for the project state.
  * Contains the possible states of a project.
@@ -14,7 +17,7 @@ package domcast.finalprojbackend.enums;
  * @author Pedro Domingos
  */
 
-public enum ProjectStateEnum {
+public enum ProjectStateEnum implements ConvertibleToEnumDTO {
     // The values are the possible states of a project.
     PLANNING (1, 100),
     READY (2, 200),
@@ -83,5 +86,16 @@ public enum ProjectStateEnum {
      */
     public static int getProjectStateValue(ProjectStateEnum state) {
         return state.getValue();
+    }
+
+    /**
+     * Method that returns the EnumDTO of the project state.
+     * @return the EnumDTO of the project state
+     */
+    @Override
+    public EnumDTO toEnumDTO() {
+        // if value is a String, pass it to the forth parameter and leave the third parameter as 0
+        // if value is an int, pass it to the third parameter and leave the forth parameter as null
+        return new EnumDTO(id, name(), value, null);
     }
 }

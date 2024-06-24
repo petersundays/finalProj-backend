@@ -69,5 +69,59 @@ public class M2MComponentProjectDao extends AbstractDao<M2MComponentProject> {
             return null;
         }
     }
+
+    /**
+     * Method that finds all the M2MComponentProject entities by project id.
+     *
+     * @param projectId the id of the project.
+     * @return the set of M2MComponentProject entities.
+     */
+    public Set<M2MComponentProject> findAllByProjectId(int projectId) {
+        logger.info("Finding all M2MComponentProject by project id");
+        try {
+            return new HashSet<>(em.createNamedQuery("M2MComponentProject.findAllByProjectId", M2MComponentProject.class)
+                    .setParameter("projectId", projectId)
+                    .getResultList());
+        } catch (Exception e) {
+            logger.error("M2MComponentProject with project id {} not found, when trying to return set", projectId);
+            return null;
+        }
+    }
+
+    /**
+     * Method that sets a M2MComponentProject as active by its component id and project id.
+     *
+     * @param componentId the id of the component.
+     * @param projectId   the id of the project.
+     */
+    public void setActiveByComponentIdAndProjectId(int componentId, int projectId) {
+        logger.info("Setting M2MComponentProject as active by component id and project id");
+        try {
+            em.createNamedQuery("M2MComponentProject.setActiveByProjectIdAndComponentId")
+                    .setParameter("componentId", componentId)
+                    .setParameter("projectId", projectId)
+                    .executeUpdate();
+        } catch (Exception e) {
+            logger.error("Error while setting M2MComponentProject as active by component id {} and project id {}: {}", componentId, projectId, e.getMessage());
+        }
+    }
+
+    /**
+     * Method that sets a M2MComponentProject as inactive by its component id and project id.
+     *
+     * @param componentId the id of the component.
+     * @param projectId   the id of the project.
+     */
+    public void setInactiveByComponentIdAndProjectId(int componentId, int projectId) {
+        logger.info("Setting M2MComponentProject as inactive by component id and project id");
+        try {
+            em.createNamedQuery("M2MComponentProject.setInactiveByProjectIdAndComponentId")
+                    .setParameter("componentId", componentId)
+                    .setParameter("projectId", projectId)
+                    .executeUpdate();
+        } catch (Exception e) {
+            logger.error("Error while setting M2MComponentProject as inactive by component id {} and project id {}: {}", componentId, projectId, e.getMessage());
+        }
+    }
 }
 
