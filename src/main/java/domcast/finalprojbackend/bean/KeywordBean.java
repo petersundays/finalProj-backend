@@ -2,6 +2,7 @@ package domcast.finalprojbackend.bean;
 
 import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.dao.KeywordDao;
+import domcast.finalprojbackend.dao.M2MKeywordDao;
 import domcast.finalprojbackend.dto.KeywordDto;
 import domcast.finalprojbackend.entity.KeywordEntity;
 import domcast.finalprojbackend.entity.M2MKeyword;
@@ -28,6 +29,9 @@ public class KeywordBean implements Serializable {
 
     @EJB
     private InterestBean interestBean;
+
+    @EJB
+    private M2MKeywordDao m2MKeywordDao;
 
     /**
      * Default constructor for KeywordBean.
@@ -197,4 +201,81 @@ public class KeywordBean implements Serializable {
 
         return keywordNames;
     }
+
+    /**
+     * Updates the relationship between a project and a set of keywords.
+     *
+     * @param keywords the set of keywords
+     * @param project  the project
+     * @return the set of M2MKeyword objects
+     */
+    public Set<M2MKeyword> updateRelationshipToProject(Set<KeywordEntity> keywords, ProjectEntity project) {
+        logger.info("Entering updateKeywordRelationshipToProject for project");
+
+        Set<M2MKeyword> newRelations = new HashSet<>();
+        Set<M2MKeyword> oldRelations = new HashSet<>();
+
+        if (keywords == null || keywords.isEmpty()) {
+            logger.error("Keywords list is null or empty when updating relationship");
+            return newRelations;
+        }
+
+        if (project == null) {
+            logger.error("Project is null when updating relationship with keywords");
+            throw new IllegalArgumentException("Project is null");
+        }
+
+        try {
+            oldRelations = m2MKeywordDao.findAllKeywordsByProject(project.getId());
+        } catch (Exception e) {
+            logger.error("Error while finding old relations: {}", e.getMessage());
+        }
+
+        for (KeywordEntity keyword : keywords) {
+
+            if (keyword == null) {
+                logger.error("Keyword not found with name while updating relationship with project");
+                continue;
+            }
+
+            if (oldRelations != null && !oldRelations.isEmpty()) {
+                if (oldRelations.stream().noneMatch(i -> i.getKeyword().equals(keyword))) {
+                    M2MKeyword projectKeyword = new M2MKeyword();
+                    projectKeyword.setProject(project);
+                    projectKeyword.setKeyword(keyword);
+                    newRelations.add(projectKeyword);
+                }
+
+                if (oldRelations.stream().anyMatch(i -> i.getKeyword().equals(keyword))) {
+                    M2MKeyword projectKeyword = oldRelations.stream().filter(i -> i.getKeyword().equals(keyword)).findFirst().orElse(null);
+
+                    assert projectKeyword != null;
+
+                    if (!projectKeyword.isActive()) {
+                        try {
+                            m2MKeywordDao.setKeywordActiveForProject(project.getId(), keyword.getId());
+                            newRelations.add(projectKeyword);
+                        } catch (Exception e) {
+                            logger.error("Error while setting keyword active for project: {}", e.getMessage());
+                        }
+                    }
+                }
+            }
+        }
+
+        if (oldRelations != null && !oldRelations.isEmpty()) {
+            for (M2MKeyword oldRelation : oldRelations) {
+                if (keywords.stream().noneMatch(i -> i.equals(oldRelation.getKeyword()))) {
+                    try {
+                        m2MKeywordDao.setKeywordInactiveForProject(project.getId(), oldRelation.getKeyword().getId());
+                    } catch (Exception e) {
+                        logger.error("Error while setting keyword inactive for project: {}", e.getMessage());
+                    }
+                }
+            }
+        }
+
+        return newRelations;
+    }
+
 }

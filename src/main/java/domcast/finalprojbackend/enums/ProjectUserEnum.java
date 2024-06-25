@@ -1,5 +1,8 @@
 package domcast.finalprojbackend.enums;
 
+import domcast.finalprojbackend.dto.userDto.EnumDTO;
+import domcast.finalprojbackend.enums.intefarce.ConvertibleToEnumDTO;
+
 /**
  * Enum class for the project_user table in the database.
  * Contains all the possible values for the role attribute of the project_user table.
@@ -14,7 +17,7 @@ package domcast.finalprojbackend.enums;
  * @author Pedro Domingos
  */
 
-public enum ProjectUserEnum {
+public enum ProjectUserEnum implements ConvertibleToEnumDTO {
 
     // The user is a member of the project and can have one of the following roles
     MAIN_MANAGER (1, 300),
@@ -60,5 +63,12 @@ public enum ProjectUserEnum {
             }
         }
         throw new IllegalArgumentException("Invalid ProjectUserEnum value: " + value);
+    }
+
+    @Override
+    public EnumDTO toEnumDTO() {
+        // if value is a String, pass it to the forth parameter and leave the third parameter as 0
+        // if value is an int, pass it to the third parameter and leave the forth parameter as null
+        return new EnumDTO(id, name(), value, name());
     }
 }

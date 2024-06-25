@@ -20,6 +20,11 @@ import java.io.Serializable;
 
 @Entity
 @Table(name = "project_keyword")
+
+@NamedQuery(name = "M2MKeyword.findAllKeywordsByProject", query = "SELECT k.keyword FROM M2MKeyword k WHERE k.project.id = :projectId")
+@NamedQuery(name = "M2MKeyword.setKeywordActiveForProject", query = "UPDATE M2MKeyword k SET k.active = true WHERE k.project.id = :projectId AND k.keyword.id = :keywordId")
+@NamedQuery(name = "M2MKeyword.setKeywordInactiveForProject", query = "UPDATE M2MKeyword k SET k.active = false WHERE k.project.id = :projectId AND k.keyword.id = :keywordId")
+
 public class M2MKeyword implements Serializable {
 
     private static final long serialVersionUID = 1L;

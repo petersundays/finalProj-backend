@@ -1,12 +1,14 @@
 package domcast.finalprojbackend.service;
 
+import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.InterestBean;
 import domcast.finalprojbackend.bean.SkillBean;
 import domcast.finalprojbackend.bean.user.AuthenticationAndAuthorization;
 import domcast.finalprojbackend.bean.user.PasswordBean;
 import domcast.finalprojbackend.bean.user.UserBean;
-import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.dto.userDto.*;
+import domcast.finalprojbackend.enums.TypeOfUserEnum;
+import domcast.finalprojbackend.enums.util.EnumUtil;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
@@ -95,8 +97,7 @@ public class UserService {
             return Response.status(400).entity("No data provided").build();
         }
 
-        Response response;
-        LoggedUser registeredUser;
+        Response response = null;
 
         try {
             FullRegistration user = userBean.extractFullRegistrationDto(input);
@@ -123,14 +124,12 @@ public class UserService {
             }
 
             // Complete registration
-            registeredUser = userBean.fullRegistration(user, photoPath, ipAddress);
-            logger.info("Completed registration for user: {}", registeredUser);
+            if (userBean.fullRegistration(user, photoPath, ipAddress)) {
+                logger.info("Completed registration for user: {}", user);
 
-            // Convert the registeredUser object to a JSON string
-            String registeredUserJson = userBean.convertUserToJson(registeredUser);
-
-            response = Response.status(200).entity(registeredUserJson).build();
-            logger.info("User with IP address {} confirmed registration successfully", ipAddress);
+                response = Response.status(200).entity("User registered successfully").build();
+                logger.info("User with IP address {} confirmed registration successfully", ipAddress);
+            }
         } catch (Exception e) {
             logger.error("Error confirming registration for user with IP address {}", ipAddress, e);
             response = Response.status(400).entity("Error confirming registration: " + e.getMessage()).build();
@@ -530,4 +529,37 @@ public class UserService {
         return response;
     }
 
+    @GET
+    @Path("/enum")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getTypeOfUserEnum(@HeaderParam("token") String token, @HeaderParam("id") int id, @Context HttpServletRequest request) {
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with token {} and id {} is trying to get the type of user enum", token, id);
+
+        // Check if the user's id is valid
+        if (!dataValidator.isIdValid(id)) {
+            logger.info("User with session token {} tried to get the type of user enum but is not authorized", token);
+            return Response.status(400).entity("Invalid id").build();
+        }
+
+        // Check if the user is authorized to get the component resource enum
+        if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, id)) {
+            logger.info("User with session token {} tried to get the type of user enum without authorization", token);
+            return Response.status(401).entity("Unauthorized").build();
+        }
+
+        Response response;
+
+        try {
+            logger.info("User with session token {} and id {} is getting the type of user enum", token, id);
+            List<EnumDTO> enumDTOs = EnumUtil.getAllEnumDTOs(TypeOfUserEnum.class);
+            response = Response.status(200).entity(enumDTOs).build();
+            logger.info("User with session token {} and id {} successfully got the type of user enum", token, id);
+        } catch (Exception e) {
+            logger.error("Error getting type of user enum", e);
+            response = Response.status(500).entity("Error getting type of user enum").build();
+        }
+
+        return response;
+    }
 }

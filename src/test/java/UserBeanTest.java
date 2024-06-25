@@ -1,4 +1,6 @@
 import domcast.finalprojbackend.bean.DataValidator;
+import domcast.finalprojbackend.bean.InterestBean;
+import domcast.finalprojbackend.bean.SkillBean;
 import domcast.finalprojbackend.bean.user.*;
 import domcast.finalprojbackend.dao.LabDao;
 import domcast.finalprojbackend.dao.UserDao;
@@ -63,6 +65,13 @@ public class UserBeanTest {
 
     @Mock
     private PasswordBean passwordBean; // Mock the PasswordBean
+
+    @Mock
+    private InterestBean interestBean; // Mock the InterestBean
+
+    @Mock
+    private SkillBean skillBean; // Mock the SkillBean
+
     /**
      * Setup method to initialize mocks
      */
@@ -154,11 +163,12 @@ public class UserBeanTest {
         when(userDao.merge(any(UserEntity.class))).thenReturn(true); // Simulate success
 
         // Act
-        LoggedUser result = userBean.fullRegistration(fullRegistration, "photoPath", "ipAddress");
+        boolean result = userBean.fullRegistration(fullRegistration, "photoPath", "ipAddress");
 
         // Assert
-        assertNotNull(result);
+        assertTrue(result);
     }
+
 
 
     /**
@@ -183,10 +193,10 @@ public class UserBeanTest {
         when(userDao.merge(any(UserEntity.class))).thenReturn(false); // Simulate failure
 
         // Act
-        LoggedUser result = userBean.fullRegistration(fullRegistration, "photoPath", "ipAddress");
+        boolean result = userBean.fullRegistration(fullRegistration, "photoPath", "ipAddress");
 
         // Assert
-        assertNull(result);
+        assertFalse(result);
     }
 
 

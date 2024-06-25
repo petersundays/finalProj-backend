@@ -2,6 +2,7 @@ package domcast.finalprojbackend.bean;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import domcast.finalprojbackend.dao.M2MProjectSkillDao;
 import domcast.finalprojbackend.dao.SkillDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.skillDto.SkillDto;
@@ -34,6 +35,10 @@ public class SkillBean implements Serializable {
     private UserDao userDao;
     @EJB
     private SkillDao skillDao;
+
+    @EJB
+    private M2MProjectSkillDao m2MProjectSkillDao;
+
     @EJB
     private DataValidator dataValidator;
 
@@ -401,4 +406,88 @@ public class SkillBean implements Serializable {
 
         return skillsList;
     }
+
+    /**
+     * Creates a relationship between a project and a set of skills
+     *
+     * @param skillsIds The ids of the skills
+     * @param project   The project to create the relationship with
+     * @return The set of M2MProjectSkill objects
+     */
+    public Set<M2MProjectSkill> updateRelationshipToProject(Set<Integer> skillsIds, ProjectEntity project) {
+        logger.info("Entering updateRelationshipToProject for project");
+
+        Set<M2MProjectSkill> newRelations = new HashSet<>();
+        Set<M2MProjectSkill> oldRelations = new HashSet<>();
+
+
+        if (skillsIds == null || skillsIds.isEmpty()) {
+            logger.error("Skills list is null or empty when updating relationship");
+            return newRelations;
+        }
+
+        if (project == null) {
+            logger.error("Project is null when updating relationship with skills");
+            throw new IllegalArgumentException("Project is null");
+        }
+
+        try {
+            oldRelations = m2MProjectSkillDao.findAllforProject(project.getId());
+        } catch (Exception e) {
+            logger.error("Error while finding old relations: {}", e.getMessage());
+        }
+
+        for (Integer skillId : skillsIds) {
+            SkillEntity skill;
+            try {
+                skill = skillDao.findSkillById(skillId);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+            if (skill == null) {
+                logger.error("Skill not found with id while updating relationship: {}", skillId);
+                continue;
+            }
+
+            if (oldRelations != null && !oldRelations.isEmpty()) {
+                if (oldRelations.stream().noneMatch(i -> i.getSkill().equals(skill))) {
+                    M2MProjectSkill projectSkill = new M2MProjectSkill();
+                    projectSkill.setProject(project);
+                    projectSkill.setSkill(skill);
+                    newRelations.add(projectSkill);
+                }
+
+                if (oldRelations.stream().anyMatch(i -> i.getSkill().equals(skill))) {
+                    M2MProjectSkill projectSkill = oldRelations.stream().filter(i -> i.getSkill().equals(skill)).findFirst().orElse(null);
+
+                    assert projectSkill != null;
+
+                    if (!projectSkill.isActive()) {
+                        try {
+                            m2MProjectSkillDao.setSkillActiveForProject(project.getId(), skillId);
+                            newRelations.add(projectSkill);
+                        } catch (Exception e) {
+                            logger.error("Error while setting skill active for project: {}", e.getMessage());
+                        }
+                    }
+                    newRelations.add(projectSkill);
+                }
+            }
+        }
+
+        if (oldRelations != null && !oldRelations.isEmpty()) {
+            for (M2MProjectSkill oldRelation : oldRelations) {
+                if (skillsIds.stream().noneMatch(i -> i.equals(oldRelation.getSkill().getId()))) {
+                    try {
+                        m2MProjectSkillDao.setSkillInactiveForProject(project.getId(), oldRelation.getSkill().getId());
+                    } catch (Exception e) {
+                        logger.error("Error while setting skill inactive for project: {}", e.getMessage());
+                    }
+                }
+            }
+        }
+        return newRelations;
+    }
+
 }

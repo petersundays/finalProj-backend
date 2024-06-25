@@ -131,7 +131,7 @@ public class UserBean implements Serializable {
      * @param photoPath the path to the user's photo
      * @return the logged user
      */
-    public LoggedUser fullRegistration(FullRegistration user, String photoPath, String ipAddress) {
+    public boolean fullRegistration(FullRegistration user, String photoPath, String ipAddress) {
         // Checks if the user is null or if the validation token is null
         if (user == null || user.getValidationToken() == null) {
             logger.error("User is null or validation token is null");
@@ -150,7 +150,7 @@ public class UserBean implements Serializable {
                     logger.error("Error deleting user with email: {}", userEntityToDelete.getEmail());
                 }
             }
-            return null;
+            return false;
         }
 
         logger.info("Completing registration for user with validation token: {}", user.getValidationToken());
@@ -158,7 +158,7 @@ public class UserBean implements Serializable {
         // Checks if the mandatory data is valid
         if (!dataValidator.isUserMandatoryDataValid(user)) {
             logger.error("Mandatory data is invalid");
-            return null;
+            return false;
         }
 
         logger.info("Mandatory data is valid");
@@ -169,7 +169,7 @@ public class UserBean implements Serializable {
         // Checks if the user is null
         if (userEntity == null) {
             logger.error("User not found with validation token, when trying to complete registration: {}", user.getValidationToken());
-            return null;
+            return false;
         }
 
         logger.info("User found with validation token, when trying to complete registration: {}", user.getValidationToken());
@@ -190,7 +190,7 @@ public class UserBean implements Serializable {
         // Tries to set the validation token as inactive
         if (!tokenBean.setTokenInactive(user.getValidationToken())) {
             logger.error("Error while inactivating validation token, after completing profile information, on register: {}", user.getValidationToken());
-            return null;
+            return false;
         }
 
         logger.info("Registration completed for user with validation token: {}", user.getValidationToken());
@@ -201,7 +201,7 @@ public class UserBean implements Serializable {
         // Checks if the session token is null, if so, throws an exception
         if (sessionToken == null) {
             logger.error("Error while generating session token, during registration process");
-            return null;
+            return false;
         }
 
         // Adds the session token to the user
@@ -210,20 +210,10 @@ public class UserBean implements Serializable {
         // Merges the user
         if (!userDao.merge(userEntity)) {
             logger.error("Error while merging in user, during registration process: {}", userEntity.getEmail());
-            return null;
+            return false;
         }
 
-        // Converts the user entity to a logged user
-        LoggedUser loggedUser = convertUserEntityToLoggedUser(userEntity, sessionToken.getToken());
-
-        // Checks if the logged user is null, if so, throws an exception
-        if (loggedUser == null) {
-            logger.error("Error while converting user to logged user, during registration process");
-            return null;
-        }
-
-        // Returns the logged user
-        return loggedUser;
+        return true;
     }
 
     /**

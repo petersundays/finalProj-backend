@@ -66,7 +66,7 @@ public class TaskEntity implements Serializable {
     @Column(name = "state", nullable = false)
     private TaskStateEnum state = TaskStateEnum.PLANNED;
 
-    // Active state of the task
+    // \ive state of the task
     @Column(name = "active", nullable = false)
     private boolean active = true;
 
