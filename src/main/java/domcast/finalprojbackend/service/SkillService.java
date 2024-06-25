@@ -110,4 +110,39 @@ public class SkillService {
 
         return response;
     }
+
+    @GET
+    @Path("unconfirmed-user")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getSkillsUnconfirmed(@HeaderParam("token") String validationToken,
+                                         @Context HttpServletRequest request) {
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with validation token {} is getting skills from IP address {}", validationToken, ipAddress);
+
+        Response response;
+
+        // Check if the user is authorized to get the public profile
+        if (!authenticationAndAuthorization.isMemberNotConfirmedAndValTokenActive(validationToken)) {
+            response = Response.status(401).entity("Unauthorized").build();
+            logger.info("User with validation token {} tried to get skills but is not authorized", validationToken);
+            return response;
+        }
+
+        try {
+            List<SkillToList> skills = skillBean.getAllSkills();
+
+            if (skills == null || skills.isEmpty()) {
+                logger.info("No skills found for user with validation token {}", validationToken);
+                return Response.status(204).build();
+            }
+
+            logger.info("User with validation token {} got skills", validationToken);
+            response = Response.status(200).entity(skills).build();
+        } catch (Exception e) {
+            logger.error("Error getting interests for user with validation token {}", validationToken, e);
+            response = Response.status(500).entity("Error getting interests for user with validation token").build();
+        }
+
+        return response;
+    }
 }

@@ -90,7 +90,7 @@ public class EmailBean {
 
 
         String subject = "Agile Scrum - Account Confirmation";
-        String confirmationLink = "http://localhost:5173/confirm/" + validationToken;
+        String confirmationLink = "http://localhost:3000/confirm-email/" + validationToken;
         String body = "Dear " + email + ",\n\n"
                 + "Thank you for registering with us. Please click on the link below to confirm your account.\n\n"
                 + "Confirmation Link: " + confirmationLink;
@@ -125,7 +125,7 @@ public class EmailBean {
         boolean sent = false;
 
         String subject = "Agile Scrum - Password Reset";
-        String resetLink = "http://localhost:5173/reset-password/" + validationToken;
+        String resetLink = "http://localhost:3000/reset-password/" + validationToken;
         String body = "Dear " + firstName + ",\n\n"
                 + "Please click on the link below to reset your password.\n\n"
                 + "Reset Link: " + resetLink;

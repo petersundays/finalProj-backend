@@ -27,6 +27,8 @@ import java.time.LocalDateTime;
 
 @NamedQuery(name = "Token.setTokenInactive", query = "UPDATE ValidationTokenEntity t SET t.active = false WHERE t.token = :token")
 @NamedQuery(name = "Token.isTokenValid", query = "SELECT COUNT(t) FROM ValidationTokenEntity t WHERE t.token = :token AND t.expirationTime > CURRENT_TIMESTAMP")
+@NamedQuery(name = "Token.isTokenActiveAndUserNotConfirmed", query = "SELECT COUNT(t) FROM ValidationTokenEntity t WHERE t.token = :token AND t.active = true AND t.user.type = 100")
+
 public class ValidationTokenEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 

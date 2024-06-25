@@ -97,8 +97,7 @@ public class UserService {
             return Response.status(400).entity("No data provided").build();
         }
 
-        Response response;
-        LoggedUser registeredUser;
+        Response response = null;
 
         try {
             FullRegistration user = userBean.extractFullRegistrationDto(input);
@@ -125,14 +124,12 @@ public class UserService {
             }
 
             // Complete registration
-            registeredUser = userBean.fullRegistration(user, photoPath, ipAddress);
-            logger.info("Completed registration for user: {}", registeredUser);
+            if (userBean.fullRegistration(user, photoPath, ipAddress)) {
+                logger.info("Completed registration for user: {}", user);
 
-            // Convert the registeredUser object to a JSON string
-            String registeredUserJson = userBean.convertUserToJson(registeredUser);
-
-            response = Response.status(200).entity(registeredUserJson).build();
-            logger.info("User with IP address {} confirmed registration successfully", ipAddress);
+                response = Response.status(200).entity("User registered successfully").build();
+                logger.info("User with IP address {} confirmed registration successfully", ipAddress);
+            }
         } catch (Exception e) {
             logger.error("Error confirming registration for user with IP address {}", ipAddress, e);
             response = Response.status(400).entity("Error confirming registration: " + e.getMessage()).build();

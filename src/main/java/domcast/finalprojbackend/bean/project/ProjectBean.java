@@ -564,8 +564,10 @@ public class ProjectBean implements Serializable {
 
         if (cRDtos != null && !cRDtos.isEmpty()) {
             try {
+                int i = 0;
                 for (DetailedCR detailedCR : cRDtos) {
                     componentResourceBean.createComponentResource(detailedCR);
+                    i++;
                 }
             } catch (RuntimeException e) {
                 logger.error("Error creating component resources while editing project: {}", e.getMessage());
@@ -653,7 +655,6 @@ public class ProjectBean implements Serializable {
                 throw e;
             }
         }
-
 
         if (componentResources != null && !componentResources.isEmpty()) {
             try {
