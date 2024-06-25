@@ -4,6 +4,7 @@ import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.project.ProjectBean;
 import domcast.finalprojbackend.dao.SessionTokenDao;
 import domcast.finalprojbackend.dao.UserDao;
+import domcast.finalprojbackend.dao.ValidationTokenDao;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import org.apache.logging.log4j.LogManager;
@@ -21,6 +22,8 @@ public class AuthenticationAndAuthorization {
     private UserDao userDao;
     @EJB
     private ProjectBean projectBean;
+    @EJB
+    private ValidationTokenDao validationTokenDao;
 
     /**
      * Checks if the password is correct
@@ -97,7 +100,7 @@ public class AuthenticationAndAuthorization {
      * @return boolean value indicating if the user is a member of the project
      */
     public boolean isUserMemberOfTheProjectAndActive(int userId, int projectId) {
-        logger.info("Checking if user with ID {} is a member of project with ID {}", userId, projectId);
+        logger.info("Checking if user with ID {} is a member of project and active with ID {}", userId, projectId);
 
         boolean isMember;
         try {
@@ -109,5 +112,26 @@ public class AuthenticationAndAuthorization {
 
         logger.info("User with ID {} is a member of project with ID {} and active: {}", userId, projectId, isMember);
         return isMember;
+    }
+
+    /**
+     * Checks if the user's validation token is active and the user is not confirmed
+     * @param token the validation token
+     * @return boolean value indicating if the user's validation token is active and the user is not confirmed
+     */
+    public boolean isMemberNotConfirmedAndValTokenActive(String token) {
+        logger.info("Checking if member is not confirmed and validation token is active");
+
+        boolean authorized;
+
+        try {
+            authorized = validationTokenDao.isTokenActiveAndUserNotConfirmed(token);
+            logger.info("Member is not confirmed and validation token is active: {}", authorized);
+        } catch (Exception e) {
+            logger.error("Error checking if member is not confirmed and validation token is active: {}", e.getMessage());
+            throw new RuntimeException(e);
+        }
+
+        return authorized;
     }
 }

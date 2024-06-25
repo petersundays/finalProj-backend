@@ -64,4 +64,25 @@ public class ValidationTokenDao extends AbstractDao<ValidationTokenEntity> {
             return true;
         }
     }
+
+    /**
+     * Checks if a validation token is active and the user is not confirmed.
+     * @param token The token to be checked.
+     * @return A boolean indicating whether the token is active and the user is not confirmed.
+     */
+    public boolean isTokenActiveAndUserNotConfirmed(String token) {
+        logger.info("Checking if token {} is active and the user is not confirmed", token);
+        try {
+            long count = em.createNamedQuery("Token.isTokenActiveAndUserNotConfirmed", Long.class)
+                    .setParameter("token", token)
+                    .getSingleResult();
+            return count > 0;
+        } catch (NoResultException e) {
+            logger.error("No token found with the provided token: {}", token, e);
+            return false;
+        } catch (NonUniqueResultException e) {
+            logger.error("Multiple tokens found with the provided token: {}", token, e);
+            return false;
+        }
+    }
 }

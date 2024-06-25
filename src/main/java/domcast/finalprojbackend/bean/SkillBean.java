@@ -471,6 +471,7 @@ public class SkillBean implements Serializable {
                             logger.error("Error while setting skill active for project: {}", e.getMessage());
                         }
                     }
+                    newRelations.add(projectSkill);
                 }
             }
         }
@@ -486,7 +487,6 @@ public class SkillBean implements Serializable {
                 }
             }
         }
-
         return newRelations;
     }
 

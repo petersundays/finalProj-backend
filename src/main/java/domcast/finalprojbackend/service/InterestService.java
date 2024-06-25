@@ -110,4 +110,39 @@ public class InterestService {
 
         return response;
     }
+
+    @GET
+    @Path("unconfirmed-user")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getInterestsUnconfirmed(@HeaderParam("token") String validationToken,
+                                            @Context HttpServletRequest request) {
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with validation token {} is getting interests from IP address {}", validationToken, ipAddress);
+
+        Response response;
+
+        // Check if the user is authorized to get the public profile
+        if (!authenticationAndAuthorization.isMemberNotConfirmedAndValTokenActive(validationToken)) {
+            response = Response.status(401).entity("Unauthorized").build();
+            logger.info("User with validation token {} tried to get interests but is not authorized", validationToken);
+            return response;
+        }
+
+        try {
+            List<InterestToList> interests = interestBean.getAllInterests();
+
+            if (interests == null || interests.isEmpty()) {
+                logger.info("No interests found for user with validation token {}", validationToken);
+                return Response.status(204).build();
+            }
+
+            logger.info("User with validation token {} got interests", validationToken);
+            response = Response.status(200).entity(interests).build();
+        } catch (Exception e) {
+            logger.error("Error getting interests", e);
+            response = Response.status(500).entity("Error getting interests").build();
+        }
+
+        return response;
+    }
 }

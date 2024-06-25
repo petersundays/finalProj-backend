@@ -890,6 +890,14 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
                     newRelation.setProject(projectEntity);
                     newRelation.setComponentResource(componentResource);
                     newRelation.setQuantity(quantity);
+
+                    try {
+                        m2MComponentProjectDao.persist(newRelation);
+                    } catch (Exception e) {
+                        logger.error("Error creating new relation between component resource {} and project {}: {}", componentResource.getId(), projectEntity.getId(), e.getMessage());
+                        continue;
+                    }
+
                     newRelations.add(newRelation);
                 }
             }
