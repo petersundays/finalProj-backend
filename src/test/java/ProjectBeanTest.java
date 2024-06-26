@@ -1,9 +1,6 @@
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import domcast.finalprojbackend.bean.ComponentResourceBean;
-import domcast.finalprojbackend.bean.DataValidator;
-import domcast.finalprojbackend.bean.KeywordBean;
-import domcast.finalprojbackend.bean.SkillBean;
+import domcast.finalprojbackend.bean.*;
 import domcast.finalprojbackend.bean.project.ProjectBean;
 import domcast.finalprojbackend.bean.task.TaskBean;
 import domcast.finalprojbackend.bean.user.UserBean;
@@ -84,6 +81,9 @@ public class ProjectBeanTest {
 
     @Mock
     private UserBean userBean;
+
+    @Mock
+    private SystemBean systemBean;
 
     @Mock
     private InputPart part;
@@ -256,6 +256,7 @@ public class ProjectBeanTest {
 
         when(dataValidator.isIdValid(anyInt())).thenReturn(true);
         when(userDao.findUserById(anyInt())).thenReturn(new UserEntity());
+        when(systemBean.getProjectMaxUsers()).thenReturn(10);
 
         // Act
         Set<M2MProjectUser> result = projectBean.createProjectTeam(teamMembers, projectEntity, 1);

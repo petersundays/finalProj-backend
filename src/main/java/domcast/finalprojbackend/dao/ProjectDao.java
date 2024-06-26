@@ -74,4 +74,23 @@ public class ProjectDao extends AbstractDao<ProjectEntity> {
             return false;
         }
     }
+
+    /**
+     * Checks if a user is a manager in a project.
+     *
+     * @param userId the id of the user
+     * @param projectId the id of the project
+     * @return boolean value indicating if the user is a manager in the project
+     */
+    public boolean isUserManagerInProject(int userId, int projectId) {
+        try {
+            Long count = em.createNamedQuery("M2MProjectUser.isUserManagerInProject", Long.class)
+                    .setParameter("userId", userId)
+                    .setParameter("projectId", projectId)
+                    .getSingleResult();
+            return count > 0;
+        } catch (NoResultException e) {
+            return false;
+        }
+    }
 }

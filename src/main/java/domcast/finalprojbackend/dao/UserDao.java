@@ -254,7 +254,7 @@ public class UserDao extends AbstractDao<UserEntity> {
     }
 
     /**
-     * Checks if the user is an admin.
+     * Checks if the user is an admin, given their session token.
      * @param token the session token of the user
      * @return true if the user is an admin, false otherwise
      */
@@ -286,5 +286,21 @@ public class UserDao extends AbstractDao<UserEntity> {
                 .setParameter("lastName", lastName)
                 .getSingleResult();
         return count > 0;
+    }
+
+    public boolean isUserAdminById(int id) {
+        logger.info("Checking if user is admin by id");
+        try {
+            Long count = (Long) em.createNamedQuery("User.isUserAdminById")
+                    .setParameter("id", id)
+                    .getSingleResult();
+            return count > 0;
+        } catch (NoResultException e) {
+            logger.error("User with id {} is not an admin", id);
+            return false;
+        } catch (Exception e) {
+            logger.error("Error while checking if user is admin by id: {}", e.getMessage());
+            return false;
+        }
     }
 }

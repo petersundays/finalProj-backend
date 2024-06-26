@@ -293,4 +293,105 @@ public class ProjectService {
 
         return response;
     }
+
+    @PUT
+    @Path("/state")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response updateStateByManager(@HeaderParam("token") String token,
+                                         @HeaderParam("id") int userId,
+                                         @QueryParam("id") int projectId,
+                                         @QueryParam("newState") int state,
+                                         @Context HttpServletRequest request) {
+
+
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with session token {} and id {} is updating the state of the project with id {} from IP address {}", token, userId, projectId, ipAddress);
+
+        // Check if the user's and project's id are valid
+        if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(projectId)) {
+            logger.info("User with session token {} tried to update the state of the project with invalid id", token);
+            return Response.status(400).entity("Invalid id").build();
+        }
+
+        if (!ProjectStateEnum.isValidId(state)) {
+            logger.info("User with session token {} tried to update the state of the project with invalid state", token);
+            return Response.status(400).entity("New state is invalid").build();
+        }
+
+        if (!authenticationAndAuthorization.isUserManagerInProject(userId, projectId)) {
+            logger.info("User with session token {} tried to update the state of the project but is not authorized", token);
+            return Response.status(401).entity("Unauthorized").build();
+        }
+
+        Response response;
+
+        try {
+            logger.info("User with session token {} and id {} is updating the state of the project with id {}", token, userId, projectId);
+            DetailedProject detailedProject = projectBean.editStateByManager(projectId, state);
+            response = Response.status(200).entity(detailedProject).build();
+            logger.info("User with session token {} and id {} successfully updated the state of the project with id {}", token, userId, projectId);
+        } catch (Exception e) {
+            logger.error("Error updating the state of the project with id {}: {}", projectId, e.getMessage());
+            response = Response.status(500).entity("Error updating the state of the project").build();
+        }
+
+        return response;
+
+    }
+
+    @PUT
+    @Path("/approve")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response approve(@HeaderParam("token") String token,
+                                         @HeaderParam("id") int userId,
+                                         @QueryParam("id") int projectId,
+                                         @QueryParam("newState") int state,
+                                         @Context HttpServletRequest request) {
+
+
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with session token {} and id {} is trying to approve the project with id {} from IP address {}", token, userId, projectId, ipAddress);
+
+        // Check if the user's and project's id are valid
+        if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(projectId)) {
+            logger.info("User with session token {} tried to approve the project with invalid id", token);
+            return Response.status(400).entity("Invalid id").build();
+        }
+
+        if (!ProjectStateEnum.isValidId(state)) {
+            logger.info("User with session token {} tried to approve the project with invalid state", token);
+            return Response.status(400).entity("New state is invalid").build();
+        }
+
+        if (!authenticationAndAuthorization.isUserAdminById(userId)) {
+            logger.info("User with session token {} tried to approve the project but is not authorized", token);
+            return Response.status(401).entity("Unauthorized").build();
+        }
+
+        Response response;
+
+        try {
+            logger.info("User with session token {} and id {} is approving the project with id {}", token, userId, projectId);
+            if (projectBean.approveProject(projectId, state)) {
+                if (state == ProjectStateEnum.APPROVED.getId()) {
+                    response = Response.status(200).entity("Project successfully approved").build();
+                    logger.info("User with session token {} and id {} successfully approved the project with id {}", token, userId, projectId);
+                } else {
+                    response = Response.status(200).entity("Project cancellation successfully approved").build();
+                    logger.info("User with session token {} and id {} successfully approved the cancellation of the project with id {}", token, userId, projectId);
+                }
+            } else {
+                response = Response.status(400).entity("Project approval status could not be set").build();
+                logger.info("User with session token {} and id {} could not set the approval status of the project with id {}", token, userId, projectId);
+            }
+        } catch (Exception e) {
+            logger.error("Error while setting the approval status of the project with id {}: {}", projectId, e.getMessage());
+            response = Response.status(500).entity("Error while setting the approval status of the project").build();
+        }
+
+        return response;
+
+    }
 }
