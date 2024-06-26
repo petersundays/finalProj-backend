@@ -813,6 +813,11 @@ public class UserBean implements Serializable {
             user.setNickname(userInfo.getNickname());
         }
 
+        // Checks if the user is visible
+        if (userInfo.isVisible()) {
+            user.setVisible(userInfo.isVisible());
+        }
+
         // Sets the user as confirmed
         user.setType(TypeOfUserEnum.STANDARD);
 
