@@ -195,18 +195,6 @@ public class UserBean implements Serializable {
 
         logger.info("Registration completed for user with validation token: {}", user.getValidationToken());
 
-        // Generate a session token for user
-        SessionTokenEntity sessionToken = tokenBean.generateSessionToken(userEntity, ipAddress);
-
-        // Checks if the session token is null, if so, throws an exception
-        if (sessionToken == null) {
-            logger.error("Error while generating session token, during registration process");
-            return false;
-        }
-
-        // Adds the session token to the user
-        userEntity.addSessionToken(sessionToken);
-
         // Merges the user
         if (!userDao.merge(userEntity)) {
             logger.error("Error while merging in user, during registration process: {}", userEntity.getEmail());

@@ -112,6 +112,37 @@ public class SkillService {
     }
 
     @GET
+    @Path("/enum-unconfirmed")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getSkillEnumUnconfirmed(@HeaderParam("token") String validationToken, @Context HttpServletRequest request) {
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with validationToken {} and is trying to get the skill enum from IP address {}", validationToken, ipAddress);
+
+        Response response;
+        
+        // Check if the user is authorized to get the skills while in registration
+        if (!authenticationAndAuthorization.isMemberNotConfirmedAndValTokenActive(validationToken)) {
+            response = Response.status(401).entity("Unauthorized").build();
+            logger.info("User with validation validationToken {} tried to get skills but is not authorized", validationToken);
+            return response;
+        }
+
+        
+
+        try {
+            logger.info("User with validationToken {} is getting the skill enum", validationToken);
+            List<EnumDTO> enumDTOs = EnumUtil.getAllEnumDTOs(SkillTypeEnum.class);
+            response = Response.status(200).entity(enumDTOs).build();
+            logger.info("User with validationToken {} successfully got the skill enum", validationToken);
+        } catch (Exception e) {
+            logger.error("Error getting skill enum for user with validationToken {}", validationToken, e);
+            response = Response.status(500).entity("Error getting skill enum").build();
+        }
+
+        return response;
+    }
+
+    @GET
     @Path("unconfirmed-user")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getSkillsUnconfirmed(@HeaderParam("token") String validationToken,
@@ -121,7 +152,7 @@ public class SkillService {
 
         Response response;
 
-        // Check if the user is authorized to get the public profile
+        // Check if the user is authorized to get the skills while in registration
         if (!authenticationAndAuthorization.isMemberNotConfirmedAndValTokenActive(validationToken)) {
             response = Response.status(401).entity("Unauthorized").build();
             logger.info("User with validation token {} tried to get skills but is not authorized", validationToken);
