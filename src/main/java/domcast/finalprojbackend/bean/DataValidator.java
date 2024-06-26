@@ -13,6 +13,7 @@ import domcast.finalprojbackend.dto.userDto.Login;
 import domcast.finalprojbackend.entity.TaskEntity;
 import domcast.finalprojbackend.enums.ComponentResourceEnum;
 import domcast.finalprojbackend.enums.InterestEnum;
+import domcast.finalprojbackend.enums.ProjectStateEnum;
 import domcast.finalprojbackend.enums.SkillTypeEnum;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
@@ -371,5 +372,85 @@ public class DataValidator {
         return newProjectDto.getName() != null && !newProjectDto.getName().isBlank() &&
                 newProjectDto.getDescription() != null && !newProjectDto.getDescription().isBlank() &&
                 newProjectDto.getLabId() > 0;
+    }
+
+    /**
+     * Validates the state change of a project
+     * @param currentStateEnum the current state of the project
+     * @param newStateEnum the new state of the project
+     */
+    public void validateStateChange(ProjectStateEnum currentStateEnum, ProjectStateEnum newStateEnum) {
+
+        if (currentStateEnum == null || newStateEnum == null) {
+            logger.error("Current state or new state is null");
+            throw new IllegalArgumentException("Current state or new state is null");
+        }
+
+        logger.info("Validating state change from {} to {}", currentStateEnum, newStateEnum);
+
+        if (currentStateEnum == newStateEnum) {
+            logger.error("Project is already in state {}", newStateEnum);
+            throw new IllegalArgumentException("Project is already in state " + newStateEnum);
+        }
+
+        if (currentStateEnum == ProjectStateEnum.CANCELED) {
+            logger.error("Project is already canceled");
+            throw new IllegalArgumentException("Project is already canceled");
+        }
+
+        if (currentStateEnum == ProjectStateEnum.FINISHED) {
+            logger.error("Project is already finished");
+            throw new IllegalArgumentException("Project is already finished");
+        }
+
+        if (currentStateEnum == ProjectStateEnum.PLANNING && (newStateEnum != ProjectStateEnum.READY && newStateEnum != ProjectStateEnum.CANCELED)) {
+            logger.error("Project is in planning state and can only be set to ready or canceled");
+            throw new IllegalArgumentException("Project is in planning state and can only be set to ready or canceled");
+        }
+
+        if (currentStateEnum == ProjectStateEnum.READY && newStateEnum != ProjectStateEnum.CANCELED) {
+            logger.error("Project is in ready state and can only be set to in progress or canceled");
+            throw new IllegalArgumentException("Project is in ready state and can only be set to in progress or canceled");
+        }
+
+        if (currentStateEnum == ProjectStateEnum.APPROVED &&
+                (newStateEnum != ProjectStateEnum.CANCELED && newStateEnum != ProjectStateEnum.IN_PROGRESS && newStateEnum != ProjectStateEnum.FINISHED)) {
+            logger.error("Project is in approved state and can only be set to canceled, in progress or finished");
+            throw new IllegalArgumentException("Project is in approved state and can only be set to canceled, in progress or finished");
+        }
+
+        if (currentStateEnum == ProjectStateEnum.IN_PROGRESS &&
+                (newStateEnum != ProjectStateEnum.CANCELED && newStateEnum != ProjectStateEnum.FINISHED)) {
+            logger.error("Project is in in progress state and can only be set to canceled or finished");
+            throw new IllegalArgumentException("Project is in in progress state and can only be set to canceled or finished");
+        }
+
+        logger.info("Successfully validated state change from {} to {}", currentStateEnum, newStateEnum);
+    }
+
+    /**
+     * Validates the project approval
+     * @param currentStateEnum the current state of the project
+     * @param newStateEnum the new state of the project
+     */
+    public void validateProjectApproval(ProjectStateEnum currentStateEnum, ProjectStateEnum newStateEnum) {
+        if (currentStateEnum == null || newStateEnum == null) {
+            logger.error("Current state or new state is null while validating project approval");
+            throw new IllegalArgumentException("Current state or new state is null while validating project approval");
+        }
+
+        logger.info("Validating project approval");
+
+        if (currentStateEnum != ProjectStateEnum.READY) {
+            logger.error("Project is not in ready state while validating project approval");
+            throw new IllegalArgumentException("Project is not in ready state while validating project approval");
+        }
+
+        if (newStateEnum != ProjectStateEnum.APPROVED && newStateEnum != ProjectStateEnum.PLANNING) {
+            logger.error("Invalid new state while validating project approval");
+            throw new IllegalArgumentException("Invalid new state while validating project approval");
+        }
+
+        logger.info("Successfully validated project approval");
     }
 }

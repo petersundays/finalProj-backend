@@ -788,4 +788,132 @@ public class ProjectBean implements Serializable {
         ObjectMapper mapper = objectMapperContextResolver.getContext(null);
         return mapper.readValue(projectString, EditProject.class);
     }
+
+    public DetailedProject editStateByManager(int projectId, int newState) {
+
+        if (!dataValidator.isIdValid(projectId)) {
+            logger.error("Project ID is invalid while editing project state");
+            throw new IllegalArgumentException("Project ID is invalid while editing project state");
+        }
+
+        if (!ProjectStateEnum.isValidId(newState)) {
+            logger.error("Invalid project state");
+            throw new IllegalArgumentException("Invalid project state");
+        }
+
+        logger.info("Editing state of project with ID {}", projectId);
+
+        ProjectEntity projectEntity;
+
+        try {
+            projectEntity = projectDao.findProjectById(projectId);
+        } catch (PersistenceException e) {
+            logger.error("Error finding project with ID {}", projectId, e);
+            throw new RuntimeException(e);
+        }
+
+        if (projectEntity == null) {
+            logger.error("Project not found with ID {} while editing project state", projectId);
+            throw new IllegalArgumentException("Project not found with ID " + projectId + " while editing project state");
+        }
+
+        ProjectStateEnum newStateEnum = ProjectStateEnum.fromId(newState);
+        ProjectStateEnum currentStateEnum = projectEntity.getState();
+
+        dataValidator.validateStateChange(currentStateEnum, newStateEnum);
+
+        projectEntity.setState(newStateEnum);
+
+        try {
+            projectDao.merge(projectEntity);
+        } catch (PersistenceException e) {
+            logger.error("Error merging project while editing project state: {}", e.getMessage());
+            // Rethrow the exception to the caller method
+            throw e;
+        }
+
+        DetailedProject detailedProject = entityToDetailedProject(projectEntity);
+
+        if (detailedProject == null) {
+            logger.error("Error converting project entity to detailed project while editing project state");
+            throw new RuntimeException("Error converting project entity to detailed project while editing project state");
+        }
+
+        logger.info("Successfully edited state of project with ID {}", projectId);
+        return detailedProject;
+    }
+
+    /**
+     * Checks if a user is a manager in a project.
+     *
+     * @param userId    the id of the user
+     * @param projectId the id of the project
+     * @return boolean value indicating if the user is a manager in the project
+     */
+    public boolean isUserManagerInProject(int userId, int projectId) {
+
+        if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(projectId)) {
+            logger.error("User ID or project ID is invalid while checking if user is a manager in project");
+            throw new IllegalArgumentException("User ID or project ID is invalid while checking if user is a manager in project");
+        }
+
+        logger.info("Checking if user with ID {} is a manager in project with ID {}", userId, projectId);
+
+        try {
+            return projectDao.isUserManagerInProject(userId, projectId);
+        } catch (PersistenceException e) {
+            logger.error("Error checking if user with ID {} is a manager in project with ID {}: {}", userId, projectId, e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    public boolean approveProject(int projectId, int newState) {
+
+        if (!dataValidator.isIdValid(projectId)) {
+            logger.error("Project ID is invalid while approving project");
+            throw new IllegalArgumentException("Project ID is invalid while approving project");
+        }
+
+        if (!ProjectStateEnum.isValidId(newState)) {
+            logger.error("Invalid project state while approving project");
+            throw new IllegalArgumentException("Invalid project state");
+        }
+
+        logger.info("Approving project with ID {}", projectId);
+
+        ProjectEntity projectEntity;
+
+        try {
+            projectEntity = projectDao.findProjectById(projectId);
+        } catch (PersistenceException e) {
+            logger.error("Error finding project with ID {}", projectId, e);
+            throw new RuntimeException(e);
+        }
+
+        if (projectEntity == null) {
+            logger.error("Project not found with ID {} while approving project", projectId);
+            throw new IllegalArgumentException("Project not found with ID " + projectId + " while approving project");
+        }
+
+        ProjectStateEnum currentStateEnum = projectEntity.getState();
+        ProjectStateEnum newStateEnum = ProjectStateEnum.fromId(newState);
+
+        dataValidator.validateProjectApproval(currentStateEnum, newStateEnum);
+
+        projectEntity.setState(newStateEnum);
+
+        try {
+            projectDao.merge(projectEntity);
+        } catch (PersistenceException e) {
+            logger.error("Error merging project while approving project: {}", e.getMessage());
+            // Rethrow the exception to the caller method
+            throw e;
+        }
+
+        logger.info("Successfully approved project with ID {}", projectId);
+        return true;
+    }
+
+
 }
