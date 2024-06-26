@@ -35,6 +35,9 @@ public class FullRegistration {
     private String workplace;  // The workplace of the user
 
     @XmlElement
+    private boolean visible;  // The visibility of the user
+
+    @XmlElement
     private ArrayList<String> interests;  // The list of user's interests
 
     @XmlElement
@@ -185,6 +188,24 @@ public class FullRegistration {
      */
     public ArrayList<String> getInterests() {
         return interests;
+    }
+
+    /**
+     * Getter for the visibility of the user.
+     *
+     * @return the visibility of the user
+     */
+    public boolean isVisible() {
+        return visible;
+    }
+
+    /**
+     * Setter for the visibility of the user.
+     *
+     * @param visible the new visibility of the user
+     */
+    public void setVisible(boolean visible) {
+        this.visible = visible;
     }
 
     /**
