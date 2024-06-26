@@ -25,6 +25,8 @@ import java.time.LocalDateTime;
         query = "SELECT s FROM SessionTokenEntity s WHERE s.active = true AND s.lastAccess < :timeBeforeNow")
 @NamedQuery(name = "SessionToken.isTokenActiveAndFromUserId",
         query = "SELECT COUNT(s) FROM SessionTokenEntity s WHERE s.active = true AND s.user.id = :userId AND s.token = :token")
+@NamedQuery(name = "SessionToken.findUserByToken",
+        query = "SELECT s.user FROM SessionTokenEntity s WHERE s.token = :token AND s.active = true")
 
 public class SessionTokenEntity extends ValidationTokenEntity implements Serializable {
     private static final long serialVersionUID = 1L;

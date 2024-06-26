@@ -1,7 +1,6 @@
 package domcast.finalprojbackend.dao;
 
 import domcast.finalprojbackend.entity.SessionTokenEntity;
-import domcast.finalprojbackend.entity.ValidationTokenEntity;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.NonUniqueResultException;
@@ -112,6 +111,29 @@ public class SessionTokenDao extends ValidationTokenDao {
         } catch (Exception e) {
             logger.error("Error checking if session token is from admin type user", e);
             return false;
+        }
+    }
+
+    /**
+     * Finds the user associated with a session token
+     * @param token the token to be checked
+     * @return the user associated with the session token
+     */
+    public int findUserIdByToken(String token) {
+        logger.info("Finding user id by token {}", token);
+        try {
+            return (int) em.createNamedQuery("SessionToken.findUserIdByToken")
+                    .setParameter("token", token)
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            logger.error("No session token found for token {}", token, e);
+            return -1;
+        } catch (NonUniqueResultException e) {
+            logger.error("Multiple session tokens found for token {}", token, e);
+            return -1;
+        } catch (Exception e) {
+            logger.error("Error finding user id by token", e);
+            return -1;
         }
     }
 }
