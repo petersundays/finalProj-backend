@@ -85,7 +85,7 @@ public class ProjectEntity implements Serializable {
 
     // Creation date of the project
     @Column(name = "ready_date")
-    private LocalDateTime readyDate = LocalDateTime.now();
+    private LocalDateTime readyDate;
 
     // Projected start date of the project
     @Column(name = "projected_start_date", nullable = false)

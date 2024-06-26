@@ -134,4 +134,43 @@ public class AuthenticationAndAuthorization {
 
         return authorized;
     }
+
+    /**
+     * Checks if the user is a manager in the project
+     * @param userId the id of the user
+     * @param projectId the id of the project
+     * @return boolean value indicating if the user is a manager in the project
+     */
+    public boolean isUserManagerInProject(int userId, int projectId) {
+        logger.info("Checking if user with ID {} is a manager in project with ID {}", userId, projectId);
+
+        boolean isManager;
+        try {
+            isManager = projectBean.isUserManagerInProject(userId, projectId);
+        } catch (Exception e) {
+            logger.error("Error checking if user with ID {} is a manager in project with ID {}", userId, projectId, e);
+            throw new RuntimeException(e);
+        }
+
+        logger.info("User with ID {} is a manager in project with ID {}: {}", userId, projectId, isManager);
+        return isManager;
+    }
+
+    /**
+     * Checks if the user is an admin by id
+     * @param userId the id of the user
+     * @return boolean value indicating if the user is an admin
+     */
+    public boolean isUserAdminById(int userId) {
+        logger.info("Checking if user with ID {} is an admin", userId);
+        boolean isAdmin;
+        try {
+            isAdmin = userDao.isUserAdminById(userId);
+        } catch (Exception e) {
+            logger.error("Error checking if user with ID {} is an admin", userId, e);
+            throw new RuntimeException(e);
+        }
+        logger.info("User with ID {} is an admin: {}", userId, isAdmin);
+        return isAdmin;
+    }
 }

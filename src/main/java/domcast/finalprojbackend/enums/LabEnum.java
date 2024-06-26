@@ -21,7 +21,7 @@ public enum LabEnum implements ConvertibleToEnumDTO {
         // The values are the labs of the project.
 
         COIMBRA(1, "Coimbra"),
-        LISBOA(1, "Lisboa"),
+        LISBOA(2, "Lisboa"),
         PORTO(3, "Porto"),
         TOMAR(4, "Tomar"),
         VILA_REAL(5, "Vila Real"),

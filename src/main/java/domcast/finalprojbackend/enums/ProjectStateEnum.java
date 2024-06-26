@@ -89,6 +89,20 @@ public enum ProjectStateEnum implements ConvertibleToEnumDTO {
     }
 
     /**
+     * Method that checks if the id is valid.
+     * @param id the id to check
+     * @return true if the id is valid, false otherwise
+     */
+    public static boolean isValidId(int id) {
+        for (ProjectStateEnum state : ProjectStateEnum.values()) {
+            if (state.getId() == id) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Method that returns the EnumDTO of the project state.
      * @return the EnumDTO of the project state
      */
