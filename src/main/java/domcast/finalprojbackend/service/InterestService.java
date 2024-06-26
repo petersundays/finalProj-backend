@@ -112,6 +112,35 @@ public class InterestService {
     }
 
     @GET
+    @Path("/enum-unconfirmed")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getInterestEnumUnconfirmed(@HeaderParam("token") String validationToken,@Context HttpServletRequest request) {
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with validationToken {} is trying to get the interest enum from IP address {}", validationToken, ipAddress);
+
+        Response response;
+
+        // Check if the user is authorized to get the interests while in registration
+        if (!authenticationAndAuthorization.isMemberNotConfirmedAndValTokenActive(validationToken)) {
+            response = Response.status(401).entity("Unauthorized").build();
+            logger.info("User with validation validationToken {} tried to get interests but is not authorized", validationToken);
+            return response;
+        }
+
+        try {
+            logger.info("User with  validationToken {} is getting the interest enum", validationToken);
+            List<EnumDTO> enumDTOs = EnumUtil.getAllEnumDTOs(InterestEnum.class);
+            response = Response.status(200).entity(enumDTOs).build();
+            logger.info("User with validationToken {} successfully got the interest enum", validationToken);
+        } catch (Exception e) {
+            logger.error("Error getting interest enum while in registration", e);
+            response = Response.status(500).entity("Error getting interest enum while in registration").build();
+        }
+
+        return response;
+    }
+
+    @GET
     @Path("unconfirmed-user")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getInterestsUnconfirmed(@HeaderParam("token") String validationToken,
