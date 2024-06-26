@@ -1,5 +1,6 @@
 package domcast.finalprojbackend.dao;
 
+import domcast.finalprojbackend.entity.UserEntity;
 import domcast.finalprojbackend.entity.ValidationTokenEntity;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.NoResultException;
@@ -83,6 +84,26 @@ public class ValidationTokenDao extends AbstractDao<ValidationTokenEntity> {
         } catch (NonUniqueResultException e) {
             logger.error("Multiple tokens found with the provided token: {}", token, e);
             return false;
+        }
+    }
+
+    /**
+     * Finds the user associated with a validation token.
+     * @param token The token to be checked.
+     * @return The user associated with the token.
+     */
+    public UserEntity findUserByToken(String token) {
+        logger.info("Finding user by validation token {}", token);
+        try {
+            return em.createNamedQuery("Token.findUserByToken", UserEntity.class)
+                    .setParameter("token", token)
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            logger.error("No token found with the provided token: {}", token, e);
+            return null;
+        } catch (NonUniqueResultException e) {
+            logger.error("Multiple tokens found with the provided token: {}", token, e);
+            return null;
         }
     }
 }

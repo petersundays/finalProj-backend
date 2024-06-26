@@ -34,7 +34,11 @@ public class UserBean implements Serializable {
 
     private static final long serialVersionUID = 1L;
     private static final Logger logger = LogManager.getLogger(UserBean.class);
-    private static final String PHOTO_STORAGE_PATH = "C:\\wildfly-30.0.1.Final\\bin";
+    private static final String SERVER_URL = "https://localhost:8443/";
+    private static final String BASE_DIR = "domcast/";
+    private static final String PHOTOS_DIR = BASE_DIR + "photos/";
+    private static final String DEFAULT_PHOTO = "default/default_user.jpg";
+    private static final String PROFILE_PIC = SERVER_URL + PHOTOS_DIR;
 
     @EJB
     private UserDao userDao;
@@ -62,6 +66,10 @@ public class UserBean implements Serializable {
     private PasswordBean passwordBean;
     @EJB
     private M2MProjectUserDao m2MProjectUserDao;
+    @EJB
+    private ValidationTokenDao validationTokenDao;
+    @EJB
+    private SessionTokenDao sessionTokenDao;
 
     // Default constructor
     public UserBean() {}
@@ -595,7 +603,31 @@ public class UserBean implements Serializable {
      */
     public String uploadPhoto(String token, MultipartFormDataInput input) throws Exception {
         logger.info("Uploading photo for user with token: {}", token);
-        UserEntity user = userDao.findUserByActiveValidationOrSessionToken(token);
+
+        if (token == null || token.trim().isEmpty()) {
+            logger.error("Token must not be null or empty");
+            throw new IllegalArgumentException("Token must not be null or empty");
+        }
+
+        UserEntity user;
+        try {
+            user = validationTokenDao.findUserByToken(token);
+        } catch (Exception e) {
+            logger.error("Error while finding user with validation token: {}", token);
+            throw new Exception("Error while finding user with token: " + token, e);
+        }
+
+        if (user != null) {
+            logger.info("User found with token: {}", token);
+        } else {
+            try {
+                user = sessionTokenDao.findUserByToken(token);
+            } catch (Exception e) {
+                logger.error("Error while finding user with session token: {}", token);
+                throw new Exception("Error while finding user with token: " + token, e);
+            }
+        }
+
         if (user == null) {
             logger.error("User not found with token: {}", token);
             throw new Exception("User not found");
@@ -610,15 +642,14 @@ public class UserBean implements Serializable {
         // If no photo is found in the input, set the default photo
         if (inputParts == null || inputParts.isEmpty()) {
             logger.info("No photo found in input, setting default photo");
-            String defaultPhotoPath = PHOTO_STORAGE_PATH + File.separator + "photos" + File.separator + "default" + File.separator + "default_user.jpg";
-            File defaultPhoto = new File(defaultPhotoPath);
+            File defaultPhoto = new File(PROFILE_PIC + DEFAULT_PHOTO);
             if (defaultPhoto.exists()) {
-                user.setPhoto(defaultPhotoPath);
+                user.setPhoto(PROFILE_PIC + DEFAULT_PHOTO);
                 userDao.merge(user);
             } else {
-                logger.error("Default photo not found at path: {}", defaultPhotoPath);
+                logger.error("Default photo not found at path: {}", PROFILE_PIC + DEFAULT_PHOTO);
             }
-            return defaultPhotoPath;
+            return PROFILE_PIC + DEFAULT_PHOTO;
         }
 
         // Process each input part
@@ -634,14 +665,14 @@ public class UserBean implements Serializable {
                 }
 
                 // Create the necessary directories
-                String photosDirPath = PHOTO_STORAGE_PATH + File.separator + "photos";
+                String photosDirPath = PHOTOS_DIR;
                 File photosDir = new File(photosDirPath);
                 if (!photosDir.exists() && !photosDir.mkdirs()) {
                     logger.error("Failed to create directory: {}", photosDirPath);
                     throw new Exception("Failed to create directory: " + photosDirPath);
                 }
 
-                String userDirPath = photosDirPath + File.separator + user.getId();
+                String userDirPath = photosDirPath + user.getId();
                 File userDir = new File(userDirPath);
                 if (!userDir.exists() && !userDir.mkdirs()) {
                     logger.error("Failed to create directory: {}", userDirPath);
@@ -649,7 +680,7 @@ public class UserBean implements Serializable {
                 }
 
                 // Write the photo to the appropriate location
-                String path = userDirPath + File.separator + "profile_pic_" + user.getId() + ".jpg";
+                String path = userDirPath + "/profile_pic_" + user.getId() + ".jpg";
                 File file = new File(path);
 
                 // If the file already exists, delete it
@@ -660,7 +691,7 @@ public class UserBean implements Serializable {
 
                 // Update the user's photo attribute in the database
                 try {
-                    user.setPhoto(path);
+                    user.setPhoto(SERVER_URL + path);
                     userDao.merge(user);
                     logger.info("Photo uploaded for user with token: {}", token);
                 } catch (Exception e) {
