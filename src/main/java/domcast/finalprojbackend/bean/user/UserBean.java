@@ -969,18 +969,28 @@ public class UserBean implements Serializable {
      */
     public List<SearchedUser> getUsersByCriteria(String firstName, String lastName, String nickname, String workplace, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
 
-        // Validate page size and page number
-        if (!dataValidator.isPageSizeValid(pageSize) || !dataValidator.isPageNumberValid(pageNumber)) {
-            logger.error("Invalid page size or page number");
-            return new ArrayList<>();
+        logger.info("Getting users by criteria");
+
+        if (!dataValidator.validateUserSearchCriteria(workplace, orderBy, pageNumber, pageSize)) {
+            logger.error("Search criteria is invalid");
+            throw new IllegalArgumentException("Search criteria is invalid");
         }
 
-        // Validate orderBy field
-        List<String> allowedOrderByFields = Arrays.asList("firstName", "lastName", "nickname", "workplace");
-        if (!allowedOrderByFields.contains(orderBy)) {
-            logger.error("Invalid orderBy field");
-            return new ArrayList<>();
+        if (firstName != null) {
+            firstName = dataValidator.getFirstWord(firstName);
+            logger.info("First name had more than one word, only the first word will be used: '{}'", firstName);
         }
+
+        if (lastName != null) {
+            lastName = dataValidator.getFirstWord(lastName);
+            logger.info("Last name had more than one word, only the first word will be used: '{}'", lastName);
+        }
+
+        if (nickname != null) {
+            nickname = dataValidator.getFirstWord(nickname);
+            logger.info("Nickname had more than one word, only the first word will be used: '{}'", nickname);
+        }
+
 
         List<SearchedUser> searchedUsers = new ArrayList<>();
         try {
@@ -994,9 +1004,13 @@ public class UserBean implements Serializable {
                     }
                 }
                 logger.info("Users found: {}", searchedUsers.size());
+            } else {
+                logger.info("No users found");
+                throw new NoSuchElementException("No users found");
             }
         } catch (Exception e) {
             logger.error("Error occurred while getting users by criteria", e);
+            throw e;
         }
         return searchedUsers;
     }

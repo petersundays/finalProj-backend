@@ -109,17 +109,7 @@ public class UserDao extends AbstractDao<UserEntity> {
         }
     }
 
-    /**
-     * Gets a list of users by criteria.
-     *
-     * @param firstName the first name of the user
-     * @param lastName the last name of the user
-     * @param nickname the nickname of the user
-     * @param workplace the workplace of the user
-     * @param orderBy the attribute by which to order the results
-     * @param orderAsc whether to order the results in ascending order
-     * @return a list of UserEntity objects
-     */
+
     /**
      * Gets a list of users by criteria with pagination.
      *
@@ -141,13 +131,13 @@ public class UserDao extends AbstractDao<UserEntity> {
         Root<UserEntity> user = cq.from(UserEntity.class);
         List<Predicate> predicates = new ArrayList<>();
         if (firstName != null && !firstName.isEmpty()) {
-            predicates.add(cb.equal(user.get("firstName"), firstName));
+            predicates.add(cb.like(user.get("firstName"), "%" + firstName + "%"));
         }
         if (lastName != null && !lastName.isEmpty()) {
-            predicates.add(cb.equal(user.get("lastName"), lastName));
+            predicates.add(cb.like(user.get("lastName"), "%" + lastName + "%"));
         }
         if (nickname != null && !nickname.isEmpty()) {
-            predicates.add(cb.equal(user.get("nickname"), nickname));
+            predicates.add(cb.like(user.get("nickname"), "%" + nickname + "%"));
         }
         if (workplace != null && !workplace.isEmpty()) {
             LabEnum workplaceEnum = LabEnum.valueOf(workplace.toUpperCase());

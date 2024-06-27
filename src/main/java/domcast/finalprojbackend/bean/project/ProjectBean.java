@@ -11,6 +11,7 @@ import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
 import domcast.finalprojbackend.dto.projectDto.DetailedProject;
 import domcast.finalprojbackend.dto.projectDto.EditProject;
 import domcast.finalprojbackend.dto.projectDto.NewProjectDto;
+import domcast.finalprojbackend.dto.projectDto.ProjectPreview;
 import domcast.finalprojbackend.dto.skillDto.SkillDto;
 import domcast.finalprojbackend.dto.taskDto.ChartTask;
 import domcast.finalprojbackend.dto.userDto.ProjectTeam;
@@ -915,5 +916,103 @@ public class ProjectBean implements Serializable {
         return true;
     }
 
+    public List<ProjectPreview> getProjectsByCriteria (Integer userId, String name, int lab, int state, String keywords, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
+
+        if (!dataValidator.isPageSizeValid(pageSize) ||
+                !dataValidator.isPageNumberValid(pageNumber) ||
+                !dataValidator.isIdValid(userId) ||
+                !LabEnum.isValidLabId(lab) ||
+                !ProjectStateEnum.isValidId(state) ||
+                dataValidator.isStringValid(name) ||
+                dataValidator.isStringValid(keywords))   {
+            logger.error("Invalid input parameters while getting projects by criteria");
+            throw new IllegalArgumentException("Invalid input parameters while getting projects by criteria");
+        }
+
+        List<String> allowedOrderByFields = Arrays.asList("state", "readyDate", "lab", "name");
+        if (!allowedOrderByFields.contains(orderBy)) {
+            logger.error("Invalid order by field while getting projects by criteria");
+            throw new IllegalArgumentException("Invalid order by field while getting projects by criteria");
+        }
+        logger.info("Getting projects by criteria");
+
+        List<ProjectEntity> projects;
+
+        try {
+            projects = projectDao.getProjectsByCriteria(userId, name, lab, state, keywords, orderBy, orderAsc, pageNumber, pageSize);
+            if (projects == null || projects.isEmpty()) {
+                logger.warn("No projects found by criteria");
+                throw new IllegalArgumentException("No projects found by criteria");
+            }
+        } catch (PersistenceException e) {
+            logger.error("Error getting projects by criteria: {}", e.getMessage());
+            throw new RuntimeException(e);
+        }
+
+        logger.info("Successfully got {} projects by criteria", projects.size());
+
+        List<ProjectPreview> projectPreviews = new ArrayList<>();
+
+        for (ProjectEntity project : projects) {
+            try {
+                ProjectPreview projectPreview = projectEntityToProjectPreview(project);
+                projectPreviews.add(projectPreview);
+            } catch (RuntimeException e) {
+                logger.error("Error converting project entity to project preview while getting projects by criteria: {}", e.getMessage());
+            }
+        }
+
+        logger.info("Successfully got projects by criteria");
+        return projectPreviews;
+    }
+
+    public ProjectPreview projectEntityToProjectPreview(ProjectEntity projectEntity) {
+        if (projectEntity == null) {
+            logger.error("Project entity is null while converting to project preview");
+            throw new IllegalArgumentException("Project entity is null while converting to project preview");
+        }
+
+        logger.info("Converting project entity to project preview");
+
+        ProjectPreview projectPreview = new ProjectPreview();
+        try {
+            projectPreview.setId(projectEntity.getId());
+            projectPreview.setName(projectEntity.getName());
+            projectPreview.setDescription(projectEntity.getDescription());
+
+            LabEntity lab = projectEntity.getLab();
+            if (lab != null && lab.getCity() != null) {
+                projectPreview.setLabId(LabEnum.fromValue(lab.getCity().getValue()).getId());
+            }
+
+            ProjectStateEnum state = projectEntity.getState();
+            if (state != null) {
+                projectPreview.setState(ProjectStateEnum.getProjectStateValue(state));
+            }
+        } catch (NullPointerException e) {
+            logger.error("Null value encountered while converting project entity to project preview", e);
+            throw new RuntimeException("Null value encountered while converting project entity to project preview", e);
+        }
+
+        Set<ProjectUser> projectUsers = new HashSet<>();
+
+        for (M2MProjectUser m2MProjectUser : projectEntity.getProjectUsers()) {
+            ProjectUser projectUser = userBean.projectUserToProjectUserDto(m2MProjectUser);
+
+            if (projectUser != null) {
+                logger.error("Error converting project user with ID {} to project user DTO while converting project entity {} to project preview", m2MProjectUser.getId(), projectEntity.getId());
+            }
+            projectUsers.add(projectUser);
+        }
+
+        if (!projectUsers.isEmpty()) {
+            projectPreview.setProjectUsers(projectUsers);
+            logger.info("Added project {} users to project preview", projectUsers.size());
+        }
+
+        logger.info("Successfully converted project entity to project preview");
+
+        return projectPreview;
+    }
 
 }
