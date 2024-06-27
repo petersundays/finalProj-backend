@@ -3,7 +3,6 @@ package domcast.finalprojbackend.dao;
 import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.entity.LabEntity;
 import domcast.finalprojbackend.entity.UserEntity;
-import domcast.finalprojbackend.enums.LabEnum;
 import domcast.finalprojbackend.enums.TypeOfUserEnum;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.NoResultException;
@@ -123,7 +122,7 @@ public class UserDao extends AbstractDao<UserEntity> {
      * @param pageSize the number of records per page
      * @return a list of UserEntity objects
      */
-    public List<UserEntity> getUsersByCriteria(String firstName, String lastName, String nickname, String workplace, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
+    public List<UserEntity> getUsersByCriteria(String firstName, String lastName, String nickname, int workplace, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
 
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<UserEntity> cq = cb.createQuery(UserEntity.class);
@@ -139,15 +138,14 @@ public class UserDao extends AbstractDao<UserEntity> {
         if (nickname != null && !nickname.isEmpty()) {
             predicates.add(cb.like(user.get("nickname"), "%" + nickname + "%"));
         }
-        if (workplace != null && !workplace.isEmpty()) {
-            LabEnum workplaceEnum = LabEnum.valueOf(workplace.toUpperCase());
-            predicates.add(cb.equal(user.get("workplace").get("city"), workplaceEnum));
+        if (workplace != 0) {
+            predicates.add(cb.equal(user.get("workplace").get("id"), workplace));
         }
 
         cq.select(user).where(cb.and(predicates.toArray(new Predicate[0])));
 
         if (orderBy != null && !orderBy.isEmpty()) {
-            if (orderBy.equals("workplace")) {
+            if (orderBy.equals("lab")) {
                 Join<UserEntity, LabEntity> join = user.join("workplace");
                 if (orderAsc) {
                     cq.orderBy(cb.asc(join.get("city")));

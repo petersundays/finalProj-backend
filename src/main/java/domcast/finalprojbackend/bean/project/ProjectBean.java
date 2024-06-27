@@ -916,30 +916,49 @@ public class ProjectBean implements Serializable {
         return true;
     }
 
-    public List<ProjectPreview> getProjectsByCriteria (Integer userId, String name, int lab, int state, String keywords, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
+    public List<ProjectPreview> getProjectsByCriteria (Integer userId, String name, int lab, int state, String keyword, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
 
-        if (!dataValidator.isPageSizeValid(pageSize) ||
-                !dataValidator.isPageNumberValid(pageNumber) ||
-                !dataValidator.isIdValid(userId) ||
-                !LabEnum.isValidLabId(lab) ||
-                !ProjectStateEnum.isValidId(state) ||
-                dataValidator.isStringValid(name) ||
-                dataValidator.isStringValid(keywords))   {
+        if (userId != 0) {
+            if (!dataValidator.isIdValid(userId)) {
+                logger.error("Invalid user ID while getting projects by criteria");
+                throw new IllegalArgumentException("Invalid user ID while getting projects by criteria");
+            }
+        }
+
+        if (!dataValidator.validateSearchCriteria(lab,orderBy,pageNumber,pageSize)) {
             logger.error("Invalid input parameters while getting projects by criteria");
             throw new IllegalArgumentException("Invalid input parameters while getting projects by criteria");
         }
 
-        List<String> allowedOrderByFields = Arrays.asList("state", "readyDate", "lab", "name");
-        if (!allowedOrderByFields.contains(orderBy)) {
-            logger.error("Invalid order by field while getting projects by criteria");
-            throw new IllegalArgumentException("Invalid order by field while getting projects by criteria");
+        if (!dataValidator.isOrderByValidForProject(orderBy)) {
+            logger.error("Invalid order by parameter while getting projects by criteria: {}", orderBy);
+            throw new IllegalArgumentException("Invalid order by parameter while getting projects by criteria");
         }
+
+        if (name != null && !name.isEmpty()) {
+            if (!dataValidator.isValidName(name)) {
+                logger.error("Invalid project name while getting projects by criteria");
+                throw new IllegalArgumentException("Invalid project name while getting projects by criteria");
+            }
+        }
+
+        String keywordTrimmed = "";
+
+        if (keyword != null && keyword.isEmpty()) {
+            keywordTrimmed = dataValidator.getFirstWord(keyword);
+            keywordTrimmed = dataValidator.isValidName(keywordTrimmed) ? keywordTrimmed : "";
+
+            if (keywordTrimmed != null && !keywordTrimmed.isEmpty() && !keywordTrimmed.equals(keyword)) {
+                logger.info("Keyword had more than one word, only the first word will be used: '{}'", keywordTrimmed);
+            }
+        }
+
         logger.info("Getting projects by criteria");
 
         List<ProjectEntity> projects;
 
         try {
-            projects = projectDao.getProjectsByCriteria(userId, name, lab, state, keywords, orderBy, orderAsc, pageNumber, pageSize);
+            projects = projectDao.getProjectsByCriteria(userId, name, lab, state, keywordTrimmed, orderBy, orderAsc, pageNumber, pageSize);
             if (projects == null || projects.isEmpty()) {
                 logger.warn("No projects found by criteria");
                 throw new IllegalArgumentException("No projects found by criteria");
@@ -999,7 +1018,7 @@ public class ProjectBean implements Serializable {
         for (M2MProjectUser m2MProjectUser : projectEntity.getProjectUsers()) {
             ProjectUser projectUser = userBean.projectUserToProjectUserDto(m2MProjectUser);
 
-            if (projectUser != null) {
+            if (projectUser == null) {
                 logger.error("Error converting project user with ID {} to project user DTO while converting project entity {} to project preview", m2MProjectUser.getId(), projectEntity.getId());
             }
             projectUsers.add(projectUser);
@@ -1007,7 +1026,7 @@ public class ProjectBean implements Serializable {
 
         if (!projectUsers.isEmpty()) {
             projectPreview.setProjectUsers(projectUsers);
-            logger.info("Added project {} users to project preview", projectUsers.size());
+            logger.info("Added {} project users to project preview", projectUsers.size());
         }
 
         logger.info("Successfully converted project entity to project preview");

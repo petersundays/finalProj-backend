@@ -967,34 +967,55 @@ public class UserBean implements Serializable {
      * @param pageSize The number of results per page.
      * @return A list of users based on the search criteria.
      */
-    public List<SearchedUser> getUsersByCriteria(String firstName, String lastName, String nickname, String workplace, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
+    public List<SearchedUser> getUsersByCriteria(String firstName, String lastName, String nickname, int workplace, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
 
         logger.info("Getting users by criteria");
 
-        if (!dataValidator.validateUserSearchCriteria(workplace, orderBy, pageNumber, pageSize)) {
+        if (!dataValidator.validateSearchCriteria(workplace, orderBy, pageNumber, pageSize)) {
             logger.error("Search criteria is invalid");
             throw new IllegalArgumentException("Search criteria is invalid");
         }
 
-        if (firstName != null) {
-            firstName = dataValidator.getFirstWord(firstName);
-            logger.info("First name had more than one word, only the first word will be used: '{}'", firstName);
+        if (!dataValidator.isOrderByValidForUser(orderBy)) {
+            logger.error("Invalid order by field: {}", orderBy);
+            throw new IllegalArgumentException("Invalid order by field: " + orderBy);
         }
 
-        if (lastName != null) {
-            lastName = dataValidator.getFirstWord(lastName);
-            logger.info("Last name had more than one word, only the first word will be used: '{}'", lastName);
+        String firstNameTrimmed = "";
+        String lastNameTrimmed = "";
+        String nicknameTrimmed = "";
+
+        if (firstName != null && !firstName.isEmpty()) {
+            firstNameTrimmed = dataValidator.getFirstWord(firstName);
+            firstNameTrimmed = dataValidator.isValidName(firstNameTrimmed) ? firstNameTrimmed : "";
+
+            if (firstNameTrimmed != null && !firstNameTrimmed.isEmpty() && !firstNameTrimmed.equals(firstName)) {
+                logger.info("First name had more than one word, only the first word will be used: '{}'", firstNameTrimmed);
+            }
         }
 
-        if (nickname != null) {
-            nickname = dataValidator.getFirstWord(nickname);
-            logger.info("Nickname had more than one word, only the first word will be used: '{}'", nickname);
+        if (lastName != null && !lastName.isEmpty()) {
+            lastNameTrimmed = dataValidator.getFirstWord(lastName);
+            lastNameTrimmed = dataValidator.isValidName(lastNameTrimmed) ? lastNameTrimmed : "";
+
+            if (lastNameTrimmed != null && !lastNameTrimmed.isEmpty() && !lastNameTrimmed.equals(lastName)) {
+                logger.info("Last name had more than one word, only the first word will be used: '{}'", lastNameTrimmed);
+            }
+        }
+
+        if (nickname != null && !nickname.isEmpty()) {
+            nicknameTrimmed = dataValidator.getFirstWord(nickname);
+            nicknameTrimmed = dataValidator.isValidName(nicknameTrimmed) ? nicknameTrimmed : "";
+
+            if (nicknameTrimmed != null && !nicknameTrimmed.isEmpty() && !nicknameTrimmed.equals(nickname)) {
+                logger.info("Nickname had more than one word, only the first word will be used: '{}'", nicknameTrimmed);
+            }
         }
 
 
         List<SearchedUser> searchedUsers = new ArrayList<>();
         try {
-            List<UserEntity> users = userDao.getUsersByCriteria(firstName, lastName, nickname, workplace, orderBy, orderAsc, pageNumber, pageSize);
+            List<UserEntity> users = userDao.getUsersByCriteria(firstNameTrimmed, lastNameTrimmed, nicknameTrimmed, workplace, orderBy, orderAsc, pageNumber, pageSize);
             if (users != null && !users.isEmpty()) {
                 logger.info("Users found in DAO: {}", users.size());
                 for (UserEntity user : users) {
@@ -1209,7 +1230,8 @@ public class UserBean implements Serializable {
         projectUser.setLastName(userEntity.getLastName());
         projectUser.setRole(role.getId());
 
-        logger.info("Successfully converted M2MProjectUser to ProjectUser");
+        logger.info("Successfully converted M2MProjectUser with user id: {} to ProjectUser, for project with id: {}",
+                userEntity.getId(), m2mProjectUser.getProject().getId());
 
         return projectUser;
     }

@@ -2,10 +2,10 @@ package domcast.finalprojbackend.bean;
 
 import domcast.finalprojbackend.bean.user.PasswordBean;
 import domcast.finalprojbackend.dao.TaskDao;
-import domcast.finalprojbackend.dto.interestDto.InterestDto;
-import domcast.finalprojbackend.dto.skillDto.SkillDto;
 import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
+import domcast.finalprojbackend.dto.interestDto.InterestDto;
 import domcast.finalprojbackend.dto.projectDto.NewProjectDto;
+import domcast.finalprojbackend.dto.skillDto.SkillDto;
 import domcast.finalprojbackend.dto.taskDto.NewTask;
 import domcast.finalprojbackend.dto.userDto.FirstRegistration;
 import domcast.finalprojbackend.dto.userDto.FullRegistration;
@@ -183,6 +183,7 @@ public class DataValidator {
             throw new IllegalArgumentException("Id must be greater than 0");
         }
 
+        logger.info("Id is valid");
         return true;
     }
 
@@ -505,14 +506,70 @@ public class DataValidator {
     }
 
     /**
+     * Validates the project name
+     * @param name the name to be checked
+     * @return boolean value indicating if the project name is valid
+     */
+    public boolean isValidName(String name) {
+        String regex = "^[a-zA-Z0-9 _-]+$";
+        return name != null && name.matches(regex);
+    }
+
+    /**
+     * Validates the orderBy field for getting users by criteria
+     * @param orderBy the orderBy field to be checked
+     * @return boolean value indicating if the orderBy field is valid
+     */
+    public boolean isOrderByValidForUser(String orderBy) {
+
+        if (orderBy == null || orderBy.isBlank()) {
+            logger.error("OrderBy field is null or blank while getting users by criteria");
+            throw new IllegalArgumentException("OrderBy field is null or blank");
+        }
+
+        // Validate orderBy field
+        List<String> allowedOrderByFields = Arrays.asList("firstName", "lastName", "nickname", "lab");
+        if (!allowedOrderByFields.contains(orderBy)) {
+            logger.error("Invalid orderBy field while getting users by criteria");
+            throw new IllegalArgumentException("Invalid orderBy field");
+        }
+
+        logger.info("OrderBy field is valid for getting users by criteria");
+        return true;
+    }
+
+    /**
+     * Validates the orderBy field for getting projects by criteria
+     * @param orderBy the orderBy field to be checked
+     * @return boolean value indicating if the orderBy field is valid
+     */
+    public boolean isOrderByValidForProject(String orderBy) {
+
+        if (orderBy == null || orderBy.isBlank()) {
+            logger.error("OrderBy field is null or blank while getting projects by criteria");
+            throw new IllegalArgumentException("OrderBy field is null or blank");
+        }
+
+        // Validate orderBy field
+        List<String> allowedOrderByFields = Arrays.asList("name", "lab", "readyDate", "state");
+        if (!allowedOrderByFields.contains(orderBy)) {
+            logger.error("Invalid orderBy field while getting users by criteria");
+            throw new IllegalArgumentException("Invalid orderBy field");
+        }
+
+        logger.info("OrderBy field is valid for getting projects by criteria");
+        return true;
+    }
+
+    /**
      * Validates the user search criteria
-     * @param workplace the workplace to be checked
+     * @param lab the lab to be checked
      * @param orderBy the order by to be checked
      * @param pageNumber the page number to be checked
      * @param pageSize the page size to be checked
      * @return boolean value indicating if the user search criteria is valid
      */
-    public boolean validateUserSearchCriteria(String workplace, String orderBy, int pageNumber, int pageSize) {
+    public boolean validateSearchCriteria(int lab, String orderBy, int pageNumber, int pageSize) {
 
         logger.info("Validating user search criteria");
 
@@ -526,18 +583,12 @@ public class DataValidator {
             throw new IllegalArgumentException("Invalid page number");
         }
 
-        if (workplace != null && !LabEnum.isValidLabValue(workplace)) {
-            logger.error("Invalid workplace while getting users by criteria");
-            throw new IllegalArgumentException("Invalid workplace");
+        if (lab != 0 && !LabEnum.isValidLabId(lab)) {
+            logger.error("Invalid lab while getting users by criteria");
+            throw new IllegalArgumentException("Invalid lab");
         }
 
-        // Validate orderBy field
-        List<String> allowedOrderByFields = Arrays.asList("firstName", "lastName", "nickname", "workplace");
-        if (!allowedOrderByFields.contains(orderBy)) {
-            logger.error("Invalid orderBy field while getting users by criteria");
-            throw new IllegalArgumentException("Invalid orderBy field");
-        }
-
+        logger.info("Search criteria is valid");
         return true;
     }
 }

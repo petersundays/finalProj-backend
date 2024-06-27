@@ -3,7 +3,6 @@ package domcast.finalprojbackend.dao;
 import domcast.finalprojbackend.entity.M2MKeyword;
 import domcast.finalprojbackend.entity.M2MProjectUser;
 import domcast.finalprojbackend.entity.ProjectEntity;
-import domcast.finalprojbackend.enums.LabEnum;
 import domcast.finalprojbackend.enums.ProjectStateEnum;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.NoResultException;
@@ -13,6 +12,7 @@ import jakarta.persistence.criteria.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -103,14 +103,14 @@ public class ProjectDao extends AbstractDao<ProjectEntity> {
         }
     }
 
-    public List<ProjectEntity> getProjectsByCriteria(Integer userId, String name, int lab, int state, String keyword, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
+    public List<ProjectEntity> getProjectsByCriteria(int userId, String name, int lab, int state, String keyword, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<ProjectEntity> cq = cb.createQuery(ProjectEntity.class);
 
         Root<ProjectEntity> project = cq.from(ProjectEntity.class);
         List<Predicate> predicates = new ArrayList<>();
 
-        if (userId != null) {
+        if (userId != 0) {
             Join<ProjectEntity, M2MProjectUser> joinProjectUser = project.join("projectUsers");
             if (joinProjectUser != null) {
                 predicates.add(cb.equal(joinProjectUser.get("user").get("id"), userId));
@@ -122,7 +122,7 @@ public class ProjectDao extends AbstractDao<ProjectEntity> {
         }
 
         if (lab != 0) {
-            predicates.add(cb.equal(project.get("lab"), LabEnum.fromId(lab)));
+            predicates.add(cb.equal(project.get("lab").get("id"), lab));
         }
 
         if (state != 0) {
@@ -147,16 +147,22 @@ public class ProjectDao extends AbstractDao<ProjectEntity> {
                 }
                 case "readyDate" -> {
                     if (orderAsc) {
-                        cq.orderBy(cb.asc(project.get("readyDate")));
+                        cq.orderBy(cb.asc(cb.coalesce(project.get("readyDate"), LocalDateTime.MAX)));
+                        // coalesce is used
+                        // to handle null values
+                        // which will be the last in the order
                     } else {
-                        cq.orderBy(cb.desc(project.get("readyDate")));
+                        cq.orderBy(cb.desc(cb.coalesce(project.get("readyDate"), LocalDateTime.MIN)));
+                        // coalesce is used
+                        // to handle null values
+                        // which will be the first in the order
                     }
                 }
                 case "lab" -> {
                     if (orderAsc) {
-                        cq.orderBy(cb.asc(project.get("lab").get("city")));
+                        cq.orderBy(cb.asc(project.get("lab").get("id")));
                     } else {
-                        cq.orderBy(cb.desc(project.get("lab").get("city")));
+                        cq.orderBy(cb.desc(project.get("lab").get("id")));
                     }
                 }
                 case "name" -> {

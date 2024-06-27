@@ -356,7 +356,7 @@ public class UserService {
                                        @QueryParam("firstName") String firstName,
                                        @QueryParam("lastName") String lastName,
                                        @QueryParam("nickname") String nickname,
-                                       @QueryParam("workplace") String workplace,
+                                       @QueryParam("workplace") int workplace,
                                        @QueryParam("orderBy") String orderBy,
                                        @QueryParam("orderAsc") boolean orderAsc,
                                        @QueryParam("pageNumber") int pageNumber,
