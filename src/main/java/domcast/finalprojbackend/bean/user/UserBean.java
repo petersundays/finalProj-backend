@@ -967,24 +967,55 @@ public class UserBean implements Serializable {
      * @param pageSize The number of results per page.
      * @return A list of users based on the search criteria.
      */
-    public List<SearchedUser> getUsersByCriteria(String firstName, String lastName, String nickname, String workplace, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
+    public List<SearchedUser> getUsersByCriteria(String firstName, String lastName, String nickname, int workplace, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
 
-        // Validate page size and page number
-        if (!dataValidator.isPageSizeValid(pageSize) || !dataValidator.isPageNumberValid(pageNumber)) {
-            logger.error("Invalid page size or page number");
-            return new ArrayList<>();
+        logger.info("Getting users by criteria");
+
+        if (!dataValidator.validateSearchCriteria(workplace, orderBy, pageNumber, pageSize)) {
+            logger.error("Search criteria is invalid");
+            throw new IllegalArgumentException("Search criteria is invalid");
         }
 
-        // Validate orderBy field
-        List<String> allowedOrderByFields = Arrays.asList("firstName", "lastName", "nickname", "workplace");
-        if (!allowedOrderByFields.contains(orderBy)) {
-            logger.error("Invalid orderBy field");
-            return new ArrayList<>();
+        if (!dataValidator.isOrderByValidForUser(orderBy)) {
+            logger.error("Invalid order by field: {}", orderBy);
+            throw new IllegalArgumentException("Invalid order by field: " + orderBy);
         }
+
+        String firstNameTrimmed = "";
+        String lastNameTrimmed = "";
+        String nicknameTrimmed = "";
+
+        if (firstName != null && !firstName.isEmpty()) {
+            firstNameTrimmed = dataValidator.getFirstWord(firstName);
+            firstNameTrimmed = dataValidator.isValidName(firstNameTrimmed) ? firstNameTrimmed : "";
+
+            if (firstNameTrimmed != null && !firstNameTrimmed.isEmpty() && !firstNameTrimmed.equals(firstName)) {
+                logger.info("First name had more than one word, only the first word will be used: '{}'", firstNameTrimmed);
+            }
+        }
+
+        if (lastName != null && !lastName.isEmpty()) {
+            lastNameTrimmed = dataValidator.getFirstWord(lastName);
+            lastNameTrimmed = dataValidator.isValidName(lastNameTrimmed) ? lastNameTrimmed : "";
+
+            if (lastNameTrimmed != null && !lastNameTrimmed.isEmpty() && !lastNameTrimmed.equals(lastName)) {
+                logger.info("Last name had more than one word, only the first word will be used: '{}'", lastNameTrimmed);
+            }
+        }
+
+        if (nickname != null && !nickname.isEmpty()) {
+            nicknameTrimmed = dataValidator.getFirstWord(nickname);
+            nicknameTrimmed = dataValidator.isValidName(nicknameTrimmed) ? nicknameTrimmed : "";
+
+            if (nicknameTrimmed != null && !nicknameTrimmed.isEmpty() && !nicknameTrimmed.equals(nickname)) {
+                logger.info("Nickname had more than one word, only the first word will be used: '{}'", nicknameTrimmed);
+            }
+        }
+
 
         List<SearchedUser> searchedUsers = new ArrayList<>();
         try {
-            List<UserEntity> users = userDao.getUsersByCriteria(firstName, lastName, nickname, workplace, orderBy, orderAsc, pageNumber, pageSize);
+            List<UserEntity> users = userDao.getUsersByCriteria(firstNameTrimmed, lastNameTrimmed, nicknameTrimmed, workplace, orderBy, orderAsc, pageNumber, pageSize);
             if (users != null && !users.isEmpty()) {
                 logger.info("Users found in DAO: {}", users.size());
                 for (UserEntity user : users) {
@@ -994,9 +1025,13 @@ public class UserBean implements Serializable {
                     }
                 }
                 logger.info("Users found: {}", searchedUsers.size());
+            } else {
+                logger.info("No users found");
+                throw new NoSuchElementException("No users found");
             }
         } catch (Exception e) {
             logger.error("Error occurred while getting users by criteria", e);
+            throw e;
         }
         return searchedUsers;
     }
@@ -1195,7 +1230,8 @@ public class UserBean implements Serializable {
         projectUser.setLastName(userEntity.getLastName());
         projectUser.setRole(role.getId());
 
-        logger.info("Successfully converted M2MProjectUser to ProjectUser");
+        logger.info("Successfully converted M2MProjectUser with user id: {} to ProjectUser, for project with id: {}",
+                userEntity.getId(), m2mProjectUser.getProject().getId());
 
         return projectUser;
     }

@@ -10,6 +10,7 @@ import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
 import domcast.finalprojbackend.dto.projectDto.DetailedProject;
 import domcast.finalprojbackend.dto.projectDto.EditProject;
 import domcast.finalprojbackend.dto.projectDto.NewProjectDto;
+import domcast.finalprojbackend.dto.projectDto.ProjectPreview;
 import domcast.finalprojbackend.dto.skillDto.SkillDto;
 import domcast.finalprojbackend.dto.userDto.EnumDTO;
 import domcast.finalprojbackend.dto.userDto.ProjectTeam;
@@ -393,5 +394,47 @@ public class ProjectService {
 
         return response;
 
+    }
+
+    @GET
+    @Path("")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getProjectsByCriteria(@HeaderParam("token") String sessionToken,
+                                          @HeaderParam("id") int loggedUserId,
+                                          @QueryParam("userId") int userId,
+                                          @QueryParam("name") String name,
+                                          @QueryParam("lab") int labId,
+                                          @QueryParam("state") int stateId,
+                                          @QueryParam("keyword") String keyword,
+                                          @QueryParam("orderBy") String orderBy,
+                                          @QueryParam("orderAsc") boolean orderAsc,
+                                          @QueryParam("pageNumber") int pageNumber,
+                                          @QueryParam("pageSize") int pageSize,
+                                          @Context HttpServletRequest request) {
+
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with IP address {} is trying to get projects by criteria", ipAddress);
+
+        Response response;
+        List<ProjectPreview> projects;
+
+        // Check if the id is valid
+        if (!dataValidator.isIdValid(loggedUserId)) {
+            response = Response.status(400).entity("Invalid id").build();
+            logger.info("User with session token {} tried to get projects by criteria with invalid id", sessionToken);
+            return response;
+        }
+
+
+        try {
+            projects = projectBean.getProjectsByCriteria(userId, name, labId, stateId, keyword, orderBy, orderAsc, pageNumber, pageSize);
+            response = Response.status(200).entity(projects).build();
+            logger.info("User with IP address {} got {} projects by criteria", ipAddress, projects.size());
+        } catch (IllegalArgumentException e) {
+            response = Response.status(400).entity(e.getMessage()).build();
+            logger.info("User with IP address {} tried to get projects by criteria unsuccessfully", ipAddress);
+        }
+
+        return response;
     }
 }

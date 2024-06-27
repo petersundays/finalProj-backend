@@ -22,6 +22,7 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 /**
  * UserService class that handles user related operations.
@@ -355,7 +356,7 @@ public class UserService {
                                        @QueryParam("firstName") String firstName,
                                        @QueryParam("lastName") String lastName,
                                        @QueryParam("nickname") String nickname,
-                                       @QueryParam("workplace") String workplace,
+                                       @QueryParam("workplace") int workplace,
                                        @QueryParam("orderBy") String orderBy,
                                        @QueryParam("orderAsc") boolean orderAsc,
                                        @QueryParam("pageNumber") int pageNumber,
@@ -385,9 +386,12 @@ public class UserService {
             users = userBean.getUsersByCriteria(firstName, lastName, nickname, workplace, orderBy, orderAsc, pageNumber, pageSize);
             response = Response.status(200).entity(users).build();
             logger.info("User with IP address {} got users by criteria successfully", ipAddress);
-        } catch (Exception e) {
-            response = Response.status(400).entity("Error getting users by criteria").build();
+        } catch (IllegalArgumentException e) {
+            response = Response.status(400).entity(e.getMessage()).build();
             logger.info("User with IP address {} tried to get users by criteria unsuccessfully", ipAddress);
+        } catch (NoSuchElementException e) {
+            response = Response.status(404).entity(e.getMessage()).build();
+            logger.info("User with IP address {} tried to get users but no users were found", ipAddress);
         }
 
         return response;

@@ -1,11 +1,20 @@
 package domcast.finalprojbackend.dao;
 
+import domcast.finalprojbackend.entity.M2MKeyword;
 import domcast.finalprojbackend.entity.M2MProjectUser;
 import domcast.finalprojbackend.entity.ProjectEntity;
+import domcast.finalprojbackend.enums.ProjectStateEnum;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.NoResultException;
+import jakarta.persistence.PersistenceException;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Stateless
 public class ProjectDao extends AbstractDao<ProjectEntity> {
@@ -93,4 +102,92 @@ public class ProjectDao extends AbstractDao<ProjectEntity> {
             return false;
         }
     }
+
+    public List<ProjectEntity> getProjectsByCriteria(int userId, String name, int lab, int state, String keyword, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<ProjectEntity> cq = cb.createQuery(ProjectEntity.class);
+
+        Root<ProjectEntity> project = cq.from(ProjectEntity.class);
+        List<Predicate> predicates = new ArrayList<>();
+
+        if (userId != 0) {
+            Join<ProjectEntity, M2MProjectUser> joinProjectUser = project.join("projectUsers");
+            if (joinProjectUser != null) {
+                predicates.add(cb.equal(joinProjectUser.get("user").get("id"), userId));
+            }
+        }
+
+        if (name != null && !name.isEmpty()) {
+            predicates.add(cb.like(project.get("name"), "%" + name + "%"));
+        }
+
+        if (lab != 0) {
+            predicates.add(cb.equal(project.get("lab").get("id"), lab));
+        }
+
+        if (state != 0) {
+            predicates.add(cb.equal(project.get("state"), ProjectStateEnum.fromId(state)));
+        }
+
+        if (keyword != null && !keyword.isEmpty()) {
+            Join<ProjectEntity, M2MKeyword> joinKeyword = project.join("keywords");
+            predicates.add(joinKeyword.get("keyword").get("name").in(keyword));
+        }
+
+        cq.select(project).where(cb.and(predicates.toArray(new Predicate[0])));
+
+        if (orderBy != null && !orderBy.isEmpty()) {
+            switch (orderBy) {
+                case "state" -> {
+                    if (orderAsc) {
+                        cq.orderBy(cb.asc(project.get("state")));
+                    } else {
+                        cq.orderBy(cb.desc(project.get("state")));
+                    }
+                }
+                case "readyDate" -> {
+                    if (orderAsc) {
+                        cq.orderBy(cb.asc(cb.coalesce(project.get("readyDate"), LocalDateTime.MAX)));
+                        // coalesce is used
+                        // to handle null values
+                        // which will be the last in the order
+                    } else {
+                        cq.orderBy(cb.desc(cb.coalesce(project.get("readyDate"), LocalDateTime.MIN)));
+                        // coalesce is used
+                        // to handle null values
+                        // which will be the first in the order
+                    }
+                }
+                case "lab" -> {
+                    if (orderAsc) {
+                        cq.orderBy(cb.asc(project.get("lab").get("id")));
+                    } else {
+                        cq.orderBy(cb.desc(project.get("lab").get("id")));
+                    }
+                }
+                case "name" -> {
+                    if (orderAsc) {
+                        cq.orderBy(cb.asc(project.get("name")));
+                    } else {
+                        cq.orderBy(cb.desc(project.get("name")));
+                    }
+                }
+            }
+        }
+
+        TypedQuery<ProjectEntity> query = em.createQuery(cq);
+        query.setFirstResult((pageNumber - 1) * pageSize);
+        query.setMaxResults(pageSize);
+
+        try {
+            return query.getResultList();
+        } catch (NoResultException e) {
+            logger.error("No projects found with the given criteria", e);
+            return new ArrayList<>();
+        } catch (PersistenceException e) {
+            logger.error("Database error while getting projects by criteria", e);
+            return new ArrayList<>();
+        }
+    }
+
 }

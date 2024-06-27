@@ -21,6 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -257,11 +258,19 @@ public class StartupCreator implements Serializable {
             project.setProjectedStartDate(LocalDateTime.now().plusDays(1));
             project.setDeadline(LocalDateTime.now().plusDays(30));
 
-            // Set realStartDate and realEndDate based on the project's state
-            if (projectStates[i] == ProjectStateEnum.PLANNING) {
+            // Set readyDate, realStartDate and realEndDate based on the project's state
+            if (projectStates[i] == ProjectStateEnum.IN_PROGRESS) {
                 project.setRealStartDate(LocalDateTime.now());
             } else if (projectStates[i] == ProjectStateEnum.FINISHED) {
                 project.setRealEndDate(LocalDateTime.now());
+            } else if (projectStates[i] != ProjectStateEnum.PLANNING) {
+                // Generate a random date within the past year
+                long minDay = LocalDate.of(2020, 1, 1).toEpochDay();
+                long maxDay = LocalDate.now().toEpochDay();
+                long randomDay = minDay + random.nextInt((int)(maxDay - minDay));
+                LocalDateTime randomReadyDate = LocalDate.ofEpochDay(randomDay).atStartOfDay();
+
+                project.setReadyDate(randomReadyDate);
             }
 
             // Create and set project skills

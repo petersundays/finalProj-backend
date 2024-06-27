@@ -2,19 +2,16 @@ package domcast.finalprojbackend.bean;
 
 import domcast.finalprojbackend.bean.user.PasswordBean;
 import domcast.finalprojbackend.dao.TaskDao;
-import domcast.finalprojbackend.dto.interestDto.InterestDto;
-import domcast.finalprojbackend.dto.skillDto.SkillDto;
 import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
+import domcast.finalprojbackend.dto.interestDto.InterestDto;
 import domcast.finalprojbackend.dto.projectDto.NewProjectDto;
+import domcast.finalprojbackend.dto.skillDto.SkillDto;
 import domcast.finalprojbackend.dto.taskDto.NewTask;
 import domcast.finalprojbackend.dto.userDto.FirstRegistration;
 import domcast.finalprojbackend.dto.userDto.FullRegistration;
 import domcast.finalprojbackend.dto.userDto.Login;
 import domcast.finalprojbackend.entity.TaskEntity;
-import domcast.finalprojbackend.enums.ComponentResourceEnum;
-import domcast.finalprojbackend.enums.InterestEnum;
-import domcast.finalprojbackend.enums.ProjectStateEnum;
-import domcast.finalprojbackend.enums.SkillTypeEnum;
+import domcast.finalprojbackend.enums.*;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import org.apache.logging.log4j.LogManager;
@@ -25,6 +22,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -36,6 +35,7 @@ public class DataValidator {
             "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
 
     private static final Pattern pattern = Pattern.compile(EMAIL_PATTERN);
+    private static final int MAX_STRING_LENGTH = 20;
 
     @EJB
     private PasswordBean passwordBean;
@@ -183,6 +183,7 @@ public class DataValidator {
             throw new IllegalArgumentException("Id must be greater than 0");
         }
 
+        logger.info("Id is valid");
         return true;
     }
 
@@ -452,5 +453,142 @@ public class DataValidator {
         }
 
         logger.info("Successfully validated project approval");
+    }
+
+    /**
+     * Verifies if a string is valid
+     * @param str the string to be checked
+     * @return boolean value indicating if the string is valid
+     */
+    public boolean isStringValid(String str) {
+        if (str == null) {
+            return false;
+        }
+
+        // Sanitize the string
+        str = sanitizeString(str);
+
+        str = str.trim();
+
+        return !str.isEmpty() && str.length() <= MAX_STRING_LENGTH;
+    }
+
+    /**
+     * Sanitizes a string by removing special characters
+     * @param str the string to be sanitized
+     * @return the sanitized string
+     */
+    private String sanitizeString(String str) {
+        return str.replaceAll("[^a-zA-Z0-9]", "");
+    }
+
+    public String getFirstWord(String str) {
+        if (str == null) {
+            return null;
+        }
+
+        // Remove all leading spaces
+        str = str.replaceFirst("^\\s+", "");
+
+        if (str.isEmpty() || str.length() > MAX_STRING_LENGTH){
+            return null;
+        }
+
+        // Split the string into words
+        String[] words = str.split("\\s+");
+
+        // If the string contains more than one word, consider only the first word
+        if (words.length > 1) {
+            str = words[0];
+        }
+
+        return str;
+    }
+
+    /**
+     * Validates the project name
+     * @param name the name to be checked
+     * @return boolean value indicating if the project name is valid
+     */
+    public boolean isValidName(String name) {
+        String regex = "^[a-zA-Z0-9 _-]+$";
+        return name != null && name.matches(regex);
+    }
+
+    /**
+     * Validates the orderBy field for getting users by criteria
+     * @param orderBy the orderBy field to be checked
+     * @return boolean value indicating if the orderBy field is valid
+     */
+    public boolean isOrderByValidForUser(String orderBy) {
+
+        if (orderBy == null || orderBy.isBlank()) {
+            logger.error("OrderBy field is null or blank while getting users by criteria");
+            throw new IllegalArgumentException("OrderBy field is null or blank");
+        }
+
+        // Validate orderBy field
+        List<String> allowedOrderByFields = Arrays.asList("firstName", "lastName", "nickname", "lab");
+        if (!allowedOrderByFields.contains(orderBy)) {
+            logger.error("Invalid orderBy field while getting users by criteria");
+            throw new IllegalArgumentException("Invalid orderBy field");
+        }
+
+        logger.info("OrderBy field is valid for getting users by criteria");
+        return true;
+    }
+
+    /**
+     * Validates the orderBy field for getting projects by criteria
+     * @param orderBy the orderBy field to be checked
+     * @return boolean value indicating if the orderBy field is valid
+     */
+    public boolean isOrderByValidForProject(String orderBy) {
+
+        if (orderBy == null || orderBy.isBlank()) {
+            logger.error("OrderBy field is null or blank while getting projects by criteria");
+            throw new IllegalArgumentException("OrderBy field is null or blank");
+        }
+
+        // Validate orderBy field
+        List<String> allowedOrderByFields = Arrays.asList("name", "lab", "readyDate", "state");
+        if (!allowedOrderByFields.contains(orderBy)) {
+            logger.error("Invalid orderBy field while getting users by criteria");
+            throw new IllegalArgumentException("Invalid orderBy field");
+        }
+
+        logger.info("OrderBy field is valid for getting projects by criteria");
+        return true;
+    }
+
+    /**
+     * Validates the user search criteria
+     * @param lab the lab to be checked
+     * @param orderBy the order by to be checked
+     * @param pageNumber the page number to be checked
+     * @param pageSize the page size to be checked
+     * @return boolean value indicating if the user search criteria is valid
+     */
+    public boolean validateSearchCriteria(int lab, String orderBy, int pageNumber, int pageSize) {
+
+        logger.info("Validating user search criteria");
+
+        if (!isPageSizeValid(pageSize)) {
+            logger.error("Invalid page size while getting users by criteria");
+            throw new IllegalArgumentException("Invalid page size");
+        }
+
+        if (!isPageNumberValid(pageNumber)) {
+            logger.error("Invalid page number while getting users by criteria");
+            throw new IllegalArgumentException("Invalid page number");
+        }
+
+        if (lab != 0 && !LabEnum.isValidLabId(lab)) {
+            logger.error("Invalid lab while getting users by criteria");
+            throw new IllegalArgumentException("Invalid lab");
+        }
+
+        logger.info("Search criteria is valid");
+        return true;
     }
 }
