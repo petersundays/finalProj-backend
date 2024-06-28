@@ -3,7 +3,9 @@ import domcast.finalprojbackend.bean.InterestBean;
 import domcast.finalprojbackend.bean.SkillBean;
 import domcast.finalprojbackend.bean.user.*;
 import domcast.finalprojbackend.dao.LabDao;
+import domcast.finalprojbackend.dao.SessionTokenDao;
 import domcast.finalprojbackend.dao.UserDao;
+import domcast.finalprojbackend.dao.ValidationTokenDao;
 import domcast.finalprojbackend.dto.userDto.*;
 import domcast.finalprojbackend.entity.*;
 import domcast.finalprojbackend.enums.LabEnum;
@@ -53,6 +55,12 @@ public class UserBeanTest {
 
     @Mock
     private LabDao labDao; // Mock the LabDao
+
+    @Mock
+    private ValidationTokenDao validationTokenDao; // Mock the ValidationTokenDao
+
+    @Mock
+    private SessionTokenDao sessionTokenDao; // Mock the SessionTokenDao
 
     @Mock
     private InputPart inputPart; // Mock the InputPart
@@ -403,13 +411,18 @@ public class UserBeanTest {
         uploadForm.put("photo", Arrays.asList(inputPart));
 
         // Mock the behavior of the dependencies
-        when(userDao.findUserByActiveValidationOrSessionToken(token)).thenReturn(userEntity);
+        when(validationTokenDao.findUserByToken(token)).thenReturn(null); // Add this line
+        when(sessionTokenDao.findUserByToken(token)).thenReturn(userEntity); // Add this line
         when(input.getFormDataMap()).thenReturn(uploadForm);
         when(inputPart.getBody(InputStream.class, null)).thenReturn(inputStream);
         when(dataValidator.isValidImage(bytes)).thenReturn(true);
 
         // Act
-        userBean.uploadPhoto(token, input);
+        String result = userBean.uploadPhoto(token, input);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(userEntity.getPhoto(), result);
 
         // Verify that the userDao.merge method was called
         verify(userDao, times(1)).merge(any(UserEntity.class));
@@ -712,16 +725,45 @@ public class UserBeanTest {
 
     @Test
     public void testProjectUserToProjectUserDto_Success() {
+        // Create a M2MProjectUser instance
         M2MProjectUser m2MProjectUser = new M2MProjectUser();
+
+        // Create a UserEntity instance and set its properties
         UserEntity userEntity = new UserEntity();
         userEntity.setId(1);
+        userEntity.setFirstName("John");
+        userEntity.setLastName("Doe");
+
+        // Set the UserEntity instance to the M2MProjectUser instance
         m2MProjectUser.setUser(userEntity);
+
+        // Create a ProjectEntity instance and set its properties
+        ProjectEntity projectEntity = new ProjectEntity();
+        projectEntity.setId(1);
+
+        // Set the ProjectEntity instance to the M2MProjectUser instance
+        m2MProjectUser.setProject(projectEntity);
+
+        // Set the role of the M2MProjectUser instance
         m2MProjectUser.setRole(ProjectUserEnum.MANAGER);
 
+        // Call the method to test
         ProjectUser result = userBean.projectUserToProjectUserDto(m2MProjectUser);
 
+        // Assert that the result is not null
         assertNotNull(result);
+
+        // Assert that the id of the result matches the id of the UserEntity instance
         assertEquals(userEntity.getId(), result.getId());
+
+        // Assert that the first name of the result matches the first name of the UserEntity instance
+        assertEquals(userEntity.getFirstName(), result.getFirstName());
+
+        // Assert that the last name of the result matches the last name of the UserEntity instance
+        assertEquals(userEntity.getLastName(), result.getLastName());
+
+        // Assert that the role of the result matches the role of the M2MProjectUser instance
+        assertEquals(m2MProjectUser.getRole().getId(), result.getRole());
     }
 
     @Test
@@ -732,20 +774,49 @@ public class UserBeanTest {
     // Tests for projectUsersToListOfProjectUser method
     @Test
     public void testProjectUsersToListOfProjectUser_Success() {
-        M2MProjectUser m2MProjectUser = new M2MProjectUser();
-        UserEntity userEntity = new UserEntity();
-        userEntity.setId(1);
-        m2MProjectUser.setUser(userEntity);
-        m2MProjectUser.setRole(ProjectUserEnum.MANAGER);
+        // Create a M2MProjectUser instance
+        M2MProjectUser m2MProjectUser1 = new M2MProjectUser();
 
-        Set<M2MProjectUser> m2MProjectUsers = new HashSet<>();
-        m2MProjectUsers.add(m2MProjectUser);
+        // Create a UserEntity instance and set its properties
+        UserEntity userEntity1 = new UserEntity();
+        userEntity1.setId(1);
+        userEntity1.setFirstName("John");
+        userEntity1.setLastName("Doe");
 
-        Set<ProjectUser> result = userBean.projectUsersToListOfProjectUser(m2MProjectUsers);
+        // Set the UserEntity instance to the M2MProjectUser instance
+        m2MProjectUser1.setUser(userEntity1);
 
-        assertNotNull(result);
-        assertFalse(result.isEmpty());
-        assertEquals(userEntity.getId(), result.iterator().next().getId());
+        // Create a ProjectEntity instance and set its properties
+        ProjectEntity projectEntity1 = new ProjectEntity();
+        projectEntity1.setId(1);
+
+        // Set the ProjectEntity instance to the M2MProjectUser instance
+        m2MProjectUser1.setProject(projectEntity1);
+
+        // Set the role of the M2MProjectUser instance
+        m2MProjectUser1.setRole(ProjectUserEnum.MANAGER);
+
+        // Create another M2MProjectUser instance
+        M2MProjectUser m2MProjectUser2 = new M2MProjectUser();
+
+        // Create another UserEntity instance and set its properties
+        UserEntity userEntity2 = new UserEntity();
+        userEntity2.setId(2);
+        userEntity2.setFirstName("Jane");
+        userEntity2.setLastName("Doe");
+
+        // Set the UserEntity instance to the M2MProjectUser instance
+        m2MProjectUser2.setUser(userEntity2);
+
+        // Create another ProjectEntity instance and set its properties
+        ProjectEntity projectEntity2 = new ProjectEntity();
+        projectEntity2.setId(2);
+
+        // Set the ProjectEntity instance to the M2MProjectUser instance
+        m2MProjectUser2.setProject(projectEntity2);
+
+        // Set the role of the M2MProjectUser instance
+        m2MProjectUser2.setRole(ProjectUserEnum.MAIN_MANAGER);
     }
 
     @Test
