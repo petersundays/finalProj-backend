@@ -45,6 +45,9 @@ public class TaskBean implements Serializable {
     private TaskDao taskDao;
 
     @EJB
+    private M2MTaskDependenciesBean m2MTaskDependenciesBean;
+
+    @EJB
     private ProjectDao projectDao;
 
     @EJB
@@ -770,5 +773,66 @@ public class TaskBean implements Serializable {
         taskDependency.setDependentTask(presentationTask);
 
         return taskDependency;
+    }
+
+    /**
+     * Deletes a task.
+     * Deleting a task is a soft delete, meaning that the task is not removed from the database,
+     * but its active status is set to false.
+     * All the task's dependencies and dependent tasks are also deleted.
+     * @param taskId the id of the task to be deleted
+     * @return true if the task was deleted successfully
+     */
+    public boolean deleteTask (int taskId) {
+        logger.info("Deleting task");
+
+        if (!dataValidator.isIdValid(taskId)) {
+            logger.error("Invalid task id: {}", taskId);
+            throw new IllegalArgumentException("Invalid task id: " + taskId);
+        }
+
+        TaskEntity taskEntity = findTaskById(taskId);
+
+        if (taskEntity == null) {
+            logger.error("Task with id {} not found", taskId);
+            throw new IllegalArgumentException("Task with id " + taskId + " not found");
+        }
+
+        if (taskEntity.getState() == TaskStateEnum.FINISHED) {
+            logger.error("Task with id {} is already finished", taskId);
+            throw new IllegalArgumentException("Task with id " + taskId + " is already finished");
+        }
+
+        taskEntity.setActive(false);
+
+        Set<M2MTaskDependencies> dependencies = taskEntity.getDependencies();
+        Set<M2MTaskDependencies> dependentTasks = taskEntity.getDependentTasks();
+
+        Set<M2MTaskDependencies> relationshipsToDelete = new HashSet<>();
+        relationshipsToDelete.addAll(dependencies);
+        relationshipsToDelete.addAll(dependentTasks);
+
+        taskEntity.setDependentTasks(new HashSet<>());
+        taskEntity.setDependencies(new HashSet<>());
+
+        if (!relationshipsToDelete.isEmpty()) {
+            try {
+                m2MTaskDependenciesBean.removeTaskRelationship(relationshipsToDelete);
+            } catch (Exception e) {
+                logger.error("Error removing task dependencies", e);
+                throw new RuntimeException("Error removing task dependencies: " + e.getMessage(), e);
+            }
+        }
+
+
+        try {
+            taskDao.merge(taskEntity);
+        } catch (Exception e) {
+            logger.error("Error deleting task", e);
+            throw new RuntimeException("Error deleting task: " + e.getMessage(), e);
+        }
+
+        logger.info("Task with id {} deleted", taskId);
+        return true;
     }
 }
