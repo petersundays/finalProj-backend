@@ -36,7 +36,11 @@ public class UserBean implements Serializable {
 
     private static final long serialVersionUID = 1L;
     private static final Logger logger = LogManager.getLogger(UserBean.class);
-    private static final String PHOTO_STORAGE_PATH = "C:\\wildfly-30.0.1.Final\\bin";
+    private static final String SERVER_URL = "https://localhost:8443/";
+    private static final String BASE_DIR = "domcast/";
+    private static final String PHOTOS_DIR = BASE_DIR + "photos/";
+    private static final String DEFAULT_PHOTO = "default/default_user.jpg";
+    private static final String PROFILE_PIC = SERVER_URL + PHOTOS_DIR;
 
     @EJB
     private UserDao userDao;
@@ -64,6 +68,10 @@ public class UserBean implements Serializable {
     private PasswordBean passwordBean;
     @EJB
     private M2MProjectUserDao m2MProjectUserDao;
+    @EJB
+    private ValidationTokenDao validationTokenDao;
+    @EJB
+    private SessionTokenDao sessionTokenDao;
 
     // Default constructor
     public UserBean() {}
@@ -597,7 +605,31 @@ public class UserBean implements Serializable {
      */
     public String uploadPhoto(String token, MultipartFormDataInput input) throws Exception {
         logger.info("Uploading photo for user with token: {}", token);
-        UserEntity user = userDao.findUserByActiveValidationOrSessionToken(token);
+
+        if (token == null || token.trim().isEmpty()) {
+            logger.error("Token must not be null or empty");
+            throw new IllegalArgumentException("Token must not be null or empty");
+        }
+
+        UserEntity user;
+        try {
+            user = validationTokenDao.findUserByToken(token);
+        } catch (Exception e) {
+            logger.error("Error while finding user with validation token: {}", token);
+            throw new Exception("Error while finding user with token: " + token, e);
+        }
+
+        if (user != null) {
+            logger.info("User found with token: {}", token);
+        } else {
+            try {
+                user = sessionTokenDao.findUserByToken(token);
+            } catch (Exception e) {
+                logger.error("Error while finding user with session token: {}", token);
+                throw new Exception("Error while finding user with token: " + token, e);
+            }
+        }
+
         if (user == null) {
             logger.error("User not found with token: {}", token);
             throw new Exception("User not found");
@@ -612,15 +644,14 @@ public class UserBean implements Serializable {
         // If no photo is found in the input, set the default photo
         if (inputParts == null || inputParts.isEmpty()) {
             logger.info("No photo found in input, setting default photo");
-            String defaultPhotoPath = PHOTO_STORAGE_PATH + File.separator + "photos" + File.separator + "default" + File.separator + "default_user.jpg";
-            File defaultPhoto = new File(defaultPhotoPath);
+            File defaultPhoto = new File(PROFILE_PIC + DEFAULT_PHOTO);
             if (defaultPhoto.exists()) {
-                user.setPhoto(defaultPhotoPath);
+                user.setPhoto(PROFILE_PIC + DEFAULT_PHOTO);
                 userDao.merge(user);
             } else {
-                logger.error("Default photo not found at path: {}", defaultPhotoPath);
+                logger.error("Default photo not found at path: {}", PROFILE_PIC + DEFAULT_PHOTO);
             }
-            return defaultPhotoPath;
+            return PROFILE_PIC + DEFAULT_PHOTO;
         }
 
         // Process each input part
@@ -636,14 +667,14 @@ public class UserBean implements Serializable {
                 }
 
                 // Create the necessary directories
-                String photosDirPath = PHOTO_STORAGE_PATH + File.separator + "photos";
+                String photosDirPath = PHOTOS_DIR;
                 File photosDir = new File(photosDirPath);
                 if (!photosDir.exists() && !photosDir.mkdirs()) {
                     logger.error("Failed to create directory: {}", photosDirPath);
                     throw new Exception("Failed to create directory: " + photosDirPath);
                 }
 
-                String userDirPath = photosDirPath + File.separator + user.getId();
+                String userDirPath = photosDirPath + user.getId();
                 File userDir = new File(userDirPath);
                 if (!userDir.exists() && !userDir.mkdirs()) {
                     logger.error("Failed to create directory: {}", userDirPath);
@@ -651,7 +682,7 @@ public class UserBean implements Serializable {
                 }
 
                 // Write the photo to the appropriate location
-                String path = userDirPath + File.separator + "profile_pic_" + user.getId() + ".jpg";
+                String path = userDirPath + "/profile_pic_" + user.getId() + ".jpg";
                 File file = new File(path);
 
                 // If the file already exists, delete it
@@ -662,7 +693,7 @@ public class UserBean implements Serializable {
 
                 // Update the user's photo attribute in the database
                 try {
-                    user.setPhoto(path);
+                    user.setPhoto(SERVER_URL + path);
                     userDao.merge(user);
                     logger.info("Photo uploaded for user with token: {}", token);
                 } catch (Exception e) {
@@ -961,24 +992,55 @@ public class UserBean implements Serializable {
      * @param pageSize The number of results per page.
      * @return A list of users based on the search criteria.
      */
-    public List<SearchedUser> getUsersByCriteria(String firstName, String lastName, String nickname, String workplace, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
+    public List<SearchedUser> getUsersByCriteria(String firstName, String lastName, String nickname, int workplace, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
 
-        // Validate page size and page number
-        if (!dataValidator.isPageSizeValid(pageSize) || !dataValidator.isPageNumberValid(pageNumber)) {
-            logger.error("Invalid page size or page number");
-            return new ArrayList<>();
+        logger.info("Getting users by criteria");
+
+        if (!dataValidator.validateSearchCriteria(workplace, orderBy, pageNumber, pageSize)) {
+            logger.error("Search criteria is invalid");
+            throw new IllegalArgumentException("Search criteria is invalid");
         }
 
-        // Validate orderBy field
-        List<String> allowedOrderByFields = Arrays.asList("firstName", "lastName", "nickname", "workplace");
-        if (!allowedOrderByFields.contains(orderBy)) {
-            logger.error("Invalid orderBy field");
-            return new ArrayList<>();
+        if (!dataValidator.isOrderByValidForUser(orderBy)) {
+            logger.error("Invalid order by field: {}", orderBy);
+            throw new IllegalArgumentException("Invalid order by field: " + orderBy);
         }
+
+        String firstNameTrimmed = "";
+        String lastNameTrimmed = "";
+        String nicknameTrimmed = "";
+
+        if (firstName != null && !firstName.isEmpty()) {
+            firstNameTrimmed = dataValidator.getFirstWord(firstName);
+            firstNameTrimmed = dataValidator.isValidName(firstNameTrimmed) ? firstNameTrimmed : "";
+
+            if (firstNameTrimmed != null && !firstNameTrimmed.isEmpty() && !firstNameTrimmed.equals(firstName)) {
+                logger.info("First name had more than one word, only the first word will be used: '{}'", firstNameTrimmed);
+            }
+        }
+
+        if (lastName != null && !lastName.isEmpty()) {
+            lastNameTrimmed = dataValidator.getFirstWord(lastName);
+            lastNameTrimmed = dataValidator.isValidName(lastNameTrimmed) ? lastNameTrimmed : "";
+
+            if (lastNameTrimmed != null && !lastNameTrimmed.isEmpty() && !lastNameTrimmed.equals(lastName)) {
+                logger.info("Last name had more than one word, only the first word will be used: '{}'", lastNameTrimmed);
+            }
+        }
+
+        if (nickname != null && !nickname.isEmpty()) {
+            nicknameTrimmed = dataValidator.getFirstWord(nickname);
+            nicknameTrimmed = dataValidator.isValidName(nicknameTrimmed) ? nicknameTrimmed : "";
+
+            if (nicknameTrimmed != null && !nicknameTrimmed.isEmpty() && !nicknameTrimmed.equals(nickname)) {
+                logger.info("Nickname had more than one word, only the first word will be used: '{}'", nicknameTrimmed);
+            }
+        }
+
 
         List<SearchedUser> searchedUsers = new ArrayList<>();
         try {
-            List<UserEntity> users = userDao.getUsersByCriteria(firstName, lastName, nickname, workplace, orderBy, orderAsc, pageNumber, pageSize);
+            List<UserEntity> users = userDao.getUsersByCriteria(firstNameTrimmed, lastNameTrimmed, nicknameTrimmed, workplace, orderBy, orderAsc, pageNumber, pageSize);
             if (users != null && !users.isEmpty()) {
                 logger.info("Users found in DAO: {}", users.size());
                 for (UserEntity user : users) {
@@ -988,9 +1050,13 @@ public class UserBean implements Serializable {
                     }
                 }
                 logger.info("Users found: {}", searchedUsers.size());
+            } else {
+                logger.info("No users found");
+                throw new NoSuchElementException("No users found");
             }
         } catch (Exception e) {
             logger.error("Error occurred while getting users by criteria", e);
+            throw e;
         }
         return searchedUsers;
     }
@@ -1189,7 +1255,8 @@ public class UserBean implements Serializable {
         projectUser.setLastName(userEntity.getLastName());
         projectUser.setRole(role.getId());
 
-        logger.info("Successfully converted M2MProjectUser to ProjectUser");
+        logger.info("Successfully converted M2MProjectUser with user id: {} to ProjectUser, for project with id: {}",
+                userEntity.getId(), m2mProjectUser.getProject().getId());
 
         return projectUser;
     }

@@ -73,17 +73,31 @@ public enum LabEnum implements ConvertibleToEnumDTO {
         }
 
         /**
-         * Method that returns the lab of the project by its id.
-         * @param id the lab's id
-         * @return the lab of the project
+         * Method that checks if the lab id is valid.
+         * @param id the lab id
+         * @return a boolean value indicating if the lab id is valid
          */
-        public static String fromIdToString(int id) {
+        public static boolean isValidLabId(int id) {
                 for (LabEnum lab : LabEnum.values()) {
                         if (lab.getId() == id) {
-                                return lab.getValue();
+                                return true;
                         }
                 }
-                throw new IllegalArgumentException("Invalid LabEnum id: " + id);
+                return false;
+        }
+
+        /**
+         * Method that checks if a given string matches (ignoring case) any value from the enum.
+         * @param str the string to check
+         * @return a boolean value indicating if the string matches any value from the enum
+         */
+        public static boolean isValidLabValue(String str) {
+                for (LabEnum lab : LabEnum.values()) {
+                        if (lab.getValue().equalsIgnoreCase(str)) {
+                                return true;
+                        }
+                }
+                return false;
         }
 
         /**

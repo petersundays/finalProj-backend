@@ -1,10 +1,11 @@
 package domcast.finalprojbackend.dto.projectDto;
 
-import domcast.finalprojbackend.dto.userDto.ProjectTeam;
+import domcast.finalprojbackend.dto.userDto.ProjectUser;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 
 import java.io.Serializable;
+import java.util.Set;
 
 @XmlRootElement
 public class ProjectPreview extends ProjectDto implements Serializable {
@@ -16,7 +17,7 @@ public class ProjectPreview extends ProjectDto implements Serializable {
     private int state;
 
     @XmlElement
-    private ProjectTeam projectUsers;
+    private Set<ProjectUser> projectUsers;
 
     /**
      * Empty constructor
@@ -33,7 +34,7 @@ public class ProjectPreview extends ProjectDto implements Serializable {
      * @param projectUsers the users that are part of the project's other executors
      * @param state the state of the project
      */
-    public ProjectPreview(int id, String name, String description, int labId, ProjectTeam projectUsers, int state) {
+    public ProjectPreview(int id, String name, String description, int labId, Set<ProjectUser> projectUsers, int state) {
         super(name, description, labId);
         this.id = id;
         this.state = state;
@@ -58,11 +59,11 @@ public class ProjectPreview extends ProjectDto implements Serializable {
         this.state = state;
     }
 
-    public ProjectTeam getProjectUsers() {
+    public Set<ProjectUser> getProjectUsers() {
         return projectUsers;
     }
 
-    public void setProjectUsers(ProjectTeam projectUsers) {
+    public void setProjectUsers(Set<ProjectUser> projectUsers) {
         this.projectUsers = projectUsers;
     }
 }
