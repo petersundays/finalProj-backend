@@ -8,6 +8,8 @@ import domcast.finalprojbackend.bean.InterestBean;
 import domcast.finalprojbackend.bean.SkillBean;
 import domcast.finalprojbackend.bean.SystemBean;
 import domcast.finalprojbackend.dao.*;
+import domcast.finalprojbackend.dto.interestDto.InterestDto;
+import domcast.finalprojbackend.dto.skillDto.SkillDto;
 import domcast.finalprojbackend.dto.userDto.*;
 import domcast.finalprojbackend.entity.*;
 import domcast.finalprojbackend.enums.ProjectUserEnum;
@@ -765,7 +767,7 @@ public class UserBean implements Serializable {
      * @return The updated user entity.
      */
     public UserEntity registerProfileInfo (UserEntity user, FullRegistration userInfo, String photoPath) {
-
+        System.out.println("User interests" + userInfo.getInterests().size());
         if (user == null) {
             throw new IllegalArgumentException("UserEntity must not be null");
         }
@@ -888,8 +890,30 @@ public class UserBean implements Serializable {
         InputPart part = input.getFormDataMap().get("user").get(0);
         String userString = part.getBodyAsString();
         ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue(userString, FullRegistration.class);
+        FullRegistration fullRegistration = mapper.readValue(userString, FullRegistration.class);
+
+        logger.info("Extracted FullRegistration object: {}", fullRegistration);
+
+        // Log interests and skills
+        if (fullRegistration.getInterestDtos() != null) {
+            for (InterestDto interest : fullRegistration.getInterestDtos()) {
+                logger.info("Interest: {}", interest.getName());
+            }
+        } else {
+            logger.error("No interests found");
+        }
+
+        if (fullRegistration.getSkillDtos() != null) {
+            for (SkillDto skill : fullRegistration.getSkillDtos()) {
+                logger.info("Skill: {}", skill.getName());
+            }
+        } else {
+            logger.error("No skills found");
+        }
+
+        return fullRegistration;
     }
+
 
     /**
      * Creates interests and skills when registering a user.
@@ -897,6 +921,7 @@ public class UserBean implements Serializable {
      * @return True if the interests and skills were created successfully, false otherwise.
      */
     public boolean createInterestsAndSkillsForRegistration(FullRegistration user) {
+        System.out.println("User interests 1978" + user.getInterests().size());
         boolean interestsCreated = interestBean.createInterests(user.getInterestDtos());
         boolean skillsCreated = skillBean.createSkills(user.getSkillDtos());
         return interestsCreated && skillsCreated;
