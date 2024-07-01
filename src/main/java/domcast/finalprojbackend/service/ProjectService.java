@@ -482,7 +482,7 @@ public class ProjectService {
                                           @QueryParam("lab") int labId,
                                           @QueryParam("state") int stateId,
                                           @QueryParam("keyword") String keyword,
-                                          @QueryParam("skill") String skill,
+                                          @QueryParam("skill") int skill,
                                           @QueryParam("orderBy") String orderBy,
                                           @QueryParam("orderAsc") boolean orderAsc,
                                           @QueryParam("pageNumber") int pageNumber,
