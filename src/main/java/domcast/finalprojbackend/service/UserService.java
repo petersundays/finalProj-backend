@@ -104,11 +104,14 @@ public class UserService {
             FullRegistration user = userBean.extractFullRegistrationDto(input);
             logger.info("Extracted FullRegistration object: {}", user);
 
-            // Create interests and skills
-            if (!userBean.createInterestsAndSkillsForRegistration(user)) {
-                logger.error("Error creating interests and skills for user: {}", user);
-                response = Response.status(400).entity("Error creating interests and skills").build();
-                return response;
+            if ((user.getInterestDtos() != null && !user.getInterestDtos().isEmpty()) || (user.getSkillDtos() != null && !user.getSkillDtos().isEmpty())) {
+
+                // Create interests and skills
+                if (!userBean.createInterestsAndSkillsForRegistration(user)) {
+                    logger.error("Error creating interests and skills for user: {}", user);
+                    response = Response.status(400).entity("Error creating interests and skills").build();
+                    return response;
+                }
             }
 
             // Update photo
@@ -410,11 +413,11 @@ public class UserService {
     @PUT
     @Path("/password")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response updatePassword (@HeaderParam("token") String sessionToken,
-                                    @HeaderParam("id") int userId,
-                                    @HeaderParam("oldPassword") String oldPassword,
-                                    @HeaderParam("newPassword") String newPassword,
-                                    @Context HttpServletRequest request) {
+    public Response updatePassword(@HeaderParam("token") String sessionToken,
+                                   @HeaderParam("id") int userId,
+                                   @HeaderParam("oldPassword") String oldPassword,
+                                   @HeaderParam("newPassword") String newPassword,
+                                   @Context HttpServletRequest request) {
         String ipAddress = request.getRemoteAddr();
         logger.info("User with IP address {} is trying to update password", ipAddress);
 
@@ -458,11 +461,11 @@ public class UserService {
     @PUT
     @Path("/type")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response updateUserType (@HeaderParam("token") String sessionToken,
-                                    @HeaderParam("loggedId") int loggedId,
-                                    @QueryParam("id") int userId,
-                                    @HeaderParam("type") int type,
-                                    @Context HttpServletRequest request) {
+    public Response updateUserType(@HeaderParam("token") String sessionToken,
+                                   @HeaderParam("loggedId") int loggedId,
+                                   @QueryParam("id") int userId,
+                                   @HeaderParam("type") int type,
+                                   @Context HttpServletRequest request) {
         String ipAddress = request.getRemoteAddr();
         logger.info("User with IP address {} is trying to update user type of user with id {}", ipAddress, userId);
 
