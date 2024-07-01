@@ -37,7 +37,7 @@ import java.util.Set;
 @Table(name = "project")
 
 @NamedQuery(name = "Project.findProjectById", query = "SELECT p FROM ProjectEntity p WHERE p.id = :id")
-
+@NamedQuery(name = "Project.removeUserFromProject", query = "DELETE FROM M2MProjectUser pu WHERE pu.project.id = :projectId AND pu.user.id = :userId")
 
 public class ProjectEntity implements Serializable {
 
@@ -183,6 +183,14 @@ public class ProjectEntity implements Serializable {
 
     public void setProjectUsers(Set<M2MProjectUser> projectUsers) {
         this.projectUsers = projectUsers;
+    }
+
+    public void addProjectUser(M2MProjectUser projectUser) {
+        this.projectUsers.add(projectUser);
+    }
+
+    public void removeProjectUser(M2MProjectUser projectUser) {
+        this.projectUsers.remove(projectUser);
     }
 
     public Set<M2MProjectSkill> getSkills() {

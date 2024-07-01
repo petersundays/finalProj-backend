@@ -1322,6 +1322,50 @@ public class UserBean implements Serializable {
         return projectTeam;
     }
 
+    /**
+     * Creates a new M2MProjectUser object.
+     *
+     * @param m2MProjectUser The M2MProjectUser object to create.
+     * @param userEntity The UserEntity object to set in the M2MProjectUser object, representing the user.
+     * @param projectEntity The ProjectEntity object to set in the M2MProjectUser object, representing the project.
+     * @param projectUserEnum The ProjectUserEnum object to set in the M2MProjectUser object, representing the role.
+     * @return The created M2MProjectUser object.
+     */
+    public M2MProjectUser createProjectUser(M2MProjectUser m2MProjectUser, UserEntity userEntity, ProjectEntity projectEntity, ProjectUserEnum projectUserEnum) {
+
+        if (m2MProjectUser == null) {
+            throw new IllegalArgumentException("M2MProjectUser cannot be null");
+        }
+
+        if (userEntity == null) {
+            throw new IllegalArgumentException("UserEntity cannot be null");
+        }
+
+        if (projectEntity == null) {
+            throw new IllegalArgumentException("ProjectEntity cannot be null");
+        }
+
+        if (projectUserEnum == null) {
+            throw new IllegalArgumentException("ProjectUserEnum cannot be null");
+        }
+
+        if (projectUserEnum == ProjectUserEnum.MAIN_MANAGER) {
+            projectUserEnum = ProjectUserEnum.MANAGER;
+        }
+
+        logger.info("Creating M2MProjectUser for user with id: {} and project with id: {}",
+                userEntity.getId(), projectEntity.getId());
+
+        m2MProjectUser.setUser(userEntity);
+        m2MProjectUser.setProject(projectEntity);
+        m2MProjectUser.setRole(projectUserEnum);
+        m2MProjectUser.setActive(false);
+        m2MProjectUser.setApproved(false);
+
+        return m2MProjectUser;
+
+    }
+
     public List<String> convertKeysToList(Map<String, ?> map) {
         if (map == null) {
             throw new IllegalArgumentException("Map cannot be null");

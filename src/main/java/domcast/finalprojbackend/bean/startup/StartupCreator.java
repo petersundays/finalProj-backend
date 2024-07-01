@@ -207,7 +207,7 @@ public class StartupCreator implements Serializable {
 
         // Get the maximum number of members allowed in a project
         SystemEntity systemEntity = em.find(SystemEntity.class, 1);
-        int maxMembers = systemEntity.getMaxMembers();
+        int maxMembers = systemBean.getProjectMaxUsers();
 
         UserEntity user2 = em.find(UserEntity.class, 2);
         if (user2 == null) {
@@ -370,25 +370,23 @@ public class StartupCreator implements Serializable {
                 }
             }
 
-// Add user with id 2 to the project
-            boolean isUser2InProject = project.getProjectUsers().stream()
-                    .anyMatch(pu -> pu.getUser().equals(user2));
-
-            if (!isUser2InProject) {
-                M2MProjectUser projectUser2 = new M2MProjectUser();
-                projectUser2.setProject(project);
-                projectUser2.setUser(user2);
-                projectUser2.setRole(ProjectUserEnum.PARTICIPANT);
-                projectUser2.setApproved(true);
-                projectUser2.setActive(true);
-                projectUsers.add(projectUser2);
-
-                // If user 2 has not been assigned as a main manager yet, assign them as the main manager for the current project
-                if (!isUser2MainManager) {
-                    projectUser2.setRole(ProjectUserEnum.MAIN_MANAGER);
-                    isUser2MainManager = true;
+            // Iterate over the projectUsers set
+            for (M2MProjectUser projectUser : projectUsers) {
+                // If the user is a MAIN_MANAGER and is not user2, remove them
+                if (projectUser.getRole() == ProjectUserEnum.MAIN_MANAGER && !projectUser.getUser().equals(user2)) {
+                    projectUsers.remove(projectUser);
+                    break;
                 }
             }
+
+            // Add user2 as the MAIN_MANAGER
+            M2MProjectUser projectUser2 = new M2MProjectUser();
+            projectUser2.setProject(project);
+            projectUser2.setUser(user2);
+            projectUser2.setRole(ProjectUserEnum.MAIN_MANAGER);
+            projectUser2.setApproved(true);
+            projectUser2.setActive(true);
+            projectUsers.add(projectUser2);
 
             project.setProjectUsers(projectUsers);
 

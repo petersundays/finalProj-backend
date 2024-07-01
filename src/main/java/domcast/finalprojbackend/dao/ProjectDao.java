@@ -1,6 +1,7 @@
 package domcast.finalprojbackend.dao;
 
 import domcast.finalprojbackend.entity.M2MKeyword;
+import domcast.finalprojbackend.entity.M2MProjectSkill;
 import domcast.finalprojbackend.entity.M2MProjectUser;
 import domcast.finalprojbackend.entity.ProjectEntity;
 import domcast.finalprojbackend.enums.ProjectStateEnum;
@@ -103,7 +104,7 @@ public class ProjectDao extends AbstractDao<ProjectEntity> {
         }
     }
 
-    public List<ProjectEntity> getProjectsByCriteria(int userId, String name, int lab, int state, String keyword, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
+    public List<ProjectEntity> getProjectsByCriteria(int userId, String name, int lab, int state, String keyword, int skill, int maxUsers, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<ProjectEntity> cq = cb.createQuery(ProjectEntity.class);
 
@@ -132,6 +133,13 @@ public class ProjectDao extends AbstractDao<ProjectEntity> {
         if (keyword != null && !keyword.isEmpty()) {
             Join<ProjectEntity, M2MKeyword> joinKeyword = project.join("keywords");
             predicates.add(joinKeyword.get("keyword").get("name").in(keyword));
+        }
+
+        if (skill != 0) {
+            Join<ProjectEntity, M2MProjectSkill> joinSkill = project.join("skills", JoinType.INNER);
+            Predicate skillNamePredicate = cb.equal(joinSkill.get("skill").get("id"), skill);
+            Predicate skillActivePredicate = cb.isTrue(joinSkill.get("active"));
+            predicates.add(cb.and(skillNamePredicate, skillActivePredicate));
         }
 
         cq.select(project).where(cb.and(predicates.toArray(new Predicate[0])));
@@ -172,6 +180,25 @@ public class ProjectDao extends AbstractDao<ProjectEntity> {
                         cq.orderBy(cb.desc(project.get("name")));
                     }
                 }
+                case "availablePlaces" -> {
+                    // Subquery to calculate the number of active users in each project
+                    Subquery<Long> activeUsersSubquery = cq.subquery(Long.class);
+                    Root<M2MProjectUser> projectUser = activeUsersSubquery.from(M2MProjectUser.class);
+                    activeUsersSubquery.select(cb.count(projectUser));
+                    activeUsersSubquery.where(cb.and(
+                            cb.equal(projectUser.get("project"), project),
+                            cb.isTrue(projectUser.get("active"))
+                    ));
+
+                    // Expression to calculate the number of places still available
+                    Expression<Long> availablePlaces = cb.diff((long) maxUsers, activeUsersSubquery);
+
+                    if (orderAsc) {
+                        cq.orderBy(cb.asc(availablePlaces));
+                    } else {
+                        cq.orderBy(cb.desc(availablePlaces));
+                    }
+                }
             }
         }
 
@@ -189,5 +216,4 @@ public class ProjectDao extends AbstractDao<ProjectEntity> {
             return new ArrayList<>();
         }
     }
-
 }

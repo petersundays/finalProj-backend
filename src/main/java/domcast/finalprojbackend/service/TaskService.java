@@ -293,4 +293,43 @@ public class TaskService  {
 
         return response;
     }
+
+    @PUT
+    @Path("/delete")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response deleteTask(@HeaderParam("token") String token, @HeaderParam("id") int userId, @QueryParam("projectId") int projectId, @QueryParam("id") int taskId, @Context HttpServletRequest request) {
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with token {} is deleting the task with id {}, from project with id {} from IP address {}", token, taskId, projectId, ipAddress);
+
+        // Check if user and task's id are valid
+        if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(taskId) || !dataValidator.isIdValid(projectId)) {
+            logger.info("User with session token {} tried to delete a task unsuccessfully", token);
+            return Response.status(400).entity("Invalid id").build();
+        }
+
+        // Check if the user is authorized to delete the task
+        if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, userId) &&
+                !authenticationAndAuthorization.isUserMemberOfTheProjectAndActive(userId, projectId)) {
+            logger.info("User with session token {} tried to delete a task unsuccessfully", token);
+            return Response.status(401).entity("Unauthorized").build();
+        }
+
+        Response response;
+        boolean deleted;
+
+        // Delete the task
+try {
+            deleted = taskBean.deleteTask(taskId);
+            logger.info("User with session token {} deleted the task with id {} from IP address {}", token, taskId, ipAddress);
+            response = Response.status(200).entity(deleted).build();
+        } catch (IllegalArgumentException e) {
+            logger.error("Error deleting task", e);
+            response = Response.status(400).entity(e.getMessage()).build();
+        } catch (RuntimeException e) {
+            logger.error("Error deleting task", e);
+            response = Response.status(500).entity(e.getMessage()).build();
+        }
+
+        return response;
+    }
 }
