@@ -104,7 +104,7 @@ public class ProjectDao extends AbstractDao<ProjectEntity> {
         }
     }
 
-    public List<ProjectEntity> getProjectsByCriteria(int userId, String name, int lab, int state, String keyword, String skill, int maxUsers, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
+    public List<ProjectEntity> getProjectsByCriteria(int userId, String name, int lab, int state, String keyword, int skill, int maxUsers, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<ProjectEntity> cq = cb.createQuery(ProjectEntity.class);
 
@@ -135,9 +135,11 @@ public class ProjectDao extends AbstractDao<ProjectEntity> {
             predicates.add(joinKeyword.get("keyword").get("name").in(keyword));
         }
 
-        if (skill != null && !skill.isEmpty()) {
-            Join<ProjectEntity, M2MProjectSkill> joinSkill = project.join("skills");
-            predicates.add(cb.equal(joinSkill.get("skill").get("name"), skill));
+        if (skill != 0) {
+            Join<ProjectEntity, M2MProjectSkill> joinSkill = project.join("skills", JoinType.INNER);
+            Predicate skillNamePredicate = cb.equal(joinSkill.get("skill").get("id"), skill);
+            Predicate skillActivePredicate = cb.isTrue(joinSkill.get("active"));
+            predicates.add(cb.and(skillNamePredicate, skillActivePredicate));
         }
 
         cq.select(project).where(cb.and(predicates.toArray(new Predicate[0])));
@@ -179,7 +181,6 @@ public class ProjectDao extends AbstractDao<ProjectEntity> {
                     }
                 }
                 case "availablePlaces" -> {
-                    System.out.println("********* Available places");
                     // Subquery to calculate the number of active users in each project
                     Subquery<Long> activeUsersSubquery = cq.subquery(Long.class);
                     Root<M2MProjectUser> projectUser = activeUsersSubquery.from(M2MProjectUser.class);
