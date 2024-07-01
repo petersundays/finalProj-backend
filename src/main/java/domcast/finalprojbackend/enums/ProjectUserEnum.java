@@ -16,7 +16,6 @@ import domcast.finalprojbackend.enums.intefarce.ConvertibleToEnumDTO;
  * @author José Castro
  * @author Pedro Domingos
  */
-
 public enum ProjectUserEnum implements ConvertibleToEnumDTO {
 
     // The user is a member of the project and can have one of the following roles
@@ -45,7 +44,11 @@ public enum ProjectUserEnum implements ConvertibleToEnumDTO {
         return value;
     }
 
-    // Method that returns the role by its id
+    /**
+     * Method that returns the role by its id.
+     * @param id the id of the role
+     * @return the role with the given id
+     */
     public static ProjectUserEnum fromId(int id) {
         for (ProjectUserEnum role : ProjectUserEnum.values()) {
             if (role.getId() == id) {
@@ -55,7 +58,11 @@ public enum ProjectUserEnum implements ConvertibleToEnumDTO {
         throw new IllegalArgumentException("Invalid ProjectUserEnum id: " + id);
     }
 
-    // Method that returns the role by its value
+    /**
+     * Method that returns the role by its value.
+     * @param value the value of the role
+     * @return the role with the given value
+     */
     public static ProjectUserEnum fromValue(int value) {
         for (ProjectUserEnum role : ProjectUserEnum.values()) {
             if (role.getValue() == value) {
@@ -63,6 +70,20 @@ public enum ProjectUserEnum implements ConvertibleToEnumDTO {
             }
         }
         throw new IllegalArgumentException("Invalid ProjectUserEnum value: " + value);
+    }
+
+    /**
+     * Method that checks if the ProjectUserEnum contains a type with the given id.
+     * @param id the id to check
+     * @return true if the ProjectUserEnum contains the id, false otherwise
+     */
+    public static boolean containsId(int id) {
+        for (ProjectUserEnum projectUserEnum : ProjectUserEnum.values()) {
+            if (projectUserEnum.getId() == id) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

@@ -24,6 +24,7 @@ import domcast.finalprojbackend.service.ObjectMapperContextResolver;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;
+import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -1032,6 +1033,332 @@ public class ProjectBean implements Serializable {
         logger.info("Successfully converted project entity to project preview");
 
         return projectPreview;
+    }
+
+    public DetailedProject removeUserFromProject (int projectId, int userId) {
+
+        if (!dataValidator.isIdValid(projectId) || !dataValidator.isIdValid(userId)) {
+            logger.error("Invalid project ID or user ID while removing user from project");
+            throw new IllegalArgumentException("Invalid project ID or user ID while removing user from project");
+        }
+
+        logger.info("Removing user with ID {} from project with ID {}", userId, projectId);
+
+        ProjectEntity projectEntity;
+
+        try {
+            projectEntity = projectDao.findProjectById(projectId);
+        } catch (PersistenceException e) {
+            logger.error("Error finding project with ID {} while removing user from project", projectId, e);
+            throw new RuntimeException(e);
+        }
+
+        if (projectEntity == null) {
+            logger.error("Project not found with ID {} while removing user from project", projectId);
+            throw new IllegalArgumentException("Project not found with ID " + projectId + " while removing user from project");
+        }
+
+        M2MProjectUser m2MProjectUser;
+
+        try {
+            m2MProjectUser = m2MProjectUserDao.findProjectUser(userId, projectId);
+        } catch (PersistenceException e) {
+            logger.error("Error finding project user with project ID {} and user ID {} while removing user from project", projectId, userId, e);
+            throw new RuntimeException(e);
+        }
+
+        if (m2MProjectUser == null) {
+            logger.error("User with ID {} is not part of project with ID {} while removing user from project", userId, projectId);
+            throw new IllegalArgumentException("User with ID " + userId + " is not part of project with ID " + projectId + " while removing user from project");
+        }
+
+        logger.info("Found user with ID {} in project with ID {}", userId, projectId);
+
+        if (m2MProjectUser.getRole() == ProjectUserEnum.MAIN_MANAGER) {
+            logger.error("Main manager cannot be removed from project");
+            throw new IllegalArgumentException("Main manager cannot be removed from project");
+        }
+
+        int mainManagerId;
+
+        try {
+            mainManagerId = m2MProjectUserDao.findMainManagerUserIdInProject(projectId);
+        } catch (PersistenceException e) {
+            logger.error("Error finding main manager ID for project with ID {} while removing user from project", projectId, e);
+            throw new RuntimeException(e);
+        }
+
+        if (mainManagerId == 0) {
+            logger.error("Main manager not found for project with ID {} while removing user from project", projectId);
+            throw new IllegalArgumentException("Main manager not found for project with ID " + projectId + " while removing user from project");
+        }
+
+        logger.info("Found main manager with ID {} for project with ID {}", mainManagerId, projectId);
+
+        UserEntity mainManager;
+
+        try {
+            mainManager = userDao.findUserById(mainManagerId);
+        } catch (PersistenceException e) {
+            logger.error("Error finding main manager with ID {} while removing user from project", mainManagerId, e);
+            throw new RuntimeException(e);
+        }
+
+        if (mainManager == null) {
+            logger.error("Main manager not found with ID {} while removing user from project", mainManagerId);
+            throw new IllegalArgumentException("Main manager not found with ID " + mainManagerId + " while removing user from project");
+        }
+
+        for (TaskEntity task : projectEntity.getTasks()) {
+            if (task.getResponsible().getId() == userId) {
+                task.setResponsible(mainManager);
+                logger.info("Changed responsible user for task with ID {} to project's main manager with ID {}", task.getId(), mainManagerId);
+            }
+        }
+
+        m2MProjectUser.setActive(false);
+
+        try {
+            if (!m2MProjectUserDao.merge(m2MProjectUser)) {
+                logger.error("Error removing user with ID {} from project with ID {}", userId, projectId);
+                throw new RuntimeException("Error removing user from project");
+            }
+        } catch (PersistenceException e) {
+            logger.error("Error removing user with ID {} from project with ID {}: {}", userId, projectId, e.getMessage());
+            throw new RuntimeException(e);
+        }
+        
+        DetailedProject detailedProject = entityToDetailedProject(projectEntity);
+
+        if (detailedProject == null) {
+            logger.error("Error converting project entity to detailed project while removing user from project");
+            throw new RuntimeException("Error converting project entity to detailed project while removing user from project");
+        }
+
+        logger.info("Successfully removed user with ID {} from project with ID {}", userId, projectId);
+
+        return detailedProject;
+    }
+
+    /**
+     * Invites a user to a project.
+     *
+     * @param projectId the id of the project
+     * @param userId    the id of the user
+     * @param role      the role of the user in the project
+     * @return boolean value indicating if the user was invited to the project
+     */
+    public boolean inviteToProject(int projectId, int userId, int role) {
+
+        if (!dataValidator.isIdValid(projectId) || !dataValidator.isIdValid(userId)) {
+            logger.error("Invalid project ID or user ID while inviting user to project");
+            throw new IllegalArgumentException("Invalid project ID or user ID while inviting user to project");
+        }
+
+        if (!ProjectUserEnum.containsId(role)) {
+            logger.error("Invalid role while inviting user to project");
+            throw new IllegalArgumentException("Invalid role while inviting user to project");
+        }
+
+        logger.info("Inviting user with ID {} to project with ID {}", userId, projectId);
+
+        boolean invited = false;
+
+        ProjectEntity projectEntity;
+
+        try {
+            projectEntity = projectDao.findProjectById(projectId);
+        } catch (PersistenceException e) {
+            logger.error("Error finding project with ID {} while inviting user to project", projectId, e);
+            throw new RuntimeException(e);
+        }
+
+        if (projectEntity == null) {
+            logger.error("Project not found with ID {} while inviting user to project", projectId);
+            throw new IllegalArgumentException("Project not found with ID " + projectId + " while inviting user to project");
+        }
+
+        logger.info("Found project with ID {}", projectId);
+
+        System.out.println("#*#*#*##*#* Number of Project users: " + projectEntity.getProjectUsers().size());
+
+        for (M2MProjectUser m2MProjectUser : projectEntity.getProjectUsers()) {
+            System.out.println("User ID: " + m2MProjectUser.getUser().getId() + " Active: " + m2MProjectUser.isActive());
+        }
+
+
+        if (!dataValidator.availablePlacesInProject(projectId)) {
+            logger.error("Project with ID {} is full while inviting user to project", projectId);
+            throw new IllegalArgumentException("Project with ID " + projectId + " is full while inviting user to project");
+        }
+
+        UserEntity userEntity;
+
+        try {
+            userEntity = userDao.findUserById(userId);
+        } catch (PersistenceException e) {
+            logger.error("Error finding user with ID {} while inviting user to project", userId, e);
+            throw new RuntimeException(e);
+        }
+
+        if (userEntity == null) {
+            logger.error("User not found with ID {} while inviting user to project", userId);
+            throw new IllegalArgumentException("User not found with ID " + userId + " while inviting user to project");
+        }
+
+        logger.info("Found user with ID {}", userId);
+
+        M2MProjectUser m2MProjectUser;
+        ProjectUserEnum projectUserEnum = ProjectUserEnum.fromId(role);
+
+        try {
+            m2MProjectUser = m2MProjectUserDao.findProjectUser(userId, projectId);
+        } catch (NoResultException e) {
+            m2MProjectUser = null;
+        } catch (PersistenceException e) {
+            logger.error("Error finding project user with user ID {} and project ID {} while inviting user to project", userId, projectId, e);
+            throw new RuntimeException(e);
+        }
+
+        if (m2MProjectUser != null) {
+            if (m2MProjectUser.isActive()) {
+                logger.error("User with ID {} is already part of project with ID {} while inviting user to project", userId, projectId);
+                throw new IllegalArgumentException("User with ID " + userId + " is already part of project with ID " + projectId + " while inviting user to project");
+            } else {
+
+                invited = true;
+            }
+        } else {
+            m2MProjectUser = new M2MProjectUser();
+            m2MProjectUser = userBean.createProjectUser(m2MProjectUser, userEntity, projectEntity, projectUserEnum);
+
+            try {
+                if (!m2MProjectUserDao.persist(m2MProjectUser)) {
+                    logger.error("Error inviting new user with ID {} to project with ID {}", userId, projectId);
+                    throw new RuntimeException("Error inviting user to project");
+                }
+            } catch (PersistenceException e) {
+                logger.error("Error inviting new user with ID {} to project with ID {}: {}", userId, projectId, e.getMessage());
+                throw new RuntimeException(e);
+            }
+
+            invited = true;
+        }
+
+        ////////////////// SEND MESSAGE TO USER //////////////////
+        ////////////////// Create log in project //////////////////
+        logger.info("Successfully invited user with ID {} to project with ID {}", userId, projectId);
+
+        return invited;
+    }
+
+    public boolean answerInvitation(int projectId, int userId, boolean answer) {
+        logger.info("Answering invitation to project");
+
+        if (!dataValidator.isIdValid(projectId) || !dataValidator.isIdValid(userId)) {
+            logger.error("Invalid project ID or user ID while answering invitation to project");
+            throw new IllegalArgumentException("Invalid project ID or user ID while answering invitation to project");
+        }
+
+        ProjectEntity projectEntity;
+
+        try {
+            projectEntity = projectDao.findProjectById(projectId);
+        } catch (PersistenceException e) {
+            logger.error("Error finding project with ID {} while answering invitation to project", projectId, e);
+            throw new RuntimeException(e);
+        }
+
+        if (projectEntity == null) {
+            logger.error("Project not found with ID {} while answering invitation to project", projectId);
+            throw new IllegalArgumentException("Project not found with ID " + projectId + " while answering invitation to project");
+        }
+
+        System.out.println("#*#*#*##*#* Number of Project users: " + projectEntity.getProjectUsers().size());
+
+        for (M2MProjectUser m2MProjectUser : projectEntity.getProjectUsers()) {
+            System.out.println("User ID: " + m2MProjectUser.getUser().getId() + " Active: " + m2MProjectUser.isActive());
+        }
+
+        M2MProjectUser m2MProjectUser;
+
+        try {
+            m2MProjectUser = m2MProjectUserDao.findProjectUser(userId, projectId);
+        } catch (PersistenceException e) {
+            logger.error("Error finding project user with user ID {} and project ID {} while answering invitation to project", userId, projectId, e);
+            throw new RuntimeException(e);
+        }
+
+        if (m2MProjectUser == null) {
+            logger.error("User with ID {} is not invited to project with ID {} while answering invitation to project", userId, projectId);
+            throw new IllegalArgumentException("User with ID " + userId + " is not invited to project with ID " + projectId + " while answering invitation to project");
+        }
+
+        if (m2MProjectUser.isActive()) {
+            logger.error("User with ID {} is already part of project with ID {} while answering invitation to project", userId, projectId);
+            throw new IllegalArgumentException("User with ID " + userId + " is already part of project with ID " + projectId + " while answering invitation to project");
+        }
+
+        String message;
+
+        if (answer) {
+
+            if (!dataValidator.availablePlacesInProject(projectId)) {
+                logger.error("Project with ID {} is full while answering invitation to project", projectId);
+                throw new IllegalArgumentException("Project with ID " + projectId + " is full while answering invitation to project");
+            }
+
+            m2MProjectUser.setActive(true);
+            m2MProjectUser.setApproved(true);
+            projectEntity.addProjectUser(m2MProjectUser);
+
+            ////////////////// SEND A MESSAGE TO MANAGERS //////////////////
+            ////////////////// Crate log in project //////////////////
+            try {
+                if (!projectDao.merge(projectEntity)) {
+                    logger.error("Error merging project while answering invitation to project with ID {}", projectId);
+                    throw new RuntimeException("Error answering invitation to project");
+                }
+            } catch (PersistenceException e) {
+                logger.error("Error persisting project while answering invitation to project with ID {}: {}", projectId, e.getMessage());
+                throw new RuntimeException(e);
+            }
+            message = "User with ID " + userId + " accepted invitation to project with ID " + projectId;
+        } else {
+            try {
+                m2MProjectUserDao.removeProjectUser(m2MProjectUser.getUser().getId(), projectId);
+            } catch (PersistenceException e) {
+                logger.error("Error removing project user while answering invitation to project with ID {}: {}", projectId, e.getMessage());
+                throw new RuntimeException(e);
+            }
+
+            try {
+                projectEntity.removeProjectUser(m2MProjectUser);
+            } catch (PersistenceException e) {
+                logger.error("Error removing project user from project while answering invitation to project with ID {}: {}", projectId, e.getMessage());
+                throw new RuntimeException(e);
+            }
+
+            message = "User with ID " + userId + " declined invitation to project with ID " + projectId;
+        }
+
+        try {
+            if (!m2MProjectUserDao.merge(m2MProjectUser)) {
+                logger.error("Error answering invitation to project with ID {}", projectId);
+                throw new RuntimeException("Error answering invitation to project");
+            }
+        } catch (PersistenceException e) {
+            logger.error("Error answering invitation to project with ID {}: {}", projectId, e.getMessage());
+            throw new RuntimeException(e);
+        }
+
+        System.out.println("################ Number of Project users: " + projectEntity.getProjectUsers().size());
+
+        ////////////////// SEND A MESSAGE TO MANAGERS //////////////////
+
+        logger.info(message);
+
+        return true;
     }
 
 }

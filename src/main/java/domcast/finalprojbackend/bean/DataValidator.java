@@ -1,6 +1,7 @@
 package domcast.finalprojbackend.bean;
 
 import domcast.finalprojbackend.bean.user.PasswordBean;
+import domcast.finalprojbackend.dao.M2MProjectUserDao;
 import domcast.finalprojbackend.dao.TaskDao;
 import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
 import domcast.finalprojbackend.dto.interestDto.InterestDto;
@@ -42,6 +43,13 @@ public class DataValidator {
 
     @EJB
     private TaskDao taskDao;
+
+    @EJB
+    private SystemBean systemBean;
+
+    @EJB
+    private M2MProjectUserDao m2MProjectUserDao;
+
 
     /**
      * Checks if the email is valid
@@ -589,6 +597,41 @@ public class DataValidator {
         }
 
         logger.info("Search criteria is valid");
+        return true;
+    }
+
+
+    public boolean availablePlacesInProject(int projectId) {
+        logger.info("Checking if there are available places in the project");
+
+        if (!isIdValid(projectId)) {
+            logger.error("Invalid project id while checking available places in the project");
+            throw new IllegalArgumentException("Invalid project id");
+        }
+
+        int numberOfActiveUsers;
+        int maxUsers;
+
+        try {
+            numberOfActiveUsers = m2MProjectUserDao.getNumberOfActiveUsersInProject(projectId);
+        } catch (Exception e) {
+            logger.error("Error while getting number of active users in project: {}", e.getMessage());
+            return false;
+        }
+
+        try {
+            maxUsers = systemBean.getProjectMaxUsers();
+        } catch (Exception e) {
+            logger.error("Error while getting project max users: {}", e.getMessage());
+            return false;
+        }
+
+        if (numberOfActiveUsers >= maxUsers) {
+            logger.error("There are no available places in the project");
+            return false;
+        }
+
+        logger.info("There are available places in the project");
         return true;
     }
 }
