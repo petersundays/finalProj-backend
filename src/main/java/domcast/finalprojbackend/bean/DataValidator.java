@@ -138,7 +138,6 @@ public class DataValidator {
                 logger.error("Invalid interest: {}", interest);
                 assert interest != null;
                 invalidInterests.add(interest.getName());
-                System.out.println("Invalid interest: " + interest.getName());
                 continue;
             }
             interestsNames.add(interest.getName());

@@ -45,7 +45,6 @@ public class PasswordBean {
         if (password == null) {
             throw new IllegalArgumentException("Password cannot be null");
         }
-
         if (password.isBlank()) {
             throw new IllegalArgumentException("Password cannot be blank");
         }
@@ -57,7 +56,6 @@ public class PasswordBean {
         String regex = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{12,}$";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(password);
-
         if (!matcher.matches()) {
             throw new IllegalArgumentException("Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character");
         }
