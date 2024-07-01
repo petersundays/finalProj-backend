@@ -477,13 +477,12 @@ public class ProjectService {
     @GET
     @Path("")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getProjectsByCriteria(@HeaderParam("token") String sessionToken,
-                                          @HeaderParam("id") int loggedUserId,
-                                          @QueryParam("userId") int userId,
+    public Response getProjectsByCriteria(@QueryParam("userId") int userId,
                                           @QueryParam("name") String name,
                                           @QueryParam("lab") int labId,
                                           @QueryParam("state") int stateId,
                                           @QueryParam("keyword") String keyword,
+                                          @QueryParam("skill") String skill,
                                           @QueryParam("orderBy") String orderBy,
                                           @QueryParam("orderAsc") boolean orderAsc,
                                           @QueryParam("pageNumber") int pageNumber,
@@ -496,16 +495,8 @@ public class ProjectService {
         Response response;
         List<ProjectPreview> projects;
 
-        // Check if the id is valid
-        if (!dataValidator.isIdValid(loggedUserId)) {
-            response = Response.status(400).entity("Invalid id").build();
-            logger.info("User with session token {} tried to get projects by criteria with invalid id", sessionToken);
-            return response;
-        }
-
-
         try {
-            projects = projectBean.getProjectsByCriteria(userId, name, labId, stateId, keyword, orderBy, orderAsc, pageNumber, pageSize);
+            projects = projectBean.getProjectsByCriteria(userId, name, labId, stateId, keyword, skill, orderBy, orderAsc, pageNumber, pageSize);
             response = Response.status(200).entity(projects).build();
             logger.info("User with IP address {} got {} projects by criteria", ipAddress, projects.size());
         } catch (IllegalArgumentException e) {

@@ -560,9 +560,9 @@ public class DataValidator {
         }
 
         // Validate orderBy field
-        List<String> allowedOrderByFields = Arrays.asList("name", "lab", "readyDate", "state");
+        List<String> allowedOrderByFields = Arrays.asList("name", "lab", "readyDate", "state", "availablePlaces");
         if (!allowedOrderByFields.contains(orderBy)) {
-            logger.error("Invalid orderBy field while getting users by criteria");
+            logger.error("Invalid orderBy field while getting projects by criteria");
             throw new IllegalArgumentException("Invalid orderBy field");
         }
 
