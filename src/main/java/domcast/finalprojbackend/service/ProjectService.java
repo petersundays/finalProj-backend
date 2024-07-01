@@ -57,7 +57,16 @@ public class ProjectService {
     @Inject
     private SkillBean skillBean;
 
-
+    /**
+     * Method to create a new project.
+     *
+     * @param token the session token
+     * @param id the id of the user
+     * @param input the input data
+     * @param request the HTTP request
+     * @return the response
+     * @throws IOException if an error occurs while reading the input data
+     */
     @POST
     @Path("")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
@@ -122,7 +131,17 @@ public class ProjectService {
         return response;
 
     }
-
+    /**
+     * Method to edit a project.
+     *
+     * @param token the session token
+     * @param id the id of the user
+     * @param projectId the id of the project
+     * @param input the input data
+     * @param request the HTTP request
+     * @return the response
+     * @throws IOException if an error occurs while reading the input data
+     */
     @PUT
     @Path("")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
@@ -193,6 +212,14 @@ public class ProjectService {
 
     }
 
+    /**
+     * Method to get the possible states of a project.
+     * @param token the session token
+     * @param id the id of the user
+     * @param request the HTTP request
+     * @return the response with the possible states of a project
+     *
+     */
     @GET
     @Path("/state-enum")
     @Produces(MediaType.APPLICATION_JSON)
@@ -227,6 +254,14 @@ public class ProjectService {
         return response;
     }
 
+    /**
+     * Method to get the possible roles of a user in a project.
+     * @param token the session token
+     * @param id the id of the user
+     * @param request the HTTP request
+     * @return the response with the possible roles of a user in a project
+     *
+     */
     @GET
     @Path("/user-enum")
     @Produces(MediaType.APPLICATION_JSON)
@@ -261,6 +296,14 @@ public class ProjectService {
         return response;
     }
 
+    /**
+     * Method to get the record topic enum.
+     * @param token the session token
+     * @param id the id of the user
+     * @param request the HTTP request
+     * @return the response with the record topic enum
+     *
+     */
     @GET
     @Path("/record-enum")
     @Produces(MediaType.APPLICATION_JSON)
@@ -295,6 +338,15 @@ public class ProjectService {
         return response;
     }
 
+    /**
+     * Method to update the state of a project by a manager.
+     * @param token the session token
+     * @param userId the id of the user
+     * @param projectId the id of the project
+     * @param state the new state of the project
+     * @param request the HTTP request
+     * @return the response with the updated project
+     */
     @PUT
     @Path("/state")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -341,6 +393,16 @@ public class ProjectService {
 
     }
 
+    /**
+     * Method to approve a project.
+     * Only an admin can approve a project.
+     * @param token the session token
+     * @param userId the id of the user
+     * @param projectId the id of the project
+     * @param state the new state of the project
+     * @param request the HTTP request
+     * @return the response
+     */
     @PUT
     @Path("/approve")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -355,7 +417,7 @@ public class ProjectService {
         String ipAddress = request.getRemoteAddr();
         logger.info("User with session token {} and id {} is trying to approve the project with id {} from IP address {}", token, userId, projectId, ipAddress);
 
-        // Check if the user's and project's id are valid
+        // Check if the user's and project's ids are valid
         if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(projectId)) {
             logger.info("User with session token {} tried to approve the project with invalid id", token);
             return Response.status(400).entity("Invalid id").build();
@@ -396,6 +458,22 @@ public class ProjectService {
 
     }
 
+    /**
+     * Method to get the projects by criteria.
+     * @param sessionToken the session token
+     * @param loggedUserId the id of the user
+     * @param userId the id of the user
+     * @param name the name of the project
+     * @param labId the id of the lab
+     * @param stateId the id of the state
+     * @param keyword the keyword
+     * @param orderBy the order by
+     * @param orderAsc the order asc
+     * @param pageNumber the page number
+     * @param pageSize the page size
+     * @param request the HTTP request
+     * @return the response with the projects
+     */
     @GET
     @Path("")
     @Produces(MediaType.APPLICATION_JSON)
@@ -436,5 +514,173 @@ public class ProjectService {
         }
 
         return response;
+    }
+
+    /**
+     * Method to remove a user from a project.
+     * @param token the session token
+     * @param userId the id of the user
+     * @param projectId the id of the project
+     * @param userToRemoveId the id of the user to remove
+     * @param request the HTTP request
+     * @return the response with the result
+     */
+    @PUT
+    @Path("/remove-user")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response removeUserFromProject(@HeaderParam("token") String token,
+                                          @HeaderParam("id") int userId,
+                                          @QueryParam("projectId") int projectId,
+                                          @QueryParam("userId") int userToRemoveId,
+                                          @Context HttpServletRequest request) {
+
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with session token {} and id {} is trying to remove the user with id {} from the project with id {} from IP address {}", token, userId, userToRemoveId, projectId, ipAddress);
+
+        // Check if the user's and project's ids are valid
+        if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(projectId) || !dataValidator.isIdValid(userToRemoveId)) {
+            logger.info("User with session token {} tried to remove a user from the project, but the ids are invalid", token);
+            return Response.status(400).entity("Invalid id").build();
+        }
+
+        if (!authenticationAndAuthorization.isUserManagerInProject(userId, projectId)) {
+            logger.info("User with session token {} tried to remove the user with id {} from the project but is not authorized", token, userToRemoveId);
+            return Response.status(401).entity("Unauthorized").build();
+        }
+
+        Response response;
+
+        DetailedProject detailedProject;
+
+        try {
+            logger.info("User with session token {} and id {} is removing the user with id {} from the project with id {}", token, userId, userToRemoveId, projectId);
+            detailedProject = projectBean.removeUserFromProject(projectId, userToRemoveId);
+            if (detailedProject != null) {
+                response = Response.status(200).entity("User with id " + userToRemoveId + " successfully removed from the project with id " + projectId).build();
+                logger.info("User with session token {} and id {} successfully removed the user with id {} from the project with id {}", token, userId, userToRemoveId, projectId);
+            } else {
+                response = Response.status(400).entity("User with id " + userToRemoveId + " could not be removed from the project with id " + projectId).build();
+                logger.info("User with session token {} and id {} could not remove the user with id {} from the project with id {}", token, userId, userToRemoveId, projectId);
+            }
+        } catch (Exception e) {
+            logger.error("Error while removing the user with id {} from the project with id {}: {}", userToRemoveId, projectId, e.getMessage());
+            response = Response.status(500).entity("Error while removing the user from the project").build();
+        }
+
+        return response;
+
+    }
+
+    /**
+     * Method to invite a user to a project.
+     * This method is idempotent, meaning that if the user is already invited,
+     * the method will return a success message.
+     *
+     * @param token the session token
+     * @param userId the id of the user
+     * @param projectId the id of the project
+     * @param userToInviteId the id of the user to invite
+     * @param role the role of the user in the project
+     * @param request the HTTP request
+     * @return the response
+     */
+    @PUT
+    @Path("/invite")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response inviteToProject(@HeaderParam("token") String token,
+                                    @HeaderParam("id") int userId,
+                                    @QueryParam("projectId") int projectId,
+                                    @QueryParam("userId") int userToInviteId,
+                                    @QueryParam("role") int role,
+                                    @Context HttpServletRequest request) {
+
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with session token {} and id {} is trying to invite the user with id {} to the project with id {} from IP address {}", token, userId, userToInviteId, projectId, ipAddress);
+
+        // Check if the user's and project's ids are valid
+        if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(projectId) || !dataValidator.isIdValid(userToInviteId)) {
+            logger.info("User with session token {} tried to invite a user to the project, but the ids are invalid", token);
+            return Response.status(400).entity("Invalid id").build();
+        }
+
+        if (!ProjectUserEnum.containsId(role)) {
+            logger.info("User with session token {} tried to invite a user to the project with invalid role", token);
+            return Response.status(400).entity("Invalid role").build();
+        }
+
+        if (!authenticationAndAuthorization.isUserManagerInProject(userId, projectId)) {
+            logger.info("User with session token {} tried to invite the user with id {} to the project but is not authorized", token, userToInviteId);
+            return Response.status(401).entity("Unauthorized").build();
+        }
+
+        Response response;
+        boolean invited;
+
+        try {
+            logger.info("User with session token {} and id {} is inviting the user with id {} to the project with id {}", token, userId, userToInviteId, projectId);
+            invited = projectBean.inviteToProject(projectId, userToInviteId, role);
+            if (invited) {
+                response = Response.status(200).entity("User with id " + userToInviteId + " successfully invited to the project with id " + projectId).build();
+                logger.info("User with session token {} and id {} successfully invited the user with id {} to the project with id {}", token, userId, userToInviteId, projectId);
+            } else {
+                response = Response.status(400).entity("User with id " + userToInviteId + " could not be invited to the project with id " + projectId).build();
+                logger.info("User with session token {} and id {} could not invite the user with id {} to the project with id {}", token, userId, userToInviteId, projectId);
+            }
+        } catch (Exception e) {
+            logger.error("Error while inviting the user with id {} to the project with id {}: {}", userToInviteId, projectId, e.getMessage());
+            response = Response.status(500).entity("Error while inviting the user to the project").build();
+        }
+
+        return response;
+
+    }
+
+    /**
+     * Method to answer an invitation to a project.
+     * @param token the session token
+     * @param userId the id of the user
+     * @param projectId the id of the project
+     * @param request the HTTP request
+     * @return the response
+     */
+    @PUT
+    @Path("/answer-invitation")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response answerInvitation(@HeaderParam("token") String token,
+                                    @HeaderParam("id") int userId,
+                                    @QueryParam("projectId") int projectId,
+                                    @QueryParam("answer") boolean answer,
+                                    @Context HttpServletRequest request) {
+
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with session token {} and id {} is trying to answer the invitation to the project with id {} from IP address {}", token, userId, projectId, ipAddress);
+
+        // Check if the user's and project's ids are valid
+        if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(projectId)) {
+            logger.info("User with session token {} tried to answer the invitation to the project, but the ids are invalid", token);
+            return Response.status(400).entity("Invalid id").build();
+        }
+
+        Response response;
+        boolean success;
+
+        try {
+            logger.info("User with session token {} and id {} is answering the invitation to the project with id {}", token, userId, projectId);
+            success = projectBean.answerInvitation(projectId, userId, answer);
+            if (success) {
+                response = Response.status(200).entity("User with id " + userId + " successfully answered the invitation to the project with id " + projectId).build();
+                logger.info("User with session token {} and id {} successfully answered the invitation to the project with id {}", token, userId, projectId);
+            } else {
+                response = Response.status(400).entity("User with id " + userId + " could not answer the invitation to the project with id " + projectId).build();
+                logger.info("User with session token {} and id {} could not answer the invitation to the project with id {}", token, userId, projectId);
+            }
+        } catch (Exception e) {
+            logger.error("Error while answering the invitation to the project with id {}: {}", projectId, e.getMessage());
+            response = Response.status(500).entity("Error while answering the invitation to the project").build();
+        }
+
+        return response;
+
     }
 }

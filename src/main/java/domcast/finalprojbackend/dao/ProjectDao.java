@@ -190,4 +190,25 @@ public class ProjectDao extends AbstractDao<ProjectEntity> {
         }
     }
 
+    /**
+     * Removes a user from a project
+     *
+     * @param userId the id of the user
+     * to be removed from the project
+     * @param projectId the id of the project
+     * from which the user is to be removed
+     * @return boolean value indicating if the user was removed from the project
+     */
+    public boolean removeUserFromProject(int userId, int projectId) {
+        try {
+            M2MProjectUser projectUser = em.createNamedQuery("M2MProjectUser.findProjectUser", M2MProjectUser.class)
+                    .setParameter("userId", userId)
+                    .setParameter("projectId", projectId)
+                    .getSingleResult();
+            em.remove(projectUser);
+            return true;
+        } catch (NoResultException e) {
+            return false;
+        }
+    }
 }
