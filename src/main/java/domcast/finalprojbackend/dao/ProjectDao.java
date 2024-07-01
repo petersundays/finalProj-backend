@@ -1,6 +1,7 @@
 package domcast.finalprojbackend.dao;
 
 import domcast.finalprojbackend.entity.M2MKeyword;
+import domcast.finalprojbackend.entity.M2MProjectSkill;
 import domcast.finalprojbackend.entity.M2MProjectUser;
 import domcast.finalprojbackend.entity.ProjectEntity;
 import domcast.finalprojbackend.enums.ProjectStateEnum;
@@ -103,7 +104,7 @@ public class ProjectDao extends AbstractDao<ProjectEntity> {
         }
     }
 
-    public List<ProjectEntity> getProjectsByCriteria(int userId, String name, int lab, int state, String keyword, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
+    public List<ProjectEntity> getProjectsByCriteria(int userId, String name, int lab, int state, String keyword, String skill, int maxUsers, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<ProjectEntity> cq = cb.createQuery(ProjectEntity.class);
 
@@ -132,6 +133,11 @@ public class ProjectDao extends AbstractDao<ProjectEntity> {
         if (keyword != null && !keyword.isEmpty()) {
             Join<ProjectEntity, M2MKeyword> joinKeyword = project.join("keywords");
             predicates.add(joinKeyword.get("keyword").get("name").in(keyword));
+        }
+
+        if (skill != null && !skill.isEmpty()) {
+            Join<ProjectEntity, M2MProjectSkill> joinSkill = project.join("skills");
+            predicates.add(cb.equal(joinSkill.get("skill").get("name"), skill));
         }
 
         cq.select(project).where(cb.and(predicates.toArray(new Predicate[0])));
@@ -172,6 +178,26 @@ public class ProjectDao extends AbstractDao<ProjectEntity> {
                         cq.orderBy(cb.desc(project.get("name")));
                     }
                 }
+                case "availablePlaces" -> {
+                    System.out.println("********* Available places");
+                    // Subquery to calculate the number of active users in each project
+                    Subquery<Long> activeUsersSubquery = cq.subquery(Long.class);
+                    Root<M2MProjectUser> projectUser = activeUsersSubquery.from(M2MProjectUser.class);
+                    activeUsersSubquery.select(cb.count(projectUser));
+                    activeUsersSubquery.where(cb.and(
+                            cb.equal(projectUser.get("project"), project),
+                            cb.isTrue(projectUser.get("active"))
+                    ));
+
+                    // Expression to calculate the number of places still available
+                    Expression<Long> availablePlaces = cb.diff((long) maxUsers, activeUsersSubquery);
+
+                    if (orderAsc) {
+                        cq.orderBy(cb.asc(availablePlaces));
+                    } else {
+                        cq.orderBy(cb.desc(availablePlaces));
+                    }
+                }
             }
         }
 
@@ -187,28 +213,6 @@ public class ProjectDao extends AbstractDao<ProjectEntity> {
         } catch (PersistenceException e) {
             logger.error("Database error while getting projects by criteria", e);
             return new ArrayList<>();
-        }
-    }
-
-    /**
-     * Removes a user from a project
-     *
-     * @param userId the id of the user
-     * to be removed from the project
-     * @param projectId the id of the project
-     * from which the user is to be removed
-     * @return boolean value indicating if the user was removed from the project
-     */
-    public boolean removeUserFromProject(int userId, int projectId) {
-        try {
-            M2MProjectUser projectUser = em.createNamedQuery("M2MProjectUser.findProjectUser", M2MProjectUser.class)
-                    .setParameter("userId", userId)
-                    .setParameter("projectId", projectId)
-                    .getSingleResult();
-            em.remove(projectUser);
-            return true;
-        } catch (NoResultException e) {
-            return false;
         }
     }
 }

@@ -917,7 +917,7 @@ public class ProjectBean implements Serializable {
         return true;
     }
 
-    public List<ProjectPreview> getProjectsByCriteria (Integer userId, String name, int lab, int state, String keyword, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
+    public List<ProjectPreview> getProjectsByCriteria (Integer userId, String name, int lab, int state, String keyword, String skill, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
 
         if (userId != 0) {
             if (!dataValidator.isIdValid(userId)) {
@@ -954,12 +954,32 @@ public class ProjectBean implements Serializable {
             }
         }
 
+        String skillTrimmed = "";
+
+        if (skill != null && skill.isEmpty()) {
+            skillTrimmed = dataValidator.getFirstWord(skill);
+            skillTrimmed = dataValidator.isValidName(skillTrimmed) ? skillTrimmed : "";
+
+            if (skillTrimmed != null && !skillTrimmed.isEmpty() && !skillTrimmed.equals(skill)) {
+                logger.info("Skill had more than one word, only the first word will be used: '{}'", skillTrimmed);
+            }
+        }
+
+        int maxUsers;
+
+        try {
+            maxUsers = systemBean.getProjectMaxUsers();
+        } catch (Exception e) {
+            logger.error("Error getting project max users while getting projects by criteria: {}", e.getMessage());
+            throw new RuntimeException(e);
+        }
+
         logger.info("Getting projects by criteria");
 
         List<ProjectEntity> projects;
 
         try {
-            projects = projectDao.getProjectsByCriteria(userId, name, lab, state, keywordTrimmed, orderBy, orderAsc, pageNumber, pageSize);
+            projects = projectDao.getProjectsByCriteria(userId, name, lab, state, keywordTrimmed, skillTrimmed, maxUsers, orderBy, orderAsc, pageNumber, pageSize);
             if (projects == null || projects.isEmpty()) {
                 logger.warn("No projects found by criteria");
                 throw new IllegalArgumentException("No projects found by criteria");
