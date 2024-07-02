@@ -743,4 +743,51 @@ public class ProjectService {
         return response;
 
     }
+
+    @GET
+    @Path("detailed")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getProject(@HeaderParam("token") String token,
+                               @HeaderParam("id") int userId,
+                               @QueryParam("id") int projectId,
+                               @Context HttpServletRequest request) {
+
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with IP address {} is trying to get the project with id {}", ipAddress, projectId);
+
+        Response response;
+
+        if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(projectId)) {
+            response = Response.status(400).entity("Invalid id").build();
+            logger.info("User with session token {} tried to get the project with invalid id {}", token, projectId);
+            return response;
+        }
+
+        // Check if the user is authorized to create a new project
+        if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, userId)) {
+            response = Response.status(401).entity("Unauthorized").build();
+            logger.info("User with session token {} tried to get the project but is not authorized", token);
+            return response;
+        }
+
+        if (!authenticationAndAuthorization.isUserMemberOfTheProjectAndActive(userId, projectId)) {
+            response = Response.status(401).entity("Unauthorized").build();
+            logger.info("User with session token {} tried to get the project but is not a member of the project", token);
+            return response;
+        }
+
+        DetailedProject detailedProject;
+
+        try {
+            logger.info("User with session token {} and id {} is getting the project with id {}", token, userId, projectId);
+            detailedProject = projectBean.getProjectById(projectId);
+            response = Response.status(200).entity(detailedProject).build();
+            logger.info("User with session token {} and id {} successfully got the project with id {}", token, userId, projectId);
+        } catch (Exception e) {
+            logger.error("Error getting the project with id {}: {}", projectId, e.getMessage());
+            response = Response.status(500).entity("Error getting the project").build();
+        }
+
+        return response;
+    }
 }

@@ -1419,4 +1419,38 @@ public class ProjectBean implements Serializable {
         return approved;
     }
 
+    public DetailedProject getProjectById(int projectId) {
+
+        if (!dataValidator.isIdValid(projectId)) {
+            logger.error("Invalid project ID while getting project by ID");
+            throw new IllegalArgumentException("Invalid project ID while getting project by ID");
+        }
+
+        logger.info("Getting project with ID {}", projectId);
+
+        ProjectEntity projectEntity;
+
+        try {
+            projectEntity = projectDao.findProjectById(projectId);
+        } catch (PersistenceException e) {
+            logger.error("Error finding project with ID {}", projectId, e);
+            throw new RuntimeException(e);
+        }
+
+        if (projectEntity == null) {
+            logger.error("Project not found while getting project by ID: {}", projectId);
+            throw new IllegalArgumentException("Project not found with ID " + projectId);
+        }
+
+        DetailedProject detailedProject = entityToDetailedProject(projectEntity);
+
+        if (detailedProject == null) {
+            logger.error("Error converting project entity to detailed project while getting project by ID");
+            throw new RuntimeException("Error converting project entity to detailed project while getting project by ID");
+        }
+
+        logger.info("Successfully got project with ID {}", projectId);
+
+        return detailedProject;
+    }
 }
