@@ -67,24 +67,18 @@ public class LabService {
     @GET
     @Path("/enum-unconfirmed")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getLabEnumUnconfirmed(@HeaderParam("token") String validationToken, @Context HttpServletRequest request) {
+    public Response getLabEnumUnconfirmed(@Context HttpServletRequest request) {
         String ipAddress = request.getRemoteAddr();
-        logger.info("User with validationToken {} is trying to get the lab enum from IP address {}", validationToken, ipAddress);
+        logger.info("User is trying to get the lab enum from IP address {}", ipAddress);
 
         Response response;
 
-        // Check if the user is authorized to get the labs while in registration
-        if (!authenticationAndAuthorization.isMemberNotConfirmedAndValTokenActive(validationToken)) {
-            response = Response.status(401).entity("Unauthorized").build();
-            logger.info("User with validation validationToken {} tried to get the labs but is not authorized", validationToken);
-            return response;
-        }
 
         try {
-            logger.info("User with validationToken {} is getting the lab enum", validationToken);
+            logger.info("User is getting the lab enum");
             List<EnumDTO> enumDTOs = EnumUtil.getAllEnumDTOs(LabEnum.class);
             response = Response.status(200).entity(enumDTOs).build();
-            logger.info("User with validationToken {} successfully got the lab enum", validationToken);
+            logger.info("User successfully got the lab enum");
         } catch (Exception e) {
             logger.error("Error getting lab enum while in registration", e);
             response = Response.status(500).entity("Error getting lab enum while in registration").build();

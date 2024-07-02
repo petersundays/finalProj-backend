@@ -214,8 +214,6 @@ public class ProjectService {
 
     /**
      * Method to get the possible states of a project.
-     * @param token the session token
-     * @param id the id of the user
      * @param request the HTTP request
      * @return the response with the possible states of a project
      *
@@ -223,29 +221,17 @@ public class ProjectService {
     @GET
     @Path("/state-enum")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getProjectStateEnum(@HeaderParam("token") String token, @HeaderParam("id") int id, @Context HttpServletRequest request) {
+    public Response getProjectStateEnum(@Context HttpServletRequest request) {
         String ipAddress = request.getRemoteAddr();
-        logger.info("User with token {} and id {} is trying to get the project state enum from IP address {}", token, id, ipAddress);
-
-        // Check if the user's id is valid
-        if (!dataValidator.isIdValid(id)) {
-            logger.info("User with session token {} tried to get the project state enum but is not authorized", token);
-            return Response.status(400).entity("Invalid id").build();
-        }
-
-        // Check if the user is authorized to get the component resource enum
-        if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, id)) {
-            logger.info("User with session token {} tried to get the project state enum but is not authorized", token);
-            return Response.status(401).entity("Unauthorized").build();
-        }
+        logger.info("User with IP address {} is getting the project state enum", ipAddress);
 
         Response response;
 
         try {
-            logger.info("User with session token {} and id {} is getting the project state enum", token, id);
+            logger.info("User with IP address {} is getting the project state enum", ipAddress);
             List<EnumDTO> enumDTOs = EnumUtil.getAllEnumDTOs(ProjectStateEnum.class);
             response = Response.status(200).entity(enumDTOs).build();
-            logger.info("User with session token {} and id {} successfully got the project state enum", token, id);
+            logger.info("User with IP address {} successfully got the project state enum", ipAddress);
         } catch (Exception e) {
             logger.error("Error getting project state enum: {}", e.getMessage());
             response = Response.status(500).entity("Error getting project state enum").build();
@@ -460,8 +446,6 @@ public class ProjectService {
 
     /**
      * Method to get the projects by criteria.
-     * @param sessionToken the session token
-     * @param loggedUserId the id of the user
      * @param userId the id of the user
      * @param name the name of the project
      * @param labId the id of the lab
