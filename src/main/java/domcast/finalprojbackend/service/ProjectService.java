@@ -697,4 +697,50 @@ public class ProjectService {
         return response;
 
     }
+
+    @PUT
+    @Path("/answer-application")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response answerApplication(@HeaderParam("token") String token,
+                                     @HeaderParam("id") int adminId,
+                                     @QueryParam("projectId") int projectId,
+                                     @QueryParam("userId") int applicantId,
+                                     @QueryParam("answer") boolean answer,
+                                     @Context HttpServletRequest request) {
+
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with session token {} and id {} is trying to answer the application to the project with id {} from IP address {} for the user with id {}", token, adminId, projectId, ipAddress, applicantId);
+
+        // Check if the user's and project's ids are valid
+        if (!dataValidator.isIdValid(adminId) || !dataValidator.isIdValid(projectId) || !dataValidator.isIdValid(applicantId)) {
+            logger.info("User with session token {} tried to answer the application to the project, but the ids are invalid", token);
+            return Response.status(400).entity("Invalid id").build();
+        }
+
+        if (!authenticationAndAuthorization.isUserManagerInProject(adminId, projectId)) {
+            logger.info("User with session token {} tried to answer the application to the project but is not authorized", token);
+            return Response.status(401).entity("Unauthorized").build();
+        }
+
+        Response response;
+        boolean success;
+
+        try {
+            logger.info("User with session token {} and id {} is answering the application to the project with id {} for the user with id {}", token, adminId, projectId, applicantId);
+            success = projectBean.approveApplication(projectId, applicantId, answer);
+            if (success) {
+                response = Response.status(200).entity("User with id " + adminId + " successfully answered the application to the project with id " + projectId + " for the user with id " + applicantId).build();
+                logger.info("User with session token {} and id {} successfully answered the application to the project with id {} for the user with id {}", token, adminId, projectId, applicantId);
+            } else {
+                response = Response.status(400).entity("User with id " + adminId + " could not answer the application to the project with id " + projectId + " for the user with id " + applicantId).build();
+                logger.info("User with session token {} and id {} could not answer the application to the project with id {} for the user with id {}", token, adminId, projectId, applicantId);
+            }
+        } catch (Exception e) {
+            logger.error("Error while answering the application to the project with id {} for the user with id {}: {}", projectId, applicantId, e.getMessage());
+            response = Response.status(500).entity("Error while answering the application to the project").build();
+        }
+
+        return response;
+
+    }
 }

@@ -1401,6 +1401,22 @@ public class ProjectBean implements Serializable {
         return applied;
     }
 
-    //public boolean approveApplications(int projectId, int userId) {}
+    /**
+     * Method to approve an application to a project.
+     * @param projectId The ID of the project to approve the application to.
+     * @param userId The ID of the user whose application is being approved.
+     * @param answer A boolean value indicating if the application is approved.
+     * @return A boolean value indicating if the application was approved.
+     */
+    public boolean approveApplication(int projectId, int userId, boolean answer) {
+
+        logger.info("Approving application to project.");
+
+        boolean approved;
+
+        approved = answerInvitationOrApplication(projectId, userId, answer, true);
+
+        return approved;
+    }
 
 }
