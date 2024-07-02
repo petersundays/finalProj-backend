@@ -1336,6 +1336,10 @@ public class ProjectBean implements Serializable {
             m2MProjectUser.setApproved(true);
             projectEntity.addProjectUser(m2MProjectUser);
 
+            if (application) {
+                m2MProjectUser.setRole(ProjectUserEnum.PARTICIPANT);
+            }
+
             try {
                 if (!projectDao.merge(projectEntity)) {
                     logger.error("Error merging project while answering {} to project with ID {}", invitationType, projectId);
@@ -1450,6 +1454,93 @@ public class ProjectBean implements Serializable {
         }
 
         logger.info("Successfully got project with ID {}", projectId);
+
+        return detailedProject;
+    }
+
+    public DetailedProject changeRole(int projectId, int userId, int role) {
+
+        if (!dataValidator.isIdValid(projectId) || !dataValidator.isIdValid(userId)) {
+            logger.error("Invalid project ID or user ID while promoting user to manager");
+            throw new IllegalArgumentException("Invalid project ID or user ID while promoting user to manager");
+        }
+
+        if (!ProjectUserEnum.containsId(role)) {
+            logger.error("Invalid role while promoting user to manager");
+            throw new IllegalArgumentException("Invalid role while promoting user to manager");
+        }
+
+        if (role == ProjectUserEnum.MAIN_MANAGER.getId() || role == ProjectUserEnum.CANDIDATE.getId()) {
+            logger.error("Invalid role while promoting user to manager");
+            throw new IllegalArgumentException("Invalid role while promoting user to manager");
+        }
+
+        logger.info("Promoting user with ID {} to manager in project with ID {}", userId, projectId);
+
+        ProjectUserEnum projectUserEnum = ProjectUserEnum.fromId(role);
+
+        ProjectEntity projectEntity;
+
+        try {
+            projectEntity = projectDao.findProjectById(projectId);
+        } catch (PersistenceException e) {
+            logger.error("Error finding project with ID {} while promoting user to manager", projectId, e);
+            throw new RuntimeException(e);
+        }
+
+        if (projectEntity == null) {
+            logger.error("Project not found with ID {} while promoting user to manager", projectId);
+            throw new IllegalArgumentException("Project not found with ID " + projectId + " while promoting user to manager");
+        }
+
+        M2MProjectUser m2MProjectUser;
+
+        try {
+            m2MProjectUser = m2MProjectUserDao.findProjectUser(userId, projectId);
+        } catch (PersistenceException e) {
+            logger.error("Error finding project user with user ID {} and project ID {} while promoting user to manager", userId, projectId, e);
+            throw new RuntimeException(e);
+        }
+
+        if (m2MProjectUser == null || !m2MProjectUser.isActive()) {
+            logger.error("User with ID {} is not part of project with ID {} while promoting user to manager", userId, projectId);
+            throw new IllegalArgumentException("User with ID " + userId + " is not part of project with ID " + projectId + " while promoting user to manager");
+        }
+
+        if (m2MProjectUser.getRole() == ProjectUserEnum.MAIN_MANAGER) {
+            logger.error("User with ID {} is already main manager in project with ID {} while promoting user to manager", userId, projectId);
+            throw new IllegalArgumentException("User with ID " + userId + " is already main manager in project with ID " + projectId + " while promoting user to manager");
+        }
+
+        if (m2MProjectUser.getRole() == ProjectUserEnum.CANDIDATE) {
+            logger.error("User with ID {} is a candidate in project with ID {} while promoting user to manager", userId, projectId);
+            throw new IllegalArgumentException("User with ID " + userId + " is a candidate in project with ID " + projectId + " and must be approved before being promoted to manager");
+        }
+
+        m2MProjectUser.setRole(projectUserEnum);
+
+        try {
+            if (!m2MProjectUserDao.merge(m2MProjectUser)) {
+                logger.error("Error promoting user with ID {} to manager in project with ID {}", userId, projectId);
+                throw new RuntimeException("Error promoting user to manager in project");
+            }
+        } catch (PersistenceException e) {
+            logger.error("Error promoting user with ID {} to manager in project with ID {}: {}", userId, projectId, e.getMessage());
+            throw new RuntimeException(e);
+        }
+
+        ////////////////// SEND MESSAGE TO USER //////////////////
+
+        ////////////////// Create log in project //////////////////
+
+        DetailedProject detailedProject = entityToDetailedProject(projectEntity);
+
+        if (detailedProject == null) {
+            logger.error("Error converting project entity to detailed project while promoting user to manager");
+            throw new RuntimeException("Error converting project entity to detailed project while promoting user to manager");
+        }
+
+        logger.info("Successfully promoted user with ID {} to manager in project with ID {}", userId, projectId);
 
         return detailedProject;
     }

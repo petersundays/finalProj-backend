@@ -790,4 +790,51 @@ public class ProjectService {
 
         return response;
     }
+
+    @PUT
+    @Path("/role")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response changeRole(@HeaderParam("token") String token,
+                                  @HeaderParam("id") int userId,
+                                  @QueryParam("projectId") int projectId,
+                                  @QueryParam("userId") int userToPromoteId,
+                                  @QueryParam("role") int role,
+                                  @Context HttpServletRequest request) {
+
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with session token {} and id {} is trying to change role of the user with id {} in the project with id {} from IP address {}", token, userId, userToPromoteId, projectId, ipAddress);
+
+        // Check if the user's and project's ids are valid
+        if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(projectId) || !dataValidator.isIdValid(userToPromoteId)) {
+            logger.info("User with session token {} tried to change role of a user in the project, but the ids are invalid", token);
+            return Response.status(400).entity("Invalid id").build();
+        }
+
+        if (!authenticationAndAuthorization.isUserManagerInProject(userId, projectId)) {
+            logger.info("User with session token {} tried to change role of the user with id {} in the project but is not authorized", token, userToPromoteId);
+            return Response.status(401).entity("Unauthorized").build();
+        }
+
+        Response response;
+        DetailedProject detailedProject;
+
+        try {
+            logger.info("User with session token {} and id {} is changing role of the user with id {} in the project with id {}", token, userId, userToPromoteId, projectId);
+            detailedProject = projectBean.changeRole(projectId, userToPromoteId, role);
+            if (detailedProject != null) {
+                response = Response.status(200).entity("User with id " + userToPromoteId + " successfully changed role in the project with id " + projectId).build();
+                logger.info("User with session token {} and id {} successfully changed role of the user with id {} in the project with id {}", token, userId, userToPromoteId, projectId);
+            } else {
+                response = Response.status(400).entity("User with id " + userToPromoteId + " could not change role in the project with id " + projectId).build();
+                logger.info("User with session token {} and id {} could not change role of the user with id {} in the project with id {}", token, userId, userToPromoteId, projectId);
+            }
+        } catch (Exception e) {
+            logger.error("Error while changing role of the user with id {} in the project with id {}: {}", userToPromoteId, projectId, e.getMessage());
+            response = Response.status(500).entity("Error while changing role of the user in the project").build();
+        }
+
+        return response;
+    }
+
 }
