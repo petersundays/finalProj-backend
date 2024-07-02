@@ -682,7 +682,7 @@ public class UserBean implements Serializable {
                 }
 
                 // Write the photo to the appropriate location
-                String path = userDirPath + "/profile_pic_" + user.getId() + ".jpg";
+                String path = userDirPath + "/profile_pic_" + user.getId() + ".jpg" + "?t=" + System.currentTimeMillis();
                 File file = new File(path);
 
                 // If the file already exists, delete it
@@ -798,7 +798,6 @@ public class UserBean implements Serializable {
      * @return The updated user entity.
      */
     public UserEntity registerProfileInfo (UserEntity user, FullRegistration userInfo, String photoPath) {
-        System.out.println("User interests" + userInfo.getInterests().size());
         if (user == null) {
             throw new IllegalArgumentException("UserEntity must not be null");
         }
@@ -812,7 +811,7 @@ public class UserBean implements Serializable {
             throw new IllegalArgumentException("Lab not found with city: " + user.getWorkplace());
         }
 
-        logger.info("Lab found with city: {}", user.getWorkplace());
+        logger.info("Lab found with city: {}", user.getWorkplace().getCity());
 
         // Sets the user's attributes
         user.setFirstName(userInfo.getFirstName());
@@ -952,7 +951,6 @@ public class UserBean implements Serializable {
      * @return True if the interests and skills were created successfully, false otherwise.
      */
     public boolean createInterestsAndSkillsForRegistration(FullRegistration user) {
-        System.out.println("User interests 1978" + user.getInterests().size());
         boolean interestsCreated = interestBean.createInterests(user.getInterestDtos());
         boolean skillsCreated = skillBean.createSkills(user.getSkillDtos());
         return interestsCreated && skillsCreated;

@@ -21,7 +21,8 @@ public enum ProjectUserEnum implements ConvertibleToEnumDTO {
     // The user is a member of the project and can have one of the following roles
     MAIN_MANAGER (1, 300),
     MANAGER (2, 200),
-    PARTICIPANT(3, 100);
+    PARTICIPANT(3, 100),
+    CANDIDATE(4, 400);
 
     // The id of the role
     private final int id;

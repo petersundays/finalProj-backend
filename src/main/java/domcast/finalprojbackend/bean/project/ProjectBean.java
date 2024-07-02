@@ -791,6 +791,15 @@ public class ProjectBean implements Serializable {
         return mapper.readValue(projectString, EditProject.class);
     }
 
+    /**
+     * Method to approve or cancel a project.
+     * @param projectId The ID of the project to approve or cancel.
+     *                  If the project is approved, the state will be set to APPROVED.
+     *                  If the project is canceled, the state will be set to CANCELED.
+     *
+     * @param newState The new state of the project.
+     * @return The detailed project object of the project that was approved or canceled.
+     */
     public DetailedProject editStateByManager(int projectId, int newState) {
 
         if (!dataValidator.isIdValid(projectId)) {
@@ -1179,7 +1188,7 @@ public class ProjectBean implements Serializable {
 
         logger.info("Inviting user with ID {} to project with ID {}", userId, projectId);
 
-        boolean invited = false;
+        boolean invited;
 
         ProjectEntity projectEntity;
 
@@ -1196,8 +1205,6 @@ public class ProjectBean implements Serializable {
         }
 
         logger.info("Found project with ID {}", projectId);
-
-        System.out.println("#*#*#*##*#* Number of Project users: " + projectEntity.getProjectUsers().size());
 
         for (M2MProjectUser m2MProjectUser : projectEntity.getProjectUsers()) {
             System.out.println("User ID: " + m2MProjectUser.getUser().getId() + " Active: " + m2MProjectUser.isActive());
@@ -1263,17 +1270,23 @@ public class ProjectBean implements Serializable {
         }
 
         ////////////////// SEND MESSAGE TO USER //////////////////
+
+        // **** if Candidate, send message to managers, else send message to user **** //
+
         ////////////////// Create log in project //////////////////
         logger.info("Successfully invited user with ID {} to project with ID {}", userId, projectId);
 
         return invited;
     }
 
-    public boolean answerInvitation(int projectId, int userId, boolean answer) {
+    public boolean answerInvitationOrApplication(int projectId, int userId, boolean answer, boolean application) {
+
+        String invitationType = application ? "application" : "invitation";
+
         logger.info("Answering invitation to project");
 
         if (!dataValidator.isIdValid(projectId) || !dataValidator.isIdValid(userId)) {
-            logger.error("Invalid project ID or user ID while answering invitation to project");
+            logger.error("Invalid project ID or user ID while answering {} to project", invitationType);
             throw new IllegalArgumentException("Invalid project ID or user ID while answering invitation to project");
         }
 
@@ -1282,19 +1295,13 @@ public class ProjectBean implements Serializable {
         try {
             projectEntity = projectDao.findProjectById(projectId);
         } catch (PersistenceException e) {
-            logger.error("Error finding project with ID {} while answering invitation to project", projectId, e);
+            logger.error("Error finding project with ID {} while answering {} to project", projectId, invitationType, e);
             throw new RuntimeException(e);
         }
 
         if (projectEntity == null) {
-            logger.error("Project not found with ID {} while answering invitation to project", projectId);
-            throw new IllegalArgumentException("Project not found with ID " + projectId + " while answering invitation to project");
-        }
-
-        System.out.println("#*#*#*##*#* Number of Project users: " + projectEntity.getProjectUsers().size());
-
-        for (M2MProjectUser m2MProjectUser : projectEntity.getProjectUsers()) {
-            System.out.println("User ID: " + m2MProjectUser.getUser().getId() + " Active: " + m2MProjectUser.isActive());
+            logger.error("Project not found with ID {} while answering {} to project", projectId, invitationType);
+            throw new IllegalArgumentException("Project not found with ID " + projectId + " while answering " + invitationType + " to project");
         }
 
         M2MProjectUser m2MProjectUser;
@@ -1302,18 +1309,18 @@ public class ProjectBean implements Serializable {
         try {
             m2MProjectUser = m2MProjectUserDao.findProjectUser(userId, projectId);
         } catch (PersistenceException e) {
-            logger.error("Error finding project user with user ID {} and project ID {} while answering invitation to project", userId, projectId, e);
+            logger.error("Error finding project user with user ID {} and project ID {} while answering {} to project", userId, projectId, invitationType, e);
             throw new RuntimeException(e);
         }
 
         if (m2MProjectUser == null) {
-            logger.error("User with ID {} is not invited to project with ID {} while answering invitation to project", userId, projectId);
-            throw new IllegalArgumentException("User with ID " + userId + " is not invited to project with ID " + projectId + " while answering invitation to project");
+            logger.error("User with ID {} is not invited to project with ID {} while answering {} to project", userId, projectId, invitationType);
+            throw new IllegalArgumentException("User with ID " + userId + " is not invited to project with ID " + projectId + " while answering " + invitationType + " to project");
         }
 
         if (m2MProjectUser.isActive()) {
-            logger.error("User with ID {} is already part of project with ID {} while answering invitation to project", userId, projectId);
-            throw new IllegalArgumentException("User with ID " + userId + " is already part of project with ID " + projectId + " while answering invitation to project");
+            logger.error("User with ID {} is already part of project with ID {} while answering {} to project", userId, projectId, invitationType);
+            throw new IllegalArgumentException("User with ID " + userId + " is already part of project with ID " + projectId + " while answering " + invitationType + " to project");
         }
 
         String message;
@@ -1321,61 +1328,79 @@ public class ProjectBean implements Serializable {
         if (answer) {
 
             if (!dataValidator.availablePlacesInProject(projectId)) {
-                logger.error("Project with ID {} is full while answering invitation to project", projectId);
-                throw new IllegalArgumentException("Project with ID " + projectId + " is full while answering invitation to project");
+                logger.error("Project with ID {} is full while answering {} to project", projectId, invitationType);
+                throw new IllegalArgumentException("Project with ID " + projectId + " is full while answering " + invitationType + " to project");
             }
 
             m2MProjectUser.setActive(true);
             m2MProjectUser.setApproved(true);
             projectEntity.addProjectUser(m2MProjectUser);
 
-            ////////////////// SEND A MESSAGE TO MANAGERS //////////////////
-            ////////////////// Crate log in project //////////////////
             try {
                 if (!projectDao.merge(projectEntity)) {
-                    logger.error("Error merging project while answering invitation to project with ID {}", projectId);
-                    throw new RuntimeException("Error answering invitation to project");
+                    logger.error("Error merging project while answering {} to project with ID {}", invitationType, projectId);
+                    throw new RuntimeException("Error merging project while answering " + invitationType + " to project");
                 }
             } catch (PersistenceException e) {
-                logger.error("Error persisting project while answering invitation to project with ID {}: {}", projectId, e.getMessage());
+                logger.error("Error persisting project while answering {} to project with ID {}: {}", invitationType, projectId, e.getMessage());
                 throw new RuntimeException(e);
             }
-            message = "User with ID " + userId + " accepted invitation to project with ID " + projectId;
+            message = "User with ID " + userId + " joined project with ID " + projectId;
         } else {
             try {
                 m2MProjectUserDao.removeProjectUser(m2MProjectUser.getUser().getId(), projectId);
             } catch (PersistenceException e) {
-                logger.error("Error removing project user while answering invitation to project with ID {}: {}", projectId, e.getMessage());
+                logger.error("Error removing project user while answering {} to project with ID {}: {}", invitationType, projectId, e.getMessage());
                 throw new RuntimeException(e);
             }
 
             try {
                 projectEntity.removeProjectUser(m2MProjectUser);
             } catch (PersistenceException e) {
-                logger.error("Error removing project user from project while answering invitation to project with ID {}: {}", projectId, e.getMessage());
+                logger.error("Error removing project user from project while answering {} to project with ID {}: {}", invitationType, projectId, e.getMessage());
                 throw new RuntimeException(e);
             }
 
-            message = "User with ID " + userId + " declined invitation to project with ID " + projectId;
+            message = "User with ID " + userId + " did not join project with ID " + projectId;
         }
 
         try {
             if (!m2MProjectUserDao.merge(m2MProjectUser)) {
-                logger.error("Error answering invitation to project with ID {}", projectId);
-                throw new RuntimeException("Error answering invitation to project");
+                logger.error("Error answering {} to project with ID {}", invitationType, projectId);
+                throw new RuntimeException("Error answering " + invitationType + " to project");
             }
         } catch (PersistenceException e) {
-            logger.error("Error answering invitation to project with ID {}: {}", projectId, e.getMessage());
+            logger.error("Error answering {} to project with ID {}: {}", invitationType, projectId, e.getMessage());
             throw new RuntimeException(e);
         }
 
-        System.out.println("################ Number of Project users: " + projectEntity.getProjectUsers().size());
+        ////////////////// SEND A MESSAGE //////////////////
 
-        ////////////////// SEND A MESSAGE TO MANAGERS //////////////////
+// ** if application, send message to user, else send message to managers ** //
+
+        ////////////////// Create project logs //////////////////
 
         logger.info(message);
 
         return true;
     }
+
+    /**
+     * Method to apply to a project.
+     * @param projectId The ID of the project to apply to.
+     * @param userId The ID of the user applying to the project.
+     * @return A boolean value indicating if the user applied to the project.
+     */
+    public boolean applyToProject(int projectId, int userId) {
+
+        logger.info("Applying to project.");
+        boolean applied;
+
+        applied = inviteToProject(projectId, userId, ProjectUserEnum.CANDIDATE.getId());
+
+        return applied;
+    }
+
+    //public boolean approveApplications(int projectId, int userId) {}
 
 }

@@ -104,8 +104,6 @@ public class UserService {
             FullRegistration user = userBean.extractFullRegistrationDto(input);
             logger.info("Extracted FullRegistration object: {}", user);
 
-            System.out.println("Interests 25: " + user.getInterestDtos().size());
-
             if ((user.getInterestDtos() != null && !user.getInterestDtos().isEmpty()) || (user.getSkillDtos() != null && !user.getSkillDtos().isEmpty())) {
 
                 // Create interests and skills
