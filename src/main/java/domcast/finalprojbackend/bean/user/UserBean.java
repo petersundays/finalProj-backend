@@ -682,7 +682,7 @@ public class UserBean implements Serializable {
                 }
 
                 // Write the photo to the appropriate location
-                String path = userDirPath + "/profile_pic_" + user.getId() + ".jpg";
+                String path = userDirPath + "/profile_pic_" + user.getId() + ".jpg" + "?t=" + System.currentTimeMillis();
                 File file = new File(path);
 
                 // If the file already exists, delete it

@@ -161,6 +161,7 @@ public class UserBeanTest {
         UserEntity userEntity = new UserEntity();
         LabEntity labEntity = new LabEntity();
         labEntity.setCity(LabEnum.LISBOA);
+        userEntity.setWorkplace(labEntity);
         SessionTokenEntity sessionTokenEntity = new SessionTokenEntity(); // Create a SessionTokenEntity
 
         when(dataValidator.isUserMandatoryDataValid(fullRegistration)).thenReturn(true);
@@ -190,10 +191,13 @@ public class UserBeanTest {
         fullRegistration.setValidationToken("validToken");
         fullRegistration.setFirstName("John");
         fullRegistration.setLastName("Doe");
-        fullRegistration.setWorkplace("CityLab");
+        fullRegistration.setWorkplace("Lisboa");
 
         UserEntity userEntity = new UserEntity();
         LabEntity labEntity = new LabEntity();
+        labEntity.setCity(LabEnum.LISBOA); // Set the city of the labEntity
+
+        userEntity.setWorkplace(labEntity); // Set the workplace of the userEntity
 
         when(dataValidator.isUserMandatoryDataValid(fullRegistration)).thenReturn(true);
         when(userDao.findUserByValidationToken(fullRegistration.getValidationToken())).thenReturn(userEntity);

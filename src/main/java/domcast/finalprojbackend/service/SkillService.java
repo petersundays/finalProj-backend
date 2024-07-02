@@ -38,26 +38,11 @@ public class SkillService {
     @GET
     @Path("")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getSkills(@HeaderParam("token") String sessionToken,
-                                 @HeaderParam("id") int id,
-                                 @Context HttpServletRequest request) {
+    public Response getSkills(@Context HttpServletRequest request) {
         String ipAddress = request.getRemoteAddr();
-        logger.info("User with token {} and id {} is getting skills from IP address {}", sessionToken, id, ipAddress);
+        logger.info("User with ip address {} got skills", ipAddress);
 
         Response response;
-
-        if (!dataValidator.isIdValid(id)) {
-            response = Response.status(400).entity("Invalid id").build();
-            logger.info("User with token {} and id {} tried to get skills with invalid id", sessionToken, id);
-            return response;
-        }
-
-        // Check if the user is authorized to get the public profile
-        if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(sessionToken, id)) {
-            response = Response.status(401).entity("Unauthorized").build();
-            logger.info("User with session token {} tried to get interests but is not authorized", sessionToken);
-            return response;
-        }
 
         try {
             List<SkillToList> skills = skillBean.getAllSkills();
@@ -67,7 +52,7 @@ public class SkillService {
                 return Response.status(204).build();
             }
 
-            logger.info("User with session token {} and id {} got skills", sessionToken, id);
+            logger.info("User with ip address {} got skills", ipAddress);
             response = Response.status(200).entity(skills).build();
         } catch (Exception e) {
             logger.error("Error getting interests", e);
