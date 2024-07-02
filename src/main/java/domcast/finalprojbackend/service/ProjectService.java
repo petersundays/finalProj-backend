@@ -460,8 +460,6 @@ public class ProjectService {
 
     /**
      * Method to get the projects by criteria.
-     * @param sessionToken the session token
-     * @param loggedUserId the id of the user
      * @param userId the id of the user
      * @param name the name of the project
      * @param labId the id of the lab
@@ -658,7 +656,7 @@ public class ProjectService {
 
         try {
             logger.info("User with session token {} and id {} is answering the invitation to the project with id {}", token, userId, projectId);
-            success = projectBean.answerInvitation(projectId, userId, answer);
+            success = projectBean.answerInvitationOrApplication(projectId, userId, answer, false);
             if (success) {
                 response = Response.status(200).entity("User with id " + userId + " successfully answered the invitation to the project with id " + projectId).build();
                 logger.info("User with session token {} and id {} successfully answered the invitation to the project with id {}", token, userId, projectId);
@@ -669,6 +667,45 @@ public class ProjectService {
         } catch (Exception e) {
             logger.error("Error while answering the invitation to the project with id {}: {}", projectId, e.getMessage());
             response = Response.status(500).entity("Error while answering the invitation to the project").build();
+        }
+
+        return response;
+
+    }
+
+    @PUT
+    @Path("/apply")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response applyToProject(@HeaderParam("token") String token,
+                                   @HeaderParam("id") int userId,
+                                   @QueryParam("projectId") int projectId,
+                                   @Context HttpServletRequest request) {
+
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with session token {} and id {} is trying to apply to the project with id {} from IP address {}", token, userId, projectId, ipAddress);
+
+        // Check if the user's and project's ids are valid
+        if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(projectId)) {
+            logger.info("User with session token {} tried to apply to the project, but the ids are invalid", token);
+            return Response.status(400).entity("Invalid id").build();
+        }
+
+        Response response;
+        boolean applied;
+
+        try {
+            logger.info("User with session token {} and id {} is applying to the project with id {}", token, userId, projectId);
+            applied = projectBean.applyToProject(projectId, userId);
+            if (applied) {
+                response = Response.status(200).entity("User with id " + userId + " successfully applied to the project with id " + projectId).build();
+                logger.info("User with session token {} and id {} successfully applied to the project with id {}", token, userId, projectId);
+            } else {
+                response = Response.status(400).entity("User with id " + userId + " could not apply to the project with id " + projectId).build();
+                logger.info("User with session token {} and id {} could not apply to the project with id {}", token, userId, projectId);
+            }
+        } catch (Exception e) {
+            logger.error("Error while applying to the project with id {}: {}", projectId, e.getMessage());
+            response = Response.status(500).entity("Error while applying to the project").build();
         }
 
         return response;

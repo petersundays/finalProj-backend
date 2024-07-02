@@ -6,7 +6,6 @@ import domcast.finalprojbackend.bean.user.AuthenticationAndAuthorization;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
@@ -34,26 +33,11 @@ public class KeywordService {
     @GET
     @Path("")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getKeywords(@HeaderParam("token") String sessionToken,
-                                 @HeaderParam("id") int id,
-                                 @Context HttpServletRequest request) {
+    public Response getKeywords(@Context HttpServletRequest request) {
         String ipAddress = request.getRemoteAddr();
-        logger.info("User with token {} and id {} is getting keywords from IP address {}", sessionToken, id, ipAddress);
+        logger.info("User with ip address {} got keywords", ipAddress);
 
         Response response;
-
-        if (!dataValidator.isIdValid(id)) {
-            response = Response.status(400).entity("Invalid id").build();
-            logger.info("User with token {} and id {} tried to get keywords with invalid id", sessionToken, id);
-            return response;
-        }
-
-        // Check if the user is authorized to get the public profile
-        if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(sessionToken, id)) {
-            response = Response.status(401).entity("Unauthorized").build();
-            logger.info("User with session token {} tried to get keywords but is not authorized", sessionToken);
-            return response;
-        }
 
         try {
             List<String> keywords = keywordBean.getAllKeywordNames();
@@ -63,7 +47,7 @@ public class KeywordService {
                 return Response.status(204).build();
             }
 
-            logger.info("User with session token {} and id {} got keywords", sessionToken, id);
+            logger.info("User with ip address {} got keywords", ipAddress);
             response = Response.status(200).entity(keywords).build();
         } catch (Exception e) {
             logger.error("Error getting keywords", e);

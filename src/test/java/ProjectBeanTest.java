@@ -7,7 +7,9 @@ import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.dao.*;
 import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
 import domcast.finalprojbackend.dto.projectDto.DetailedProject;
+import domcast.finalprojbackend.dto.projectDto.EditProject;
 import domcast.finalprojbackend.dto.projectDto.NewProjectDto;
+import domcast.finalprojbackend.dto.projectDto.ProjectPreview;
 import domcast.finalprojbackend.dto.skillDto.SkillDto;
 import domcast.finalprojbackend.dto.taskDto.ChartTask;
 import domcast.finalprojbackend.dto.userDto.ProjectTeam;
@@ -17,6 +19,7 @@ import domcast.finalprojbackend.entity.M2MProjectUser;
 import domcast.finalprojbackend.entity.ProjectEntity;
 import domcast.finalprojbackend.entity.UserEntity;
 import domcast.finalprojbackend.enums.LabEnum;
+import domcast.finalprojbackend.enums.ProjectStateEnum;
 import domcast.finalprojbackend.enums.ProjectUserEnum;
 import domcast.finalprojbackend.service.ObjectMapperContextResolver;
 import jakarta.persistence.PersistenceException;
@@ -42,6 +45,9 @@ public class ProjectBeanTest {
 
     @Mock
     private ProjectDao projectDao;
+
+    @Mock
+    private ProjectEntity projectEntity;
 
     @Mock
     private ObjectMapperContextResolver objectMapperContextResolver;
@@ -417,4 +423,293 @@ public class ProjectBeanTest {
         // Act & Assert
         assertThrows(JsonProcessingException.class, () -> projectBean.convertProjectToJson(detailedProject));
     }
+
+    /**
+     * Test for isUserManagerInProject method when the user is a manager in the project.
+     * The test is expected to pass.
+     */
+    @Test
+    public void testIsUserPartOfProjectAndActive_Success() {
+        int userId = 1;
+        int projectId = 1;
+
+        when(projectDao.isUserPartOfProjectAndActive(userId, projectId)).thenReturn(true);
+
+        boolean result = projectBean.isUserPartOfProjectAndActive(userId, projectId);
+
+        assertTrue(result);
+        verify(projectDao, times(1)).isUserPartOfProjectAndActive(userId, projectId);
+    }
+
+    /**
+     * Test for isUserPartOfProjectAndActive method when the user is not part of the project.
+     * The test is expected to throw a RuntimeException.
+     */
+    @Test
+    public void testIsUserPartOfProjectAndActive_Failure() {
+        int userId = 1;
+        int projectId = 1;
+
+        when(projectDao.isUserPartOfProjectAndActive(userId, projectId)).thenThrow(PersistenceException.class);
+
+        assertThrows(RuntimeException.class, () -> projectBean.isUserPartOfProjectAndActive(userId, projectId));
+        verify(projectDao, times(1)).isUserPartOfProjectAndActive(userId, projectId);
+    }
+
+    /**
+     * Test for extractEditProjectDto method when the extraction is successful.
+     * The test is expected to pass.
+     */
+    @Test
+    public void testExtractEditProjectDto_Success() throws IOException {
+        // Arrange
+        Map<String, List<InputPart>> formDataMap = new HashMap<>();
+        formDataMap.put("project", Collections.singletonList(part));
+        when(input.getFormDataMap()).thenReturn(formDataMap);
+        when(part.getBodyAsString()).thenReturn("{\"name\":\"Test Project\"}");
+        when(objectMapperContextResolver.getContext(null)).thenReturn(objectMapper);
+        when(objectMapper.readValue("{\"name\":\"Test Project\"}", EditProject.class)).thenReturn(new EditProject());
+
+        // Act
+        EditProject result = projectBean.extractEditProjectDto(input);
+
+        // Assert
+        assertNotNull(result);
+    }
+
+    /**
+     * Test for extractEditProjectDto method when the extraction fails.
+     * The test is expected to throw an IOException.
+     */
+    @Test
+    public void testExtractEditProjectDto_Failure() throws IOException {
+        // Arrange
+        Map<String, List<InputPart>> formDataMap = new HashMap<>();
+        formDataMap.put("project", Collections.singletonList(part));
+        when(input.getFormDataMap()).thenReturn(formDataMap);
+        when(part.getBodyAsString()).thenReturn("{\"name\":\"Test Project\"}");
+        when(objectMapperContextResolver.getContext(null)).thenReturn(objectMapper);
+        when(objectMapper.readValue("{\"name\":\"Test Project\"}", EditProject.class)).thenThrow(new RuntimeException(new IOException()));
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> projectBean.extractEditProjectDto(input));
+    }
+
+    /**
+     * Test for editStateByManager method when the project id is invalid.
+     * The test is expected to throw an IllegalArgumentException.
+     */
+    @Test
+    public void testEditStateByManager_InvalidProjectId() {
+        int projectId = 1;
+        int newState = 2;
+
+        when(dataValidator.isIdValid(projectId)).thenReturn(false);
+
+        assertThrows(IllegalArgumentException.class, () -> projectBean.editStateByManager(projectId, newState));
+    }
+
+    /**
+     * Test for editStateByManager method when the state is invalid.
+     * The test is expected to throw an IllegalArgumentException.
+     */
+    @Test
+    public void testEditStateByManager_InvalidState() {
+        int projectId = 1;
+        int newState = -1;
+
+        when(dataValidator.isIdValid(projectId)).thenReturn(true);
+
+        boolean isValid = ProjectStateEnum.isValidId(newState);
+        assertFalse(isValid, "State should be invalid");
+
+        // If the state is invalid, the method should throw an IllegalArgumentException
+        if (!isValid) {
+            assertThrows(IllegalArgumentException.class, () -> projectBean.editStateByManager(projectId, newState));
+        }
+    }
+
+    @Test
+    public void testEditStateByManager_PersistenceException() {
+        int projectId = 1;
+        int newState = 2;
+        assertTrue(ProjectStateEnum.isValidId(newState));
+
+        ProjectEntity projectEntity = new ProjectEntity();
+        projectEntity.setState(ProjectStateEnum.fromId(1));
+        when(projectDao.findProjectById(projectId)).thenReturn(projectEntity);
+
+        // Mock the merge method
+        when(projectDao.merge(any(ProjectEntity.class))).thenThrow(PersistenceException.class);
+
+        assertThrows(RuntimeException.class, () -> projectBean.editStateByManager(projectId, newState));
+    }
+
+    /**
+     * Test for editStateByManager method when the state is successfully updated.
+     * The test is expected to pass.
+     */
+    @Test
+    public void testIsUserManagerInProject_Success() {
+        // Arrange
+        int userId = 1;
+        int projectId = 1;
+
+        when(dataValidator.isIdValid(userId)).thenReturn(true);
+        when(dataValidator.isIdValid(projectId)).thenReturn(true);
+        when(projectDao.isUserManagerInProject(userId, projectId)).thenReturn(true);
+
+        // Act
+        boolean result = projectBean.isUserManagerInProject(userId, projectId);
+
+        // Assert
+        assertTrue(result);
+        verify(dataValidator, times(2)).isIdValid(userId); // Expect two invocations
+    }
+
+    /**
+     * Test for isUserManagerInProject method when the userId is invalid.
+     * The test is expected to throw an IllegalArgumentException.
+     */
+    @Test
+    public void testIsUserManagerInProject_Failure() {
+        // Arrange
+        int userId = -1; // Invalid userId
+        int projectId = 1;
+
+        when(dataValidator.isIdValid(userId)).thenReturn(false); // Simulate invalid userId
+
+        // Act and Assert
+        assertThrows(IllegalArgumentException.class, () -> projectBean.isUserManagerInProject(userId, projectId));
+        verify(dataValidator, times(1)).isIdValid(userId);
+        verify(dataValidator, never()).isIdValid(projectId); // Should not be called due to early exit
+        verify(projectDao, never()).isUserManagerInProject(userId, projectId); // Should not be called due to early exit
+    }
+
+    /**
+     * Test for isUserManagerInProject method when the projectId is invalid.
+     * The test is expected to throw an IllegalArgumentException.
+     */
+    @Test
+    public void testGetProjectsByCriteria_Failure() {
+        // Arrange
+        int userId = 1;
+        String name = "Test Project";
+        int lab = 1;
+        int state = 1;
+        String keyword = "Test";
+        int skill = 1;
+        String orderBy = "name";
+        boolean orderAsc = true;
+        int pageNumber = 1;
+        int pageSize = 10;
+
+        when(dataValidator.isIdValid(userId)).thenReturn(true);
+        when(dataValidator.validateSearchCriteria(lab, orderBy, pageNumber, pageSize)).thenReturn(true);
+        when(dataValidator.isOrderByValidForProject(orderBy)).thenReturn(true);
+        when(dataValidator.isValidName(name)).thenReturn(true);
+        when(dataValidator.getFirstWord(keyword)).thenReturn(keyword);
+        when(dataValidator.isValidName(keyword)).thenReturn(true);
+        when(dataValidator.isIdValid(skill)).thenReturn(true);
+        when(systemBean.getProjectMaxUsers()).thenReturn(10);
+
+        when(projectDao.getProjectsByCriteria(userId, name, lab, state, keyword, skill, 10, orderBy, orderAsc, pageNumber, pageSize)).thenThrow(PersistenceException.class);
+
+        // Act & Assert
+
+        assertThrows(RuntimeException.class, () -> projectBean.getProjectsByCriteria(userId, name, lab, state, keyword, skill, orderBy, orderAsc, pageNumber, pageSize));
+    }
+
+    /**
+     * Test for getProjectsByCriteria method when the criteria is successfully retrieved.
+     * The test is expected to pass.
+     */
+    @Test
+    public void testProjectEntityToProjectPreview_Success() {
+        // Arrange
+        ProjectEntity projectEntity = new ProjectEntity();
+        projectEntity.setId(1);
+        projectEntity.setName("Test Project");
+        projectEntity.setDescription("Test Description");
+        LabEntity labEntity = new LabEntity();
+        labEntity.setCity(LabEnum.fromId(1));
+        projectEntity.setLab(labEntity);
+        projectEntity.setState(ProjectStateEnum.fromId(1));
+        M2MProjectUser m2MProjectUser = new M2MProjectUser();
+        m2MProjectUser.setId(1);
+        Set<M2MProjectUser> projectUsers = new HashSet<>();
+        projectUsers.add(m2MProjectUser);
+        projectEntity.setProjectUsers(projectUsers);
+        ProjectUser projectUser = new ProjectUser();
+        projectUser.setId(1);
+        when(userBean.projectUserToProjectUserDto(m2MProjectUser)).thenReturn(projectUser);
+
+        // Act
+        ProjectPreview result = projectBean.projectEntityToProjectPreview(projectEntity);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.getId());
+        assertEquals("Test Project", result.getName());
+        assertEquals("Test Description", result.getDescription());
+        assertEquals(1, result.getLabId());
+        assertEquals(ProjectStateEnum.fromId(1).getValue(), result.getState());
+        assertEquals(1, result.getProjectUsers().size());
+    }
+
+    /**
+     * Test for projectEntityToProjectPreview method when the ProjectEntity is null.
+     * The test is expected to throw an IllegalArgumentException.
+     */
+    @Test
+    public void testProjectEntityToProjectPreview_Failure() {
+        // Arrange
+        ProjectEntity projectEntity = null;
+
+        // Act & Assert
+        assertThrows(IllegalArgumentException.class, () -> projectBean.projectEntityToProjectPreview(projectEntity));
+    }
+
+   /* @Test
+    public void testRemoveUserFromProject_Success() {
+        // Arrange
+        int projectId = 1;
+        int userId = 2;
+        when(dataValidator.isIdValid(projectId)).thenReturn(true);
+        when(dataValidator.isIdValid(userId)).thenReturn(true);
+        ProjectEntity projectEntity = new ProjectEntity();
+        LabEntity labEntity = new LabEntity();
+        labEntity.setCity(LabEnum.fromId(1)); // Ensure the city is set
+        projectEntity.setLab(labEntity);
+        when(projectDao.findProjectById(projectId)).thenReturn(projectEntity);
+        M2MProjectUser m2MProjectUser = new M2MProjectUser();
+        m2MProjectUser.setRole(ProjectUserEnum.MANAGER);
+        when(m2MProjectUserDao.findProjectUser(userId, projectId)).thenReturn(m2MProjectUser);
+        int mainManagerId = 3;
+        when(m2MProjectUserDao.findMainManagerUserIdInProject(projectId)).thenReturn(mainManagerId);
+        UserEntity mainManager = new UserEntity();
+        when(userDao.findUserById(mainManagerId)).thenReturn(mainManager);
+        when(m2MProjectUserDao.merge(m2MProjectUser)).thenReturn(true);
+        DetailedProject detailedProject = new DetailedProject();
+        when(projectBean.entityToDetailedProject(projectEntity)).thenReturn(detailedProject);
+
+        // Act
+        DetailedProject result = projectBean.removeUserFromProject(projectId, userId);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(detailedProject, result);
+    }*/
+
+    @Test
+    public void testRemoveUserFromProject_Failure() {
+        // Arrange
+        int projectId = -1; // Invalid projectId
+        int userId = 2;
+        when(dataValidator.isIdValid(projectId)).thenReturn(false); // Simulate invalid projectId
+
+        // Act & Assert
+        assertThrows(IllegalArgumentException.class, () -> projectBean.removeUserFromProject(projectId, userId));
+    }
+
 }
