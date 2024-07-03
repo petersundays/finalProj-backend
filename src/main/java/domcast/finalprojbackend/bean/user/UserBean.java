@@ -1289,6 +1289,36 @@ public class UserBean implements Serializable {
 
     }
 
+    /**
+     * Converts a UserEntity object to a MessageUser object.
+     * This method is used when a user's profile is requested.
+     *
+     * @param user The UserEntity object that represents the user whose profile is requested.
+     *             If the user is null, an IllegalArgumentException is thrown.
+     * @return A MessageUser object that contains the user's profile details.
+     */
+    public MessageUser entityToMessageUser(UserEntity user) {
+
+        if (user == null) {
+            throw new IllegalArgumentException("UserEntity cannot be null");
+        }
+
+        logger.info("Converting UserEntity to MessageUser for user with id: {}", user.getId());
+
+        MessageUser messageUser = new MessageUser();
+        messageUser.setId(user.getId());
+        messageUser.setFirstName(user.getFirstName());
+        messageUser.setLastName(user.getLastName());
+        messageUser.setPhoto(user.getPhoto());
+
+        return messageUser;
+    }
+
+    /**
+     * Converts a map of strings to a list of strings.
+     * @param map The map of strings to convert.
+     * @return The list of strings.
+     */
     public List<String> convertKeysToList(Map<String, ?> map) {
         if (map == null) {
             throw new IllegalArgumentException("Map cannot be null");
