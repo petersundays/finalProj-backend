@@ -122,7 +122,7 @@ public class SessionTokenDao extends ValidationTokenDao {
     public int findUserIdByToken(String token) {
         logger.info("Finding user id by token {}", token);
         try {
-            return (int) em.createNamedQuery("SessionToken.findUserIdByToken")
+            return (int) em.createNamedQuery("SessionToken.findUserByToken")
                     .setParameter("token", token)
                     .getSingleResult();
         } catch (NoResultException e) {
@@ -134,6 +134,52 @@ public class SessionTokenDao extends ValidationTokenDao {
         } catch (Exception e) {
             logger.error("Error finding user id by token", e);
             return -1;
+        }
+    }
+
+    /**
+     * Verifies if a token is active.
+     * @param token the token to be checked
+     * @return boolean value indicating if the token is active
+     */
+    public boolean isTokenActive(String token) {
+        logger.info("Checking if token {} is active", token);
+        try {
+            return (Long) em.createNamedQuery("SessionToken.isTokenActive")
+                    .setParameter("token", token)
+                    .getSingleResult() > 0;
+        } catch (NoResultException e) {
+            logger.error("No session token found for token {}", token, e);
+            return false;
+        } catch (NonUniqueResultException e) {
+            logger.error("Multiple session tokens found for token {}", token, e);
+            return false;
+        } catch (Exception e) {
+            logger.error("Error checking if session token is active", e);
+            return false;
+        }
+    }
+
+    /**
+     * Finds the token by the user id
+     * @param userId the user id to be checked
+     * @return the token found by the user id
+     */
+    public String findSessionTokenByUserId(int userId) {
+        logger.info("Finding token by user id {}", userId);
+        try {
+            return (String) em.createNamedQuery("SessionToken.findSessionTokenByUserId")
+                    .setParameter("userId", userId)
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            logger.error("No session token found for user id {}", userId, e);
+            return null;
+        } catch (NonUniqueResultException e) {
+            logger.error("Multiple session tokens found for user id {}", userId, e);
+            return null;
+        } catch (Exception e) {
+            logger.error("Error finding token by user id", e);
+            return null;
         }
     }
 }
