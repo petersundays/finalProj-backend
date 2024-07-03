@@ -1,4 +1,3 @@
-/*
 package domcast.finalprojbackend.websocket;
 
 import com.google.gson.Gson;
@@ -10,6 +9,7 @@ import domcast.finalprojbackend.bean.user.TokenBean;
 import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.dao.SessionTokenDao;
 import domcast.finalprojbackend.dao.UserDao;
+import domcast.finalprojbackend.dto.messageDto.PersonalMessage;
 import domcast.finalprojbackend.entity.UserEntity;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Singleton;
@@ -48,13 +48,11 @@ public class MessageWS {
 
     private final HashMap<String, Session> sessions = new HashMap<String, Session>();
 
-    */
-/**
+    /**
      * Sends a message to a user
      * @param token the token of the user
      * @param msg the message to be sent
-     *//*
-
+     */
     public void send(String token, String msg){
         Session session = sessions.get(token);
 
@@ -70,11 +68,11 @@ public class MessageWS {
         }
     }
     @OnOpen
-    public void toDoOnOpen(Session session, @PathParam("token") String token, @PathParam("receiver") int receiver){
+    public void toDoOnOpen(Session session, @PathParam("token") String token){
 
         logger.info("Opening websocket session with token: {}", token);
 
-        boolean authenticated = false;
+        boolean authenticated;
 
         try {
             authenticated = dataValidator.isTokenValidForWebSocket(token, sessions);
@@ -135,8 +133,7 @@ public class MessageWS {
         }
 
 
-        String sender = userSender.getUsername();
-        String receiver = userReceiver.getUsername();
+        int senderId = userSender.getId();
         String content;
 
         Gson gson = new Gson();
@@ -167,28 +164,35 @@ public class MessageWS {
         for (String key : sessions.keySet()) {
             if (key.equals(receiverToken)) {
                 Session receiverSession = sessions.get(key);
-                String receiverUsername = receiverSession.getPathParameters().get("receiver");
-                if (receiverUsername.equals(sender)) {
+                int receiverUsername = Integer.parseInt(receiverSession.getPathParameters().get("receiver"));
+                if (receiverUsername == senderId) {
                     receiverOnline = true;
                 }
             }
         }
 
-        if (messageBean.persistPersonalMessage(content, userSender, userReceiver)) {
+        PersonalMessage message;
 
-            if (receiverOnline) {
-                send(receiverToken, new Gson().toJson(new Message(content, sender, receiver)));
+        try {
+            message = messageBean.persistPersonalMessage(content, userSender, userReceiver);
+        } catch (Exception e) {
+            logger.error("Error persisting message");
+            return;
+        }
+
+        if (message == null) {
+            logger.error("Message not persisted");
+            return;
+        }
+
+        if (receiverOnline) {
+            send(receiverToken, new Gson().toJson(message));
+        }
+
+        for (String key : sessions.keySet()) {
+            if (key.equals(token)) {
+                send(token, new Gson().toJson(message));
             }
-
-            for (String key : sessions.keySet()) {
-                if (key.equals(token)) {
-                    send(token, new Gson().toJson(new Message(content, sender, receiver)));
-                }
-            }
-
-        } else {
-            logger.error("Message not sent");
-            throw new RuntimeException("Message not sent");
         }
     }
-}*/
+}

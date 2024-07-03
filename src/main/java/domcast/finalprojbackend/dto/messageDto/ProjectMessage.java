@@ -1,10 +1,12 @@
 package domcast.finalprojbackend.dto.messageDto;
 
 import domcast.finalprojbackend.entity.ProjectEntity;
+import domcast.finalprojbackend.entity.UserEntity;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 /**
  * Data transfer object for the message table in the database.
@@ -20,7 +22,7 @@ import java.io.Serializable;
  * @author Pedro Domingos
  */
 @XmlRootElement
-public class GroupMessage extends Message implements Serializable {
+public class ProjectMessage extends Message implements Serializable {
 
     @XmlElement
     private ProjectEntity project;
@@ -28,16 +30,19 @@ public class GroupMessage extends Message implements Serializable {
     /**
      * Default constructor
      */
-    public GroupMessage() {
+    public ProjectMessage() {
     }
 
     /**
-     * Constructor with parameters
-     *
-     * @param project  the project to which the message is being sent
+     * Constructor with all parameters
+     * @param id the id of the message
+     * @param content the content of the message
+     * @param sender the sender of the message
+     * @param project the project to which the message is being sent
+     * @param timestamp the timestamp of the message
      */
-    public GroupMessage(ProjectEntity project) {
-        super();
+    public ProjectMessage(int id, String content, UserEntity sender, ProjectEntity project, LocalDateTime timestamp) {
+        super(id, content, sender, timestamp);
         this.project = project;
     }
 

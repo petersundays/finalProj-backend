@@ -1,13 +1,13 @@
-/*
+
 package domcast.finalprojbackend.dto.messageDto;
 
+import domcast.finalprojbackend.entity.UserEntity;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-*/
 /**
  * Data transfer object for the message table in the database.
  * Contains all the attributes of the message table and their getters and setters.
@@ -20,8 +20,7 @@ import java.time.LocalDateTime;
  * The class also contains the necessary annotations to work with the database.
  * @author José Castro
  * @author Pedro Domingos
- *//*
-
+ */
 @XmlRootElement
 public class Message implements Serializable {
 
@@ -32,7 +31,7 @@ public class Message implements Serializable {
     private String content;
 
     @XmlElement
-    private String sender;
+    private UserEntity sender;
 
     @XmlElement
     private LocalDateTime timestamp;
@@ -40,47 +39,27 @@ public class Message implements Serializable {
     @XmlElement
     private boolean read;
 
-    */
-/**
+    /**
      * Default constructor
-     *//*
-
+     */
     public Message() {
     }
 
-    */
-/**
+    /**
      * Constructor with parameters
      * @param id the id of the message
      * @param content the content of the message
      * @param sender the sender of the message
-     *//*
-
-    public Message(int id, String content, String sender, LocalDateTime timestamp, Boolean read) {
-        this.id = id;
-        this.content = content;
-        this.sender = sender;
-        this.timestamp = timestamp;
-        this.read = read;
-    }
-
-    */
-/**
-     * Constructor with all the attributes
-     * @param id the id of the message
-     * @param content the content of the message
-     * @param sender the sender of the message
      * @param timestamp the timestamp of the message
-     * @param read a boolean that indicates if the message has been read
-     *//*
-
-    public Message(int id, String content, String sender, LocalDateTime timestamp, Boolean read) {
+     */
+    public Message(int id, String content, UserEntity sender, LocalDateTime timestamp) {
         this.id = id;
         this.content = content;
         this.sender = sender;
         this.timestamp = timestamp;
-        this.read = read;
+        this.read = false;
     }
+
 
     // Getters and setters
 
@@ -125,4 +104,3 @@ public class Message implements Serializable {
     }
 
 }
-*/
