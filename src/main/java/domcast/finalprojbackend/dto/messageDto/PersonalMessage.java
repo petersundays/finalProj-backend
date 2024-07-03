@@ -5,6 +5,7 @@ import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 /**
  * Data transfer object for the message table in the database.
@@ -32,15 +33,15 @@ public class PersonalMessage extends Message implements Serializable {
     }
 
     /**
-     * Constructor with parameters
-
+     * Constructor with all parameters
+     * @param content the content of the message
+     * @param sender the sender of the message
      * @param receiver the receiver of the message
      */
-    public PersonalMessage(UserEntity receiver) {
-        super();
+    public PersonalMessage(int id, String content, UserEntity sender, UserEntity receiver, LocalDateTime timestamp) {
+        super(id, content, sender, timestamp);
         this.receiver = receiver;
     }
-
 
     // Getters and setters
 
