@@ -233,4 +233,20 @@ public class ProjectDao extends AbstractDao<ProjectEntity> {
             return 0;
         }
     }
+
+    /**
+     * Gets the name of all projects.
+     * @return the name of all projects
+     */
+    public List<String> getProjectsNames() {
+        try {
+            return em.createNamedQuery("Project.getProjectsNames", String.class).getResultList();
+        } catch (NoResultException e) {
+            logger.error("No projects found", e);
+            return new ArrayList<>();
+        } catch (PersistenceException e) {
+            logger.error("Database error while getting all project names", e);
+            return new ArrayList<>();
+        }
+    }
 }
