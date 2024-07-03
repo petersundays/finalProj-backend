@@ -1,4 +1,3 @@
-/*
 package domcast.finalprojbackend.bean;
 
 import domcast.finalprojbackend.bean.task.TaskBean;
@@ -7,7 +6,11 @@ import domcast.finalprojbackend.dao.PersonalMessageDao;
 import domcast.finalprojbackend.dao.ProjectMessageDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.messageDto.PersonalMessage;
-import domcast.finalprojbackend.entity.*;
+import domcast.finalprojbackend.dto.messageDto.ProjectMessage;
+import domcast.finalprojbackend.entity.PersonalMessageEntity;
+import domcast.finalprojbackend.entity.ProjectEntity;
+import domcast.finalprojbackend.entity.ProjectMessageEntity;
+import domcast.finalprojbackend.entity.UserEntity;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.PersistenceException;
@@ -16,7 +19,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 
 @Stateless
 public class MessageBean implements Serializable {
@@ -41,6 +43,14 @@ public class MessageBean implements Serializable {
     public MessageBean() {
     }
 
+    /**
+     * Persists a personal message
+     * @param content the content of the message
+     * @param sender the sender of the message
+     * @param receiver the receiver of the message
+     * @return the persisted message
+     * @throws PersistenceException if an error occurs during the persist operation
+     */
     public PersonalMessage persistPersonalMessage(String content, UserEntity sender, UserEntity receiver) {
 
         if (sender == null || receiver == null) {
@@ -55,67 +65,104 @@ public class MessageBean implements Serializable {
 
         logger.info("Sending message from: {} to: {}", sender.getFirstName() + sender.getLastName(), receiver.getFirstName() + receiver.getLastName());
 
-        PersonalMessageEntity messageEntity = new PersonalMessageEntity;
+        PersonalMessageEntity messageEntity = new PersonalMessageEntity();
         messageEntity.setContent(content);
         messageEntity.setSender(sender);
         messageEntity.setReceiver(receiver);
         messageEntity.setTimestamp(LocalDateTime.now());
 
+        PersonalMessageEntity persistedMessage;
+
         try {
-            personalMessageDao.persist(messageEntity);
+            persistedMessage = personalMessageDao.persistPersonalMessage(messageEntity);
             logger.info("Message persisted");
         } catch (PersistenceException e) {
             logger.error("Message not persisted");
             throw new PersistenceException("Message not persisted");
         }
 
-    }
-
-
-    public void markMessageAsRead(String username) {
-        logger.info("Marking messages as read for: {}", username);
-        ArrayList<MessageEntity> messages = projectMessageDao.findMessagesUnreadForUser(username);
-
-        for (MessageEntity message : messages) {
-            message.setRead(true);
-            projectMessageDao.merge(message);
-
-            logger.info("Message {} marked as read for: {}", message.getId(), username);
+        if (persistedMessage == null) {
+            logger.error("Message not persisted");
+            throw new PersistenceException("Message not persisted");
         }
 
+        return personalMessageEntityToDto(persistedMessage);
+
     }
 
-    public MessageEntity convertMessageDtoToEntity(Message message) {
-        logger.info("Converting message DTO to entity");
-        UserEntity sender = userDao.findUserByUsername(message.getSender());
-        UserEntity receiver = userDao.findUserByUsername(message.getReceiver());
-        return new MessageEntity(message.getContent(), sender, receiver, message.getTimestamp());
-    }
+    public ProjectMessage persistGroupMessage(String content, UserEntity sender, ProjectEntity receiver) {
 
-    public Message convertMessageEntityToDto(MessageEntity messageEntity) {
-        logger.info("Converting message entity to DTO");
-        return new Message(messageEntity.getContent(), messageEntity.getSender().getUsername(), messageEntity.getReceiver().getUsername(), messageEntity.getTimestamp(), messageEntity.isRead());
-    }
-
-    public ArrayList<Message> getMessages(String token, String receiver) {
-        logger.info("Getting messages for: {}", receiver);
-        ArrayList<Message> messages = new ArrayList<>();
-        User user = userBean.findUserByToken(token);
-
-        if (user != null) {
-            logger.info("User found: {}", user.getUsername());
-            ArrayList<MessageEntity> messageEntities = projectMessageDao.findMessagesBetweenUsers(user.getUsername(), receiver);
-            if(messageEntities!=null) {
-                logger.info("Messages found for: {}", receiver);
-                for (MessageEntity messageEntity : messageEntities) {
-                    messages.add(convertMessageEntityToDto(messageEntity));
-                    logger.info("Message {} added to list", messageEntity.getId());
-                }
-            }
+        if (sender == null) {
+            logger.error("Message not sent");
+            throw new IllegalArgumentException("Sender is null");
         }
 
-        logger.info("Returning messages for: {}", receiver);
-        return messages;
+        if (receiver == null) {
+            logger.error("Message not sent to project.");
+            throw new IllegalArgumentException("Receiver is null");
+        }
+
+        if (content == null || content.isEmpty()) {
+            logger.error("Message not sent for project: {}", receiver.getName());
+            throw new IllegalArgumentException("Content is null or empty");
+        }
+
+        logger.info("Sending message from: {} to project: {}", sender.getFirstName() + sender.getLastName(), receiver.getName());
+
+        ProjectMessageEntity messageEntity = new ProjectMessageEntity();
+
+        messageEntity.setContent(content);
+        messageEntity.setSender(sender);
+        messageEntity.setProject(receiver);
+        messageEntity.setTimestamp(LocalDateTime.now());
+
+        ProjectMessageEntity persistedMessage;
+
+        try {
+            persistedMessage = projectMessageDao.persistProjectMessage(messageEntity);
+            logger.info("Message persisted");
+        } catch (PersistenceException e) {
+            logger.error("Message not persisted");
+            throw new PersistenceException("Message not persisted");
+        }
+
+        if (persistedMessage == null) {
+            logger.error("Message not persisted");
+            throw new PersistenceException("Message not persisted");
+        }
+
+        return projectMessageEntityToDto(persistedMessage);
+    }
+
+    public PersonalMessage personalMessageEntityToDto (PersonalMessageEntity messageEntity) {
+
+        logger.info("Converting personal message entity to DTO");
+
+        if (messageEntity == null) {
+            logger.error("Message entity is null");
+            throw new IllegalArgumentException("Message entity is null");
+        }
+
+        return new PersonalMessage(messageEntity.getId(),
+                                    messageEntity.getContent(),
+                                    messageEntity.getSender(),
+                                    messageEntity.getReceiver(),
+                                    messageEntity.getTimestamp());
+    }
+
+    public ProjectMessage projectMessageEntityToDto (ProjectMessageEntity messageEntity) {
+
+        logger.info("Converting project message entity to DTO");
+
+        if (messageEntity == null) {
+            logger.error("Project message entity is null");
+            throw new IllegalArgumentException("Project message entity is null");
+        }
+
+        return new ProjectMessage(messageEntity.getId(),
+                                    messageEntity.getContent(),
+                                    messageEntity.getSender(),
+                                    messageEntity.getProject(),
+                                    messageEntity.getTimestamp());
     }
 }
-*/
