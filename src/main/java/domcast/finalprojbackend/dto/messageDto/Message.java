@@ -1,7 +1,7 @@
 
 package domcast.finalprojbackend.dto.messageDto;
 
-import domcast.finalprojbackend.entity.UserEntity;
+import domcast.finalprojbackend.dto.userDto.MessageUser;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 
@@ -31,7 +31,7 @@ public class Message implements Serializable {
     private String content;
 
     @XmlElement
-    private UserEntity sender;
+    private MessageUser sender;
 
     @XmlElement
     private LocalDateTime timestamp;
@@ -52,7 +52,7 @@ public class Message implements Serializable {
      * @param sender the sender of the message
      * @param timestamp the timestamp of the message
      */
-    public Message(int id, String content, UserEntity sender, LocalDateTime timestamp) {
+    public Message(int id, String content, MessageUser sender, LocalDateTime timestamp) {
         this.id = id;
         this.content = content;
         this.sender = sender;
@@ -79,11 +79,11 @@ public class Message implements Serializable {
         this.content = content;
     }
 
-    public String getSender() {
+    public MessageUser getSender() {
         return sender;
     }
 
-    public void setSender(String sender) {
+    public void setSender(MessageUser sender) {
         this.sender = sender;
     }
 

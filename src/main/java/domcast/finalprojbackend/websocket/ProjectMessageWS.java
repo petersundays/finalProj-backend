@@ -1,19 +1,17 @@
 package domcast.finalprojbackend.websocket;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSyntaxException;
 import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.MessageBean;
 import domcast.finalprojbackend.bean.user.TokenBean;
 import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.dao.SessionTokenDao;
 import domcast.finalprojbackend.dao.UserDao;
-import domcast.finalprojbackend.dto.messageDto.PersonalMessage;
-import domcast.finalprojbackend.entity.UserEntity;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Singleton;
-import jakarta.websocket.*;
+import jakarta.websocket.CloseReason;
+import jakarta.websocket.OnClose;
+import jakarta.websocket.OnOpen;
+import jakarta.websocket.Session;
 import jakarta.websocket.server.PathParam;
 import jakarta.websocket.server.ServerEndpoint;
 import org.apache.logging.log4j.LogManager;
@@ -23,8 +21,8 @@ import java.io.IOException;
 import java.util.HashMap;
 
 @Singleton
-@ServerEndpoint("/websocket/messages/{token}/{receiver}")
-public class MessageWS {
+@ServerEndpoint("/websocket/project-chat/{token}/{projectId}")
+public class ProjectMessageWS {
     @EJB
     private MessageBean messageBean;
 
@@ -44,31 +42,31 @@ public class MessageWS {
     private SessionTokenDao tokenDao;
 
 
-    private static final Logger logger = LogManager.getLogger(MessageWS.class);
+    private static final Logger logger = LogManager.getLogger(ProjectMessageWS.class);
 
     private final HashMap<String, Session> sessions = new HashMap<String, Session>();
 
     /**
-     * Sends a message to a user
-     * @param token the token of the user
+     * Sends a message to a project chat
+     * @param id the id of the project to send the message to
      * @param msg the message to be sent
      */
-    public void send(String token, String msg){
-        Session session = sessions.get(token);
+    public void send(int id, String msg){
+        Session session = sessions.get(id);
 
-        logger.info("Sending message to: {}", token);
+        logger.info("Sending message to project: {}", id);
 
         if (session != null){
             try {
                 session.getBasicRemote().sendText(msg);
-                logger.info("Message sent to: {}", token);
+                logger.info("Message sent to project: {}", id);
             } catch (IOException e) {
                 logger.error("Something went wrong!");
             }
         }
     }
     @OnOpen
-    public void toDoOnOpen(Session session, @PathParam("token") String token){
+    public void toDoOnOpen(Session session, @PathParam("projectId") String token) {
 
         logger.info("Opening websocket session with token: {}", token);
 
@@ -78,15 +76,28 @@ public class MessageWS {
             authenticated = dataValidator.isTokenValidForWebSocket(token, sessions);
         } catch (Exception e) {
             logger.error("Error validating token");
+
+            try {
+                session.close(new CloseReason(CloseReason.CloseCodes.VIOLATED_POLICY, "Invalid token"));
+            } catch (IOException ioException) {
+                logger.error("Error closing session due to invalid token", ioException);
+            }
             return;
         }
 
         if (!authenticated) {
             logger.error("User not authenticated");
+            try {
+                session.close(new CloseReason(CloseReason.CloseCodes.VIOLATED_POLICY, "Not authenticated"));
+            } catch (IOException e) {
+                logger.error("Error closing session due to authentication failure", e);
+            }
             return;
         }
 
         sessions.put(token, session);
+
+        logger.info("Session added, there are {} sessions open", sessions.size());
     }
 
     @OnClose
@@ -98,7 +109,7 @@ public class MessageWS {
         logger.info("Session removed, there still are {} sessions open", sessions.size());
     }
 
-    @OnMessage
+    /*@OnMessage
     public void toDoOnMessage(Session session, String msg){
 
         String token = session.getPathParameters().get("token");
@@ -145,28 +156,29 @@ public class MessageWS {
             return;
         }
 
-        String receiverToken;
+        String receiverToken = "";
 
         try {
             receiverToken = tokenDao.findSessionTokenByUserId(receiverId);
+        } catch (NoResultException e) {
+            logger.error("No session token found for user id {}", receiverId, e);
+        } catch (NonUniqueResultException e) {
+            logger.error("Multiple session tokens found for user id {}", receiverId, e);
         } catch (Exception e) {
-            logger.error("Error finding token by user id");
-            return;
+            logger.error("Error finding token by user id", e);
         }
 
         boolean receiverOnline = false;
 
-        if (receiverToken == null) {
-            logger.error("Receiver token not found");
-            return;
-        }
+        if (receiverToken != null && !receiverToken.isEmpty()) {
 
-        for (String key : sessions.keySet()) {
-            if (key.equals(receiverToken)) {
-                Session receiverSession = sessions.get(key);
-                int receiverUsername = Integer.parseInt(receiverSession.getPathParameters().get("receiver"));
-                if (receiverUsername == senderId) {
-                    receiverOnline = true;
+            for (String key : sessions.keySet()) {
+                if (key.equals(receiverToken)) {
+                    Session receiverSession = sessions.get(key);
+                    int receiverUsername = Integer.parseInt(receiverSession.getPathParameters().get("receiver"));
+                    if (receiverUsername == senderId) {
+                        receiverOnline = true;
+                    }
                 }
             }
         }
@@ -185,14 +197,25 @@ public class MessageWS {
             return;
         }
 
+        ObjectMapperContextResolver contextResolver = new ObjectMapperContextResolver();
+        ObjectMapper objectMapper = contextResolver.getContext(null);
+
+        String jsonMessage;
+        try {
+            jsonMessage = objectMapper.writeValueAsString(message);
+        } catch (JsonProcessingException e) {
+            logger.error("Error serializing message", e);
+            return;
+        }
+
         if (receiverOnline) {
             send(receiverToken, new Gson().toJson(message));
         }
 
         for (String key : sessions.keySet()) {
             if (key.equals(token)) {
-                send(token, new Gson().toJson(message));
+                send(token, jsonMessage);
             }
         }
-    }
+    }*/
 }

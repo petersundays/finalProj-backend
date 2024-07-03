@@ -837,4 +837,28 @@ public class ProjectService {
         return response;
     }
 
+
+    @GET
+    @Path("/number-projects")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getNumberOfProjects(@Context HttpServletRequest request) {
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with IP address {} is trying to get the number of projects", ipAddress);
+
+        Response response;
+
+        try {
+            logger.info("User with IP address {} is getting the number of projects", ipAddress);
+            int numberOfProjects = projectBean.getNumberOfProjects();
+            response = Response.status(200).entity(numberOfProjects).build();
+            logger.info("User with IP address {} successfully got the number of projects", ipAddress);
+        } catch (Exception e) {
+            logger.error("Error getting the number of projects: {}", e.getMessage());
+            response = Response.status(500).entity("Error getting the number of projects").build();
+        }
+
+        return response;
+
+    }
+
 }

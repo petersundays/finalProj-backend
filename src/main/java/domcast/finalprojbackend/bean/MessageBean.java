@@ -7,6 +7,7 @@ import domcast.finalprojbackend.dao.ProjectMessageDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.messageDto.PersonalMessage;
 import domcast.finalprojbackend.dto.messageDto.ProjectMessage;
+import domcast.finalprojbackend.dto.userDto.MessageUser;
 import domcast.finalprojbackend.entity.PersonalMessageEntity;
 import domcast.finalprojbackend.entity.ProjectEntity;
 import domcast.finalprojbackend.entity.ProjectMessageEntity;
@@ -69,7 +70,6 @@ public class MessageBean implements Serializable {
         messageEntity.setContent(content);
         messageEntity.setSender(sender);
         messageEntity.setReceiver(receiver);
-        messageEntity.setTimestamp(LocalDateTime.now());
 
         PersonalMessageEntity persistedMessage;
 
@@ -143,11 +143,16 @@ public class MessageBean implements Serializable {
             throw new IllegalArgumentException("Message entity is null");
         }
 
-        return new PersonalMessage(messageEntity.getId(),
-                                    messageEntity.getContent(),
-                                    messageEntity.getSender(),
-                                    messageEntity.getReceiver(),
-                                    messageEntity.getTimestamp());
+        MessageUser sender = userBean.entityToMessageUser(messageEntity.getSender());
+        MessageUser receiver = userBean.entityToMessageUser(messageEntity.getReceiver());
+
+        return new PersonalMessage(
+                messageEntity.getId(),
+                messageEntity.getContent(),
+                sender,
+                receiver,
+                messageEntity.getTimestamp()
+        );
     }
 
     public ProjectMessage projectMessageEntityToDto (ProjectMessageEntity messageEntity) {
@@ -159,10 +164,12 @@ public class MessageBean implements Serializable {
             throw new IllegalArgumentException("Project message entity is null");
         }
 
+        MessageUser sender = userBean.entityToMessageUser(messageEntity.getSender());
+
         return new ProjectMessage(messageEntity.getId(),
                                     messageEntity.getContent(),
-                                    messageEntity.getSender(),
-                                    messageEntity.getProject(),
+                                    sender,
+                                    messageEntity.getProject().getId(),
                                     messageEntity.getTimestamp());
     }
 }

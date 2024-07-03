@@ -216,4 +216,21 @@ public class ProjectDao extends AbstractDao<ProjectEntity> {
             return new ArrayList<>();
         }
     }
+
+    /**
+     * Gets the number of projects.
+     *
+     * @return the number of projects
+     */
+    public int getNumberOfProjects() {
+        try {
+            return ((Number) em.createNamedQuery("Project.getNumberOfProjects").getSingleResult()).intValue();
+        } catch (NoResultException e) {
+            logger.error("No projects found", e);
+            return 0;
+        } catch (PersistenceException e) {
+            logger.error("Database error while getting number of projects", e);
+            return 0;
+        }
+    }
 }

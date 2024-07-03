@@ -1,7 +1,6 @@
 package domcast.finalprojbackend.dto.messageDto;
 
-import domcast.finalprojbackend.entity.ProjectEntity;
-import domcast.finalprojbackend.entity.UserEntity;
+import domcast.finalprojbackend.dto.userDto.MessageUser;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 
@@ -25,7 +24,7 @@ import java.time.LocalDateTime;
 public class ProjectMessage extends Message implements Serializable {
 
     @XmlElement
-    private ProjectEntity project;
+    private int projectId;
 
     /**
      * Default constructor
@@ -38,20 +37,20 @@ public class ProjectMessage extends Message implements Serializable {
      * @param id the id of the message
      * @param content the content of the message
      * @param sender the sender of the message
-     * @param project the project to which the message is being sent
+     * @param projectId the project to which the message is being sent
      * @param timestamp the timestamp of the message
      */
-    public ProjectMessage(int id, String content, UserEntity sender, ProjectEntity project, LocalDateTime timestamp) {
+    public ProjectMessage(int id, String content, MessageUser sender, int projectId, LocalDateTime timestamp) {
         super(id, content, sender, timestamp);
-        this.project = project;
+        this.projectId = projectId;
     }
 
-    public ProjectEntity getProject() {
-        return project;
+    public int getProjectId() {
+        return projectId;
     }
 
-    public void setProject(ProjectEntity project) {
-        this.project = project;
+    public void setProjectId(int projectId) {
+        this.projectId = projectId;
     }
 
 }
