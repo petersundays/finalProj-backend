@@ -2,6 +2,7 @@ package domcast.finalprojbackend.bean;
 
 import domcast.finalprojbackend.bean.user.PasswordBean;
 import domcast.finalprojbackend.dao.M2MProjectUserDao;
+import domcast.finalprojbackend.dao.SessionTokenDao;
 import domcast.finalprojbackend.dao.TaskDao;
 import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
 import domcast.finalprojbackend.dto.interestDto.InterestDto;
@@ -15,6 +16,7 @@ import domcast.finalprojbackend.entity.TaskEntity;
 import domcast.finalprojbackend.enums.*;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
+import jakarta.websocket.Session;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -22,10 +24,7 @@ import javax.imageio.ImageIO;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 
 @Stateless
@@ -49,6 +48,9 @@ public class DataValidator {
 
     @EJB
     private M2MProjectUserDao m2MProjectUserDao;
+
+    @EJB
+    private SessionTokenDao sessionTokenDao;
 
 
     /**
@@ -464,24 +466,6 @@ public class DataValidator {
     }
 
     /**
-     * Verifies if a string is valid
-     * @param str the string to be checked
-     * @return boolean value indicating if the string is valid
-     */
-    public boolean isStringValid(String str) {
-        if (str == null) {
-            return false;
-        }
-
-        // Sanitize the string
-        str = sanitizeString(str);
-
-        str = str.trim();
-
-        return !str.isEmpty() && str.length() <= MAX_STRING_LENGTH;
-    }
-
-    /**
      * Sanitizes a string by removing special characters
      * @param str the string to be sanitized
      * @return the sanitized string
@@ -632,6 +616,41 @@ public class DataValidator {
         }
 
         logger.info("There are available places in the project");
+        return true;
+    }
+
+    public boolean isTokenValidForWebSocket(String token, HashMap<String, Session> sessions) {
+        logger.info("Checking if token is valid for websocket");
+
+        if (token == null || token.isBlank()) {
+            logger.error("Token is null or blank while checking if token is valid for websocket");
+            return false;
+        }
+
+        if (sessions == null) {
+            logger.error("Sessions is null while checking if token is valid for websocket");
+            return false;
+        }
+
+        boolean isTokenActive;
+        try {
+            isTokenActive = sessionTokenDao.isTokenActive(token);
+        } catch (Exception e) {
+            logger.error("Error while checking if token is active: {}", e.getMessage());
+            return false;
+        }
+
+        if (!isTokenActive) {
+            logger.info("Token is not active for websocket");
+            return false;
+        }
+
+        if (sessions.containsKey(token)) {
+            logger.info("Token already exists in sessions");
+            return false;
+        }
+
+        logger.info("Token is valid for websocket");
         return true;
     }
 }

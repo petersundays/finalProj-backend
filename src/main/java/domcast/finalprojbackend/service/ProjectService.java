@@ -697,4 +697,144 @@ public class ProjectService {
         return response;
 
     }
+
+    @PUT
+    @Path("/answer-application")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response answerApplication(@HeaderParam("token") String token,
+                                     @HeaderParam("id") int adminId,
+                                     @QueryParam("projectId") int projectId,
+                                     @QueryParam("userId") int applicantId,
+                                     @QueryParam("answer") boolean answer,
+                                     @Context HttpServletRequest request) {
+
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with session token {} and id {} is trying to answer the application to the project with id {} from IP address {} for the user with id {}", token, adminId, projectId, ipAddress, applicantId);
+
+        // Check if the user's and project's ids are valid
+        if (!dataValidator.isIdValid(adminId) || !dataValidator.isIdValid(projectId) || !dataValidator.isIdValid(applicantId)) {
+            logger.info("User with session token {} tried to answer the application to the project, but the ids are invalid", token);
+            return Response.status(400).entity("Invalid id").build();
+        }
+
+        if (!authenticationAndAuthorization.isUserManagerInProject(adminId, projectId)) {
+            logger.info("User with session token {} tried to answer the application to the project but is not authorized", token);
+            return Response.status(401).entity("Unauthorized").build();
+        }
+
+        Response response;
+        boolean success;
+
+        try {
+            logger.info("User with session token {} and id {} is answering the application to the project with id {} for the user with id {}", token, adminId, projectId, applicantId);
+            success = projectBean.approveApplication(projectId, applicantId, answer);
+            if (success) {
+                response = Response.status(200).entity("User with id " + adminId + " successfully answered the application to the project with id " + projectId + " for the user with id " + applicantId).build();
+                logger.info("User with session token {} and id {} successfully answered the application to the project with id {} for the user with id {}", token, adminId, projectId, applicantId);
+            } else {
+                response = Response.status(400).entity("User with id " + adminId + " could not answer the application to the project with id " + projectId + " for the user with id " + applicantId).build();
+                logger.info("User with session token {} and id {} could not answer the application to the project with id {} for the user with id {}", token, adminId, projectId, applicantId);
+            }
+        } catch (Exception e) {
+            logger.error("Error while answering the application to the project with id {} for the user with id {}: {}", projectId, applicantId, e.getMessage());
+            response = Response.status(500).entity("Error while answering the application to the project").build();
+        }
+
+        return response;
+
+    }
+
+    @GET
+    @Path("detailed")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getProject(@HeaderParam("token") String token,
+                               @HeaderParam("id") int userId,
+                               @QueryParam("id") int projectId,
+                               @Context HttpServletRequest request) {
+
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with IP address {} is trying to get the project with id {}", ipAddress, projectId);
+
+        Response response;
+
+        if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(projectId)) {
+            response = Response.status(400).entity("Invalid id").build();
+            logger.info("User with session token {} tried to get the project with invalid id {}", token, projectId);
+            return response;
+        }
+
+        // Check if the user is authorized to create a new project
+        if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, userId)) {
+            response = Response.status(401).entity("Unauthorized").build();
+            logger.info("User with session token {} tried to get the project but is not authorized", token);
+            return response;
+        }
+
+        if (!authenticationAndAuthorization.isUserMemberOfTheProjectAndActive(userId, projectId)) {
+            response = Response.status(401).entity("Unauthorized").build();
+            logger.info("User with session token {} tried to get the project but is not a member of the project", token);
+            return response;
+        }
+
+        DetailedProject detailedProject;
+
+        try {
+            logger.info("User with session token {} and id {} is getting the project with id {}", token, userId, projectId);
+            detailedProject = projectBean.getProjectById(projectId);
+            response = Response.status(200).entity(detailedProject).build();
+            logger.info("User with session token {} and id {} successfully got the project with id {}", token, userId, projectId);
+        } catch (Exception e) {
+            logger.error("Error getting the project with id {}: {}", projectId, e.getMessage());
+            response = Response.status(500).entity("Error getting the project").build();
+        }
+
+        return response;
+    }
+
+    @PUT
+    @Path("/role")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response changeRole(@HeaderParam("token") String token,
+                                  @HeaderParam("id") int userId,
+                                  @QueryParam("projectId") int projectId,
+                                  @QueryParam("userId") int userToPromoteId,
+                                  @QueryParam("role") int role,
+                                  @Context HttpServletRequest request) {
+
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with session token {} and id {} is trying to change role of the user with id {} in the project with id {} from IP address {}", token, userId, userToPromoteId, projectId, ipAddress);
+
+        // Check if the user's and project's ids are valid
+        if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(projectId) || !dataValidator.isIdValid(userToPromoteId)) {
+            logger.info("User with session token {} tried to change role of a user in the project, but the ids are invalid", token);
+            return Response.status(400).entity("Invalid id").build();
+        }
+
+        if (!authenticationAndAuthorization.isUserManagerInProject(userId, projectId)) {
+            logger.info("User with session token {} tried to change role of the user with id {} in the project but is not authorized", token, userToPromoteId);
+            return Response.status(401).entity("Unauthorized").build();
+        }
+
+        Response response;
+        DetailedProject detailedProject;
+
+        try {
+            logger.info("User with session token {} and id {} is changing role of the user with id {} in the project with id {}", token, userId, userToPromoteId, projectId);
+            detailedProject = projectBean.changeRole(projectId, userToPromoteId, role);
+            if (detailedProject != null) {
+                response = Response.status(200).entity("User with id " + userToPromoteId + " successfully changed role in the project with id " + projectId).build();
+                logger.info("User with session token {} and id {} successfully changed role of the user with id {} in the project with id {}", token, userId, userToPromoteId, projectId);
+            } else {
+                response = Response.status(400).entity("User with id " + userToPromoteId + " could not change role in the project with id " + projectId).build();
+                logger.info("User with session token {} and id {} could not change role of the user with id {} in the project with id {}", token, userId, userToPromoteId, projectId);
+            }
+        } catch (Exception e) {
+            logger.error("Error while changing role of the user with id {} in the project with id {}: {}", userToPromoteId, projectId, e.getMessage());
+            response = Response.status(500).entity("Error while changing role of the user in the project").build();
+        }
+
+        return response;
+    }
+
 }
