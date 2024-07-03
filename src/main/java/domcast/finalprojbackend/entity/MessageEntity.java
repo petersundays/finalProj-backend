@@ -1,8 +1,9 @@
 package domcast.finalprojbackend.entity;
 
 import jakarta.persistence.*;
+
 import java.io.Serializable;
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 /**
  * Entity class for the message table in the database.
@@ -46,22 +47,21 @@ public abstract class MessageEntity implements Serializable {
 
     // Timestamp of when the message was sent
     @Column (name="timestamp", nullable = false, updatable = false)
-    private Timestamp timestamp;
+    private LocalDateTime timestamp;
 
     // Read status of the message
     @Column (name="'read'", nullable = false)
-    private boolean read;
+    private boolean read = false;
 
     // Default constructor
     public MessageEntity() {
     }
 
     // Constructor with parameters
-    public MessageEntity(String content, UserEntity sender, Timestamp timestamp) {
+    public MessageEntity(String content, UserEntity sender, LocalDateTime timestamp) {
         this.content = content;
         this.sender = sender;
         this.timestamp = timestamp;
-        this.read = false;
     }
 
     // Getters and setters
@@ -90,11 +90,11 @@ public abstract class MessageEntity implements Serializable {
         this.sender = sender;
     }
 
-    public Timestamp getTimestamp() {
+    public LocalDateTime getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(Timestamp timestamp) {
+    public void setTimestamp(LocalDateTime timestamp) {
         this.timestamp = timestamp;
     }
 

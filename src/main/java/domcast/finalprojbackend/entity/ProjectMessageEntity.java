@@ -19,7 +19,6 @@ import java.io.Serializable;
  *  @author José Castro
  *  @author Pedro Domingos
  */
-
 @Entity
 public class ProjectMessageEntity extends MessageEntity implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -29,9 +28,22 @@ public class ProjectMessageEntity extends MessageEntity implements Serializable 
     @JoinColumn(name = "project_id", nullable = false)
     private ProjectEntity project;
 
-    // Default constructor
+    /**
+     * Default constructor
+     */
     public ProjectMessageEntity() {
     }
+
+    /**
+     * Constructor with parameters
+     * @param project the project of the project message
+     * @param message the message of the project message
+     */
+    public ProjectMessageEntity(ProjectEntity project, MessageEntity message) {
+        super();
+        this.project = project;
+    }
+
 
     // Getters and setters
 

@@ -369,8 +369,8 @@ public class UserBean implements Serializable {
         }
 
         // Set the LoggedUser's attributes using the UserEntity's attributes
-        //loggedUser.setEmail(user.getEmail());
         loggedUser.setId(user.getId());
+        loggedUser.setType(user.getType().getValue());
         loggedUser.setFirstName(user.getFirstName());
         loggedUser.setLastName(user.getLastName());
         loggedUser.setWorkplace(user.getWorkplace().getCity().getValue());
@@ -386,87 +386,12 @@ public class UserBean implements Serializable {
         return loggedUser;
     }
 
-    /*public void addInterestToUser(UserEntity user, ArrayList<String> interestsList) {
-        if (user == null || interestsList == null) {
-            logger.error("User and interests list must not be null");
-            throw new IllegalArgumentException("User and interests list must not be null");
-        }
-
-        if (interestsList.isEmpty()) {
-            logger.info("No interests to add to user");
-            return;
-        }
-
-        logger.info("Adding interests to user");
-
-        try {
-            Set<InterestEntity> interests = interestDao.findInterestsByListOfNames(interestsList);
-
-            if (interests.isEmpty()) {
-                logger.info("No matching interests found in database");
-                return;
-            }
-
-            for (InterestEntity interest : interests) {
-                M2MUserInterest userInterest = new M2MUserInterest();
-                userInterest.setUser(user);
-                userInterest.setInterest(interest);
-                user.addInterest(userInterest);
-            }
-
-            userDao.merge(user);
-
-            logger.info("Interests added to user");
-
-        } catch (NoResultException e) {
-            logger.error("Error while finding interests: {}", e.getMessage());
-        } catch (Exception e) {
-            logger.error("Error while adding interests to user: {}", e.getMessage());
-            throw e;
-        }
-    }*/
-
-    /*public void addSkillToUser(UserEntity user, ArrayList<String> skillsList) {
-        if (user == null || skillsList == null) {
-            logger.error("User and skills list must not be null");
-            throw new IllegalArgumentException("User and skills list must not be null");
-        }
-
-        if (skillsList.isEmpty()) {
-            logger.info("No skills to add to user");
-            return;
-        }
-
-        logger.info("Adding skills to user");
-
-        try {
-            Set<SkillEntity> skills = skillDao.findSkillsByListOfNames(skillsList);
-
-            if (skills.isEmpty()) {
-                logger.info("No matching skills found in database");
-                return;
-            }
-
-            for (SkillEntity skill : skills) {
-                M2MUserSkill userSkill = new M2MUserSkill();
-                userSkill.setUser(user);
-                userSkill.setSkill(skill);
-                user.addUserSkill(userSkill);
-            }
-
-            userDao.merge(user);
-
-            logger.info("Skills added to user");
-
-        } catch (NoResultException e) {
-            logger.error("Error while finding skills: {}", e.getMessage());
-        } catch (Exception e) {
-            logger.error("Error while adding skills to user: {}", e.getMessage());
-            throw e;
-        }
-
-    }*/
-
+    /**
+     * Recovers the password of a user
+     * @param email the email of the user to recover the password
+     * @param ipAddress the IP address of the user
+     * @return boolean value indicating if the password was recovered
+     */
     public boolean recoverPassword (String email, String ipAddress){
         logger.info("Recovering password for user with email: {}", email);
 

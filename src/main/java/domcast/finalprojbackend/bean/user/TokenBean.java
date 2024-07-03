@@ -159,4 +159,21 @@ public class TokenBean implements Serializable {
 
         return expired;
     }
+
+    /**
+     * Finds the user by the session token
+     * @param token the session token
+     * @return the user found by the session token
+     */
+    public UserEntity findUserByToken(String token) {
+
+        logger.info("Finding user by token");
+
+        try {
+            return sessionTokenDao.findUserByToken(token);
+        } catch (Exception e) {
+            logger.error("Error finding user by token", e);
+            return null;
+        }
+    }
 }
