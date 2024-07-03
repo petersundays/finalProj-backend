@@ -25,7 +25,7 @@ public class ProjectMessageEntity extends MessageEntity implements Serializable 
 
     // Project of the project message
     @ManyToOne
-    @JoinColumn(name = "project_id", nullable = false)
+    @JoinColumn(name = "project_id", referencedColumnName = "id")
     private ProjectEntity project;
 
     /**

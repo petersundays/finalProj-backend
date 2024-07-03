@@ -1544,4 +1544,26 @@ public class ProjectBean implements Serializable {
 
         return detailedProject;
     }
+
+    /**
+     * Method to get the number of projects in the database.
+     * @return The number of projects.
+     */
+    public int getNumberOfProjects() {
+
+        logger.info("Getting number of projects");
+
+        int numberOfProjects;
+
+        try {
+            numberOfProjects = projectDao.getNumberOfProjects();
+        } catch (PersistenceException e) {
+            logger.error("Error getting number of projects: {}", e.getMessage());
+            throw new RuntimeException(e);
+        }
+
+        logger.info("Successfully got number of projects: {}", numberOfProjects);
+
+        return numberOfProjects;
+    }
 }

@@ -47,7 +47,7 @@ public abstract class MessageEntity implements Serializable {
 
     // Timestamp of when the message was sent
     @Column (name="timestamp", nullable = false, updatable = false)
-    private LocalDateTime timestamp;
+    private LocalDateTime timestamp = LocalDateTime.now();
 
     // Read status of the message
     @Column (name="'read'", nullable = false)
