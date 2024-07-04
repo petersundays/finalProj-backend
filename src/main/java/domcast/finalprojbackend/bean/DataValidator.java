@@ -2,6 +2,7 @@ package domcast.finalprojbackend.bean;
 
 import domcast.finalprojbackend.bean.user.PasswordBean;
 import domcast.finalprojbackend.dao.M2MProjectUserDao;
+import domcast.finalprojbackend.dao.ProjectDao;
 import domcast.finalprojbackend.dao.SessionTokenDao;
 import domcast.finalprojbackend.dao.TaskDao;
 import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
@@ -51,6 +52,9 @@ public class DataValidator {
 
     @EJB
     private SessionTokenDao sessionTokenDao;
+
+    @EJB
+    private ProjectDao projectDao;
 
 
     /**
@@ -420,14 +424,14 @@ public class DataValidator {
         }
 
         if (currentStateEnum == ProjectStateEnum.READY && newStateEnum != ProjectStateEnum.CANCELED) {
-            logger.error("Project is in ready state and can only be set to in progress or canceled");
-            throw new IllegalArgumentException("Project is in ready state and can only be set to in progress or canceled");
+            logger.error("Project is in ready state and can only be set to canceled or approved by an admin");
+            throw new IllegalArgumentException("Project is in ready state and can only be set to canceled");
         }
 
         if (currentStateEnum == ProjectStateEnum.APPROVED &&
-                (newStateEnum != ProjectStateEnum.CANCELED && newStateEnum != ProjectStateEnum.IN_PROGRESS && newStateEnum != ProjectStateEnum.FINISHED)) {
-            logger.error("Project is in approved state and can only be set to canceled, in progress or finished");
-            throw new IllegalArgumentException("Project is in approved state and can only be set to canceled, in progress or finished");
+                (newStateEnum != ProjectStateEnum.CANCELED && newStateEnum != ProjectStateEnum.IN_PROGRESS)) {
+            logger.error("Project is in approved state and can only be set to canceled or in progress");
+            throw new IllegalArgumentException("Project is in approved state and can only be set to canceled or in progress");
         }
 
         if (currentStateEnum == ProjectStateEnum.IN_PROGRESS &&
@@ -585,6 +589,11 @@ public class DataValidator {
     }
 
 
+    /**
+     * Checks if there are available places in the project
+     * @param projectId the id of the project to be checked
+     * @return boolean value indicating if there are available places in the project
+     */
     public boolean availablePlacesInProject(int projectId) {
         logger.info("Checking if there are available places in the project");
 
@@ -619,6 +628,12 @@ public class DataValidator {
         return true;
     }
 
+    /**
+     * Checks if the token is valid for websocket
+     * @param token the token to be checked
+     * @param sessions the sessions to be checked
+     * @return boolean value indicating if the token is valid for websocket
+     */
     public boolean isTokenValidForWebSocket(String token, HashMap<String, Session> sessions) {
         logger.info("Checking if token is valid for websocket");
 
@@ -653,4 +668,5 @@ public class DataValidator {
         logger.info("Token is valid for websocket");
         return true;
     }
+
 }

@@ -267,4 +267,38 @@ public class ProjectDao extends AbstractDao<ProjectEntity> {
             return new ArrayList<>();
         }
     }
+
+    /**
+     * Checks if a project is canceled.
+     *
+     * @param projectId the id of the project
+     * @return boolean value indicating if the project is canceled
+     */
+    public boolean isProjectCanceledOrFinished(int projectId) {
+        try {
+            ProjectStateEnum state = em.createNamedQuery("Project.isProjectCanceledOrFinished", ProjectStateEnum.class)
+                    .setParameter("projectId", projectId)
+                    .getSingleResult();
+            return state == ProjectStateEnum.CANCELED;
+        } catch (NoResultException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Checks if a project is ready.
+     *
+     * @param projectId the id of the project
+     * @return boolean value indicating if the project is ready
+     */
+    public boolean isProjectReady(int projectId) {
+        try {
+            ProjectStateEnum state = em.createNamedQuery("Project.isProjectReady", ProjectStateEnum.class)
+                    .setParameter("projectId", projectId)
+                    .getSingleResult();
+            return state == ProjectStateEnum.READY;
+        } catch (NoResultException e) {
+            return false;
+        }
+    }
 }

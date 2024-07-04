@@ -2,6 +2,7 @@ package domcast.finalprojbackend.bean.user;
 
 import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.project.ProjectBean;
+import domcast.finalprojbackend.dao.ProjectDao;
 import domcast.finalprojbackend.dao.SessionTokenDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dao.ValidationTokenDao;
@@ -18,12 +19,21 @@ public class AuthenticationAndAuthorization {
 
     @EJB
     private SessionTokenDao sessionTokenDao;
+
     @EJB
     private UserDao userDao;
+
     @EJB
     private ProjectBean projectBean;
+
     @EJB
     private ValidationTokenDao validationTokenDao;
+
+    @EJB
+    private DataValidator dataValidator;
+
+    @EJB
+    private ProjectDao projectDao;
 
     /**
      * Checks if the password is correct
@@ -173,4 +183,76 @@ public class AuthenticationAndAuthorization {
         logger.info("User with ID {} is an admin: {}", userId, isAdmin);
         return isAdmin;
     }
+
+    /**
+     * Checks if the project is canceled or finished
+     * @param projectId the id of the project to be checked
+     * @return boolean value indicating if the project is canceled or finished
+     */
+    public boolean isProjectCanceledOrFinished(int projectId) {
+        logger.info("Checking if project is canceled");
+
+        if (!dataValidator.isIdValid(projectId)) {
+            logger.error("Invalid project id while checking if project is canceled");
+            throw new IllegalArgumentException("Invalid project id");
+        }
+
+        try {
+            if (projectDao.isProjectCanceledOrFinished(projectId)) {
+                logger.info("Project is canceled or finished");
+                return true;
+            } else {
+                logger.info("Project is not canceled nor finished");
+                return false;
+            }
+        } catch (Exception e) {
+            logger.error("Error while checking if project is canceled or finished: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Checks if the project is ready
+     * @param projectId the id of the project to be checked
+     * @return boolean value indicating if the project is ready
+     */
+    public boolean isProjectReady(int projectId) {
+        logger.info("Checking if project is ready");
+
+        if (!dataValidator.isIdValid(projectId)) {
+            logger.error("Invalid project id while checking if project is ready");
+            throw new IllegalArgumentException("Invalid project id");
+        }
+
+        try {
+            if (projectDao.isProjectReady(projectId)) {
+                logger.info("Project is ready");
+                return true;
+            } else {
+                logger.info("Project is not ready");
+                return false;
+            }
+        } catch (Exception e) {
+            logger.error("Error while checking if project is ready: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Checks if the user is able to edit the project
+     * @param projectId the id of the project to be checked
+     * @return boolean value indicating if the user is able to edit the project
+     */
+    public boolean ableToEditProject(int projectId) {
+
+        logger.info("Checking if project is able to be edited");
+
+        if (!dataValidator.isIdValid(projectId)) {
+            logger.error("Invalid project id while checking if project is able to be edited");
+            throw new IllegalArgumentException("Invalid project id");
+        }
+
+        return !isProjectCanceledOrFinished(projectId) && !isProjectReady(projectId);
+    }
+
 }
