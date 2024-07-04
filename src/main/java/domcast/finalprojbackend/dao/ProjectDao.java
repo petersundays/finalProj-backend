@@ -1,5 +1,6 @@
 package domcast.finalprojbackend.dao;
 
+import domcast.finalprojbackend.dto.projectDto.ProjectEntitiesList;
 import domcast.finalprojbackend.entity.M2MKeyword;
 import domcast.finalprojbackend.entity.M2MProjectSkill;
 import domcast.finalprojbackend.entity.M2MProjectUser;
@@ -104,95 +105,124 @@ public class ProjectDao extends AbstractDao<ProjectEntity> {
         }
     }
 
-    public List<ProjectEntity> getProjectsByCriteria(int userId, String name, int lab, int state, String keyword, int skill, int maxUsers, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
+    public ProjectEntitiesList getProjectsByCriteria(int userId, String name, int lab, int state, String keyword, int skill, int maxUsers, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaQuery<ProjectEntity> cq = cb.createQuery(ProjectEntity.class);
 
+        // Main query to get projects
+        CriteriaQuery<ProjectEntity> cq = cb.createQuery(ProjectEntity.class);
         Root<ProjectEntity> project = cq.from(ProjectEntity.class);
+        List<Predicate> mainPredicates = buildPredicates(cb, project, userId, name, lab, state, keyword, skill);
+
+        cq.select(project).where(cb.and(mainPredicates.toArray(new Predicate[0])));
+        applyOrder(cq, cb, project, orderBy, orderAsc, maxUsers);
+
+        TypedQuery<ProjectEntity> query = em.createQuery(cq);
+        query.setFirstResult((pageNumber - 1) * pageSize);
+        query.setMaxResults(pageSize);
+
+        List<ProjectEntity> projects = new ArrayList<>();
+        try {
+            projects = query.getResultList();
+        } catch (NoResultException e) {
+            logger.error("No projects found with the given criteria", e);
+        } catch (PersistenceException e) {
+            logger.error("Database error while getting projects by criteria", e);
+        }
+
+        // Count query for total number of projects
+        CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
+        Root<ProjectEntity> countRoot = countQuery.from(ProjectEntity.class);
+        List<Predicate> countPredicates = buildPredicates(cb, countRoot, userId, name, lab, state, keyword, skill);
+
+        countQuery.select(cb.count(countRoot)).where(cb.and(countPredicates.toArray(new Predicate[0])));
+
+        Long totalProjects = 0L;
+        try {
+            totalProjects = em.createQuery(countQuery).getSingleResult();
+        } catch (NoResultException e) {
+            logger.error("No projects found with the given criteria", e);
+        } catch (PersistenceException e) {
+            logger.error("Database error while counting projects by criteria", e);
+        }
+
+        return new ProjectEntitiesList(projects, totalProjects);
+    }
+
+    private List<Predicate> buildPredicates(CriteriaBuilder cb, Root<ProjectEntity> root, int userId, String name, int lab, int state, String keyword, int skill) {
         List<Predicate> predicates = new ArrayList<>();
 
         if (userId != 0) {
-            Join<ProjectEntity, M2MProjectUser> joinProjectUser = project.join("projectUsers");
-            if (joinProjectUser != null) {
-                predicates.add(cb.equal(joinProjectUser.get("user").get("id"), userId));
-            }
+            Join<ProjectEntity, M2MProjectUser> joinProjectUser = root.join("projectUsers");
+            predicates.add(cb.equal(joinProjectUser.get("user").get("id"), userId));
         }
 
         if (name != null && !name.isEmpty()) {
-            predicates.add(cb.like(project.get("name"), "%" + name + "%"));
+            predicates.add(cb.like(root.get("name"), "%" + name + "%"));
         }
 
         if (lab != 0) {
-            predicates.add(cb.equal(project.get("lab").get("id"), lab));
+            predicates.add(cb.equal(root.get("lab").get("id"), lab));
         }
 
         if (state != 0) {
-            predicates.add(cb.equal(project.get("state"), ProjectStateEnum.fromId(state)));
+            predicates.add(cb.equal(root.get("state"), ProjectStateEnum.fromId(state)));
         }
 
         if (keyword != null && !keyword.isEmpty()) {
-            Join<ProjectEntity, M2MKeyword> joinKeyword = project.join("keywords");
+            Join<ProjectEntity, M2MKeyword> joinKeyword = root.join("keywords");
             predicates.add(joinKeyword.get("keyword").get("name").in(keyword));
         }
 
         if (skill != 0) {
-            Join<ProjectEntity, M2MProjectSkill> joinSkill = project.join("skills", JoinType.INNER);
+            Join<ProjectEntity, M2MProjectSkill> joinSkill = root.join("skills", JoinType.INNER);
             Predicate skillNamePredicate = cb.equal(joinSkill.get("skill").get("id"), skill);
             Predicate skillActivePredicate = cb.isTrue(joinSkill.get("active"));
             predicates.add(cb.and(skillNamePredicate, skillActivePredicate));
         }
 
-        cq.select(project).where(cb.and(predicates.toArray(new Predicate[0])));
+        return predicates;
+    }
 
+    private void applyOrder(CriteriaQuery<ProjectEntity> cq, CriteriaBuilder cb, Root<ProjectEntity> root, String orderBy, boolean orderAsc, int maxUsers) {
         if (orderBy != null && !orderBy.isEmpty()) {
             switch (orderBy) {
                 case "state" -> {
                     if (orderAsc) {
-                        cq.orderBy(cb.asc(project.get("state")));
+                        cq.orderBy(cb.asc(root.get("state")));
                     } else {
-                        cq.orderBy(cb.desc(project.get("state")));
+                        cq.orderBy(cb.desc(root.get("state")));
                     }
                 }
                 case "readyDate" -> {
                     if (orderAsc) {
-                        cq.orderBy(cb.asc(cb.coalesce(project.get("readyDate"), LocalDateTime.MAX)));
-                        // coalesce is used
-                        // to handle null values
-                        // which will be the last in the order
+                        cq.orderBy(cb.asc(cb.coalesce(root.get("readyDate"), LocalDateTime.MAX)));
                     } else {
-                        cq.orderBy(cb.desc(cb.coalesce(project.get("readyDate"), LocalDateTime.MIN)));
-                        // coalesce is used
-                        // to handle null values
-                        // which will be the first in the order
+                        cq.orderBy(cb.desc(cb.coalesce(root.get("readyDate"), LocalDateTime.MIN)));
                     }
                 }
                 case "lab" -> {
                     if (orderAsc) {
-                        cq.orderBy(cb.asc(project.get("lab").get("id")));
+                        cq.orderBy(cb.asc(root.get("lab").get("id")));
                     } else {
-                        cq.orderBy(cb.desc(project.get("lab").get("id")));
+                        cq.orderBy(cb.desc(root.get("lab").get("id")));
                     }
                 }
                 case "name" -> {
                     if (orderAsc) {
-                        cq.orderBy(cb.asc(project.get("name")));
+                        cq.orderBy(cb.asc(root.get("name")));
                     } else {
-                        cq.orderBy(cb.desc(project.get("name")));
+                        cq.orderBy(cb.desc(root.get("name")));
                     }
                 }
                 case "availablePlaces" -> {
-                    // Subquery to calculate the number of active users in each project
                     Subquery<Long> activeUsersSubquery = cq.subquery(Long.class);
                     Root<M2MProjectUser> projectUser = activeUsersSubquery.from(M2MProjectUser.class);
                     activeUsersSubquery.select(cb.count(projectUser));
                     activeUsersSubquery.where(cb.and(
-                            cb.equal(projectUser.get("project"), project),
+                            cb.equal(projectUser.get("project"), root),
                             cb.isTrue(projectUser.get("active"))
                     ));
-
-                    // Expression to calculate the number of places still available
                     Expression<Long> availablePlaces = cb.diff((long) maxUsers, activeUsersSubquery);
-
                     if (orderAsc) {
                         cq.orderBy(cb.asc(availablePlaces));
                     } else {
@@ -201,21 +231,9 @@ public class ProjectDao extends AbstractDao<ProjectEntity> {
                 }
             }
         }
-
-        TypedQuery<ProjectEntity> query = em.createQuery(cq);
-        query.setFirstResult((pageNumber - 1) * pageSize);
-        query.setMaxResults(pageSize);
-
-        try {
-            return query.getResultList();
-        } catch (NoResultException e) {
-            logger.error("No projects found with the given criteria", e);
-            return new ArrayList<>();
-        } catch (PersistenceException e) {
-            logger.error("Database error while getting projects by criteria", e);
-            return new ArrayList<>();
-        }
     }
+
+
 
     /**
      * Gets the number of projects.
