@@ -8,10 +8,7 @@ import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.dao.*;
 import domcast.finalprojbackend.dto.componentResourceDto.CRQuantity;
 import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
-import domcast.finalprojbackend.dto.projectDto.DetailedProject;
-import domcast.finalprojbackend.dto.projectDto.EditProject;
-import domcast.finalprojbackend.dto.projectDto.NewProjectDto;
-import domcast.finalprojbackend.dto.projectDto.ProjectPreview;
+import domcast.finalprojbackend.dto.projectDto.*;
 import domcast.finalprojbackend.dto.skillDto.SkillDto;
 import domcast.finalprojbackend.dto.taskDto.ChartTask;
 import domcast.finalprojbackend.dto.userDto.ProjectTeam;
@@ -926,7 +923,7 @@ public class ProjectBean implements Serializable {
         return true;
     }
 
-    public List<ProjectPreview> getProjectsByCriteria (Integer userId, String name, int lab, int state, String keyword, int skill, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
+    public ProjectPreviewsList getProjectsByCriteria (Integer userId, String name, int lab, int state, String keyword, int skill, String orderBy, boolean orderAsc, int pageNumber, int pageSize) {
 
         if (userId != 0) {
             if (!dataValidator.isIdValid(userId)) {
@@ -982,11 +979,11 @@ public class ProjectBean implements Serializable {
 
         logger.info("Getting projects by criteria");
 
-        List<ProjectEntity> projects;
+        ProjectEntitiesList projects;
 
         try {
             projects = projectDao.getProjectsByCriteria(userId, name, lab, state, keywordTrimmed, skill, maxUsers, orderBy, orderAsc, pageNumber, pageSize);
-            if (projects == null || projects.isEmpty()) {
+            if (projects == null || projects.getProjects().isEmpty() || projects.getTotalProjects() == 0) {
                 logger.warn("No projects found by criteria");
                 throw new IllegalArgumentException("No projects found by criteria");
             }
@@ -995,11 +992,11 @@ public class ProjectBean implements Serializable {
             throw new RuntimeException(e);
         }
 
-        logger.info("Successfully got {} projects by criteria", projects.size());
+        logger.info("Successfully got {} projects by criteria", projects.getTotalProjects());
 
         List<ProjectPreview> projectPreviews = new ArrayList<>();
 
-        for (ProjectEntity project : projects) {
+        for (ProjectEntity project : projects.getProjects()) {
             try {
                 ProjectPreview projectPreview = projectEntityToProjectPreview(project);
                 projectPreviews.add(projectPreview);
@@ -1008,8 +1005,11 @@ public class ProjectBean implements Serializable {
             }
         }
 
+        ProjectPreviewsList projectPreviewsList = new ProjectPreviewsList(projectPreviews, projects.getTotalProjects());
+
         logger.info("Successfully got projects by criteria");
-        return projectPreviews;
+
+        return projectPreviewsList;
     }
 
     public ProjectPreview projectEntityToProjectPreview(ProjectEntity projectEntity) {

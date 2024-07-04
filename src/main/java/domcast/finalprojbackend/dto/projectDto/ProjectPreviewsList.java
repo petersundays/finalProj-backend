@@ -14,18 +14,18 @@ import java.util.List;
  * @author Pedro Domingos
  */
 @XmlRootElement
-public class ProjectsList implements Serializable {
+public class ProjectPreviewsList implements Serializable {
 
     @XmlElement
     private List<ProjectPreview> projects;
 
     @XmlElement
-    private int totalProjects;
+    private Long totalProjects;
 
     /**
      * Default constructor
      */
-    public ProjectsList() {
+    public ProjectPreviewsList() {
     }
 
     /**
@@ -33,7 +33,7 @@ public class ProjectsList implements Serializable {
      * @param projects the list of projects
      * @param totalProjects the total number of projects
      */
-    public ProjectsList(List<ProjectPreview> projects, int totalProjects) {
+    public ProjectPreviewsList(List<ProjectPreview> projects, Long totalProjects) {
         this.projects = projects;
         this.totalProjects = totalProjects;
     }
@@ -48,11 +48,11 @@ public class ProjectsList implements Serializable {
         this.projects = projects;
     }
 
-    public int getTotalProjects() {
+    public Long getTotalProjects() {
         return totalProjects;
     }
 
-    public void setTotalProjects(int totalProjects) {
+    public void setTotalProjects(Long totalProjects) {
         this.totalProjects = totalProjects;
     }
 
