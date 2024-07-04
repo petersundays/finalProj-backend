@@ -7,10 +7,7 @@ import domcast.finalprojbackend.bean.project.ProjectBean;
 import domcast.finalprojbackend.bean.user.AuthenticationAndAuthorization;
 import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
-import domcast.finalprojbackend.dto.projectDto.DetailedProject;
-import domcast.finalprojbackend.dto.projectDto.EditProject;
-import domcast.finalprojbackend.dto.projectDto.NewProjectDto;
-import domcast.finalprojbackend.dto.projectDto.ProjectPreview;
+import domcast.finalprojbackend.dto.projectDto.*;
 import domcast.finalprojbackend.dto.skillDto.SkillDto;
 import domcast.finalprojbackend.dto.userDto.EnumDTO;
 import domcast.finalprojbackend.dto.userDto.ProjectTeam;
@@ -478,10 +475,12 @@ public class ProjectService {
 
         Response response;
         List<ProjectPreview> projects;
+        ProjectsList projectsList;
 
         try {
             projects = projectBean.getProjectsByCriteria(userId, name, labId, stateId, keyword, skill, orderBy, orderAsc, pageNumber, pageSize);
-            response = Response.status(200).entity(projects).build();
+            projectsList = new ProjectsList(projects, projects.size());
+            response = Response.status(200).entity(projectsList).build();
             logger.info("User with IP address {} got {} projects by criteria", ipAddress, projects.size());
         } catch (IllegalArgumentException e) {
             response = Response.status(400).entity(e.getMessage()).build();

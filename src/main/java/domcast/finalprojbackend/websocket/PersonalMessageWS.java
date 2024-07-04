@@ -16,8 +16,6 @@ import domcast.finalprojbackend.entity.UserEntity;
 import domcast.finalprojbackend.service.ObjectMapperContextResolver;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Singleton;
-import jakarta.persistence.NoResultException;
-import jakarta.persistence.NonUniqueResultException;
 import jakarta.websocket.*;
 import jakarta.websocket.server.PathParam;
 import jakarta.websocket.server.ServerEndpoint;
@@ -117,7 +115,7 @@ public class PersonalMessageWS {
     }
 
     @OnMessage
-    public void toDoOnMessage(Session session, String msg){
+    public void toDoOnMessage(Session session, String msg) {
 
         String token = session.getPathParameters().get("token");
 
@@ -150,7 +148,6 @@ public class PersonalMessageWS {
             return;
         }
 
-
         int senderId = userSender.getId();
         String content;
 
@@ -163,32 +160,6 @@ public class PersonalMessageWS {
             return;
         }
 
-        String receiverToken = "";
-
-        try {
-            receiverToken = tokenDao.findSessionTokenByUserId(receiverId);
-        } catch (NoResultException e) {
-            logger.error("No session token found for user id {}", receiverId, e);
-        } catch (NonUniqueResultException e) {
-            logger.error("Multiple session tokens found for user id {}", receiverId, e);
-        } catch (Exception e) {
-            logger.error("Error finding token by user id", e);
-        }
-
-        boolean receiverOnline = false;
-
-        if (receiverToken != null && !receiverToken.isEmpty()) {
-
-            for (String key : sessions.keySet()) {
-                if (key.equals(receiverToken)) {
-                    Session receiverSession = sessions.get(key);
-                    int receiverUsername = Integer.parseInt(receiverSession.getPathParameters().get("receiver"));
-                    if (receiverUsername == senderId) {
-                        receiverOnline = true;
-                    }
-                }
-            }
-        }
 
         PersonalMessage message;
 
@@ -215,14 +186,10 @@ public class PersonalMessageWS {
             return;
         }
 
-        if (receiverOnline) {
-            send(receiverToken, new Gson().toJson(message));
-        }
+        // Send the message to all active sessions of the sender
+        messageBean.sendToUser(senderId, jsonMessage, sessions);
 
-        for (String key : sessions.keySet()) {
-            if (key.equals(token)) {
-                send(token, jsonMessage);
-            }
-        }
+        // Send the message to all active sessions of the receiver
+        messageBean.sendToUser(receiverId, jsonMessage, sessions);
     }
 }
