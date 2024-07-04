@@ -161,25 +161,19 @@ public class SessionTokenDao extends ValidationTokenDao {
     }
 
     /**
-     * Finds the token by the user id
+     * Finds the active session tokens by user id
      * @param userId the user id to be checked
-     * @return the token found by the user id
+     * @return the list of active session tokens by user id
      */
-    public String findSessionTokenByUserId(int userId) {
-        logger.info("Finding token by user id {}", userId);
+    public List<String> findActiveSessionTokensByUserId(int userId) {
+        logger.info("Finding active session tokens by user id {}", userId);
         try {
-            return (String) em.createNamedQuery("SessionToken.findSessionTokenByUserId")
+            return em.createNamedQuery("SessionToken.findActiveSessionTokensByUserId", String.class)
                     .setParameter("userId", userId)
-                    .getSingleResult();
-        } catch (NoResultException e) {
-            logger.error("No session token found for user id {}", userId, e);
-            return null;
-        } catch (NonUniqueResultException e) {
-            logger.error("Multiple session tokens found for user id {}", userId, e);
-            return null;
+                    .getResultList();
         } catch (Exception e) {
-            logger.error("Error finding token by user id", e);
-            return null;
+            logger.error("Error finding active session tokens by user id", e);
+            return new ArrayList<>();
         }
     }
 }
