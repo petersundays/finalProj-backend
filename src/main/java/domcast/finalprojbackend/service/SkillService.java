@@ -130,33 +130,26 @@ public class SkillService {
     @GET
     @Path("unconfirmed-user")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getSkillsUnconfirmed(@HeaderParam("token") String validationToken,
-                                         @Context HttpServletRequest request) {
+    public Response getSkillsUnconfirmed(@Context HttpServletRequest request) {
         String ipAddress = request.getRemoteAddr();
-        logger.info("User with validation token {} is getting skills from IP address {}", validationToken, ipAddress);
+        logger.info("An unlogged user with ip address {} is trying to get skills", ipAddress);
 
         Response response;
 
-        // Check if the user is authorized to get the skills while in registration
-        if (!authenticationAndAuthorization.isMemberNotConfirmedAndValTokenActive(validationToken)) {
-            response = Response.status(401).entity("Unauthorized").build();
-            logger.info("User with validation token {} tried to get skills but is not authorized", validationToken);
-            return response;
-        }
 
         try {
             List<SkillToList> skills = skillBean.getAllSkills();
 
             if (skills == null || skills.isEmpty()) {
-                logger.info("No skills found for user with validation token {}", validationToken);
+                logger.info("No skills found for unlogged user with ip address {}", ipAddress);
                 return Response.status(204).build();
             }
 
-            logger.info("User with validation token {} got skills", validationToken);
+            logger.info("Unlogged user with ip address {} got skills", ipAddress);
             response = Response.status(200).entity(skills).build();
         } catch (Exception e) {
-            logger.error("Error getting interests for user with validation token {}", validationToken, e);
-            response = Response.status(500).entity("Error getting interests for user with validation token").build();
+            logger.error("Error getting skills for unlogged user with ip address {}", ipAddress, e);
+            response = Response.status(500).entity("Error getting skills").build();
         }
 
         return response;

@@ -1566,4 +1566,25 @@ public class ProjectBean implements Serializable {
 
         return numberOfProjects;
     }
+
+    /**
+     * Method to get the names of the projects in the database.
+     * @return The names of the projects.
+     */
+    public List<String> getProjectsNames() {
+        logger.info("Getting projects names");
+
+        List<String> projectsNames;
+
+        try {
+            projectsNames = projectDao.getProjectsNames();
+        } catch (PersistenceException e) {
+            logger.error("Error getting projects names: {}", e.getMessage());
+            throw new RuntimeException(e);
+        }
+
+        logger.info("Successfully got projects names");
+
+        return projectsNames;
+    }
 }

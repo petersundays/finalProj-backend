@@ -861,4 +861,26 @@ public class ProjectService {
 
     }
 
+    @GET
+    @Path("/names")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getProjectNames(@Context HttpServletRequest request) {
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with IP address {} is trying to get the project names", ipAddress);
+
+        Response response;
+
+        try {
+            logger.info("User with IP address {} is getting the project names", ipAddress);
+            List<String> projectNames = projectBean.getProjectsNames();
+            response = Response.status(200).entity(projectNames).build();
+            logger.info("User with IP address {} successfully got the project names", ipAddress);
+        } catch (Exception e) {
+            logger.error("Error getting the project names: {}", e.getMessage());
+            response = Response.status(500).entity("Error getting the project names").build();
+        }
+
+        return response;
+    }
+
 }
