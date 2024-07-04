@@ -474,14 +474,13 @@ public class ProjectService {
         logger.info("User with IP address {} is trying to get projects by criteria", ipAddress);
 
         Response response;
-        List<ProjectPreview> projects;
-        ProjectsList projectsList;
+
+        ProjectPreviewsList projects;
 
         try {
             projects = projectBean.getProjectsByCriteria(userId, name, labId, stateId, keyword, skill, orderBy, orderAsc, pageNumber, pageSize);
-            projectsList = new ProjectsList(projects, projects.size());
-            response = Response.status(200).entity(projectsList).build();
-            logger.info("User with IP address {} got {} projects by criteria", ipAddress, projects.size());
+            response = Response.status(200).entity(projects).build();
+            logger.info("User with IP address {} got {} projects by criteria", ipAddress, projects.getTotalProjects());
         } catch (IllegalArgumentException e) {
             response = Response.status(400).entity(e.getMessage()).build();
             logger.info("User with IP address {} tried to get projects by criteria unsuccessfully", ipAddress);
