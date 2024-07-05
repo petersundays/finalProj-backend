@@ -40,6 +40,8 @@ import java.util.Set;
 @NamedQuery(name = "Project.removeUserFromProject", query = "DELETE FROM M2MProjectUser pu WHERE pu.project.id = :projectId AND pu.user.id = :userId")
 @NamedQuery(name= "Project.getNumberOfProjects", query = "SELECT COUNT(p) FROM ProjectEntity p")
 @NamedQuery(name= "Project.getProjectsNames", query = "SELECT p.name FROM ProjectEntity p")
+@NamedQuery(name= "Project.isProjectCanceledOrFinished", query = "SELECT p.state FROM ProjectEntity p WHERE p.id = :projectId AND p.state = 600 OR p.state = 500")
+@NamedQuery(name= "Project.isProjectReady", query = "SELECT p.state FROM ProjectEntity p WHERE p.id = :projectId AND p.state = 500")
 
 public class ProjectEntity implements Serializable {
 
@@ -76,6 +78,9 @@ public class ProjectEntity implements Serializable {
     // Users associated with the project
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<M2MProjectUser> projectUsers = new HashSet<>();
+
+    @Column(name = "max_members", nullable = false)
+    private int maxMembers = 4;
 
     // Skills required for the project
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -193,6 +198,14 @@ public class ProjectEntity implements Serializable {
 
     public void removeProjectUser(M2MProjectUser projectUser) {
         this.projectUsers.remove(projectUser);
+    }
+
+    public int getMaxMembers() {
+        return maxMembers;
+    }
+
+    public void setMaxMembers(int maxMembers) {
+        this.maxMembers = maxMembers;
     }
 
     public Set<M2MProjectSkill> getSkills() {

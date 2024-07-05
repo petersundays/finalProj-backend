@@ -33,37 +33,13 @@ import java.util.Set;
  * @author Pedro Domingos
  */
 @XmlRootElement
-public class DetailedProject extends ProjectDto implements Serializable {
-
-    @XmlElement
-    private int id;
-
-    @XmlElement
-    private int state;
-
-    @XmlElement
-    private LocalDateTime projectedStartDate;
-
-    @XmlElement
-    private LocalDateTime deadline;
-
-    @XmlElement
-    private Set<KeywordDto> keywords;
-
-    @XmlElement
-    private Set<SkillToProject> skills;
-
-    @XmlElement
-    private Set<CRPreview> resources;
-
-    @XmlElement
-    private ProjectUser mainManager;
-
-    @XmlElement
-    private Set<ProjectUser> collaborators;
+public class DetailedProject extends PublicProject implements Serializable {
 
     @XmlElement
     private Set<ChartTask> tasks;
+
+    @XmlElement
+    private int maxMembers;
 
     /**
      * Empty constructor
@@ -71,79 +47,30 @@ public class DetailedProject extends ProjectDto implements Serializable {
     public DetailedProject() {
     }
 
+    /**
+     * Constructor with all the attributes
+     * @param id the id of the project
+     * @param name the name of the project
+     * @param description the description of the project
+     * @param state the state of the project
+     * @param projectedStartDate the projected start date of the project
+     * @param deadline the deadline of the project
+     * @param keywords the keywords of the project
+     * @param skills the skills of the project
+     * @param resources the resources of the project
+     * @param mainManager the project's main manager
+     * @param collaborators the collaborators of the project
+     * @param vacancies the number of vacancies in the project
+     * @param tasks the tasks of the project
+     * @param maxMembers the maximum number of members in the project
+     */
+    public DetailedProject(int id, String name, String description, int labId, int state, LocalDateTime projectedStartDate, LocalDateTime deadline, Set<KeywordDto> keywords, Set<SkillToProject> skills, Set<CRPreview> resources, ProjectUser mainManager, Set<ProjectUser> collaborators, Set<ChartTask> tasks, int vacancies, int maxMembers) {
+        super(id, name, description, labId, state, projectedStartDate,deadline, keywords, skills, resources, mainManager, collaborators, vacancies);
+        this.tasks = tasks;
+        this.maxMembers = maxMembers;
+    }
+
     // Getters and setters
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public int getState() {
-        return state;
-    }
-
-    public void setState(int state) {
-        this.state = state;
-    }
-
-    public LocalDateTime getProjectedStartDate() {
-        return projectedStartDate;
-    }
-
-    public void setProjectedStartDate(LocalDateTime projectedStartDate) {
-        this.projectedStartDate = projectedStartDate;
-    }
-
-    public LocalDateTime getDeadline() {
-        return deadline;
-    }
-
-    public void setDeadline(LocalDateTime deadline) {
-        this.deadline = deadline;
-    }
-
-    public Set<KeywordDto> getKeywords() {
-        return keywords;
-    }
-
-    public void setKeywords(Set<KeywordDto> keywords) {
-        this.keywords = keywords;
-    }
-
-    public Set<SkillToProject> getSkills() {
-        return skills;
-    }
-
-    public void setSkills(Set<SkillToProject> skills) {
-        this.skills = skills;
-    }
-
-    public Set<CRPreview> getResources() {
-        return resources;
-    }
-
-    public void setResources(Set<CRPreview> resources) {
-        this.resources = resources;
-    }
-
-    public ProjectUser getMainManager() {
-        return mainManager;
-    }
-
-    public void setMainManager(ProjectUser mainManager) {
-        this.mainManager = mainManager;
-    }
-
-    public Set<ProjectUser> getCollaborators() {
-        return collaborators;
-    }
-
-    public void setCollaborators(Set<ProjectUser> collaborators) {
-        this.collaborators = collaborators;
-    }
 
     public Set<ChartTask> getTasks() {
         return tasks;
@@ -151,5 +78,13 @@ public class DetailedProject extends ProjectDto implements Serializable {
 
     public void setTasks(Set<ChartTask> tasks) {
         this.tasks = tasks;
+    }
+
+    public int getMaxMembers() {
+        return maxMembers;
+    }
+
+    public void setMaxMembers(int maxMembers) {
+        this.maxMembers = maxMembers;
     }
 }

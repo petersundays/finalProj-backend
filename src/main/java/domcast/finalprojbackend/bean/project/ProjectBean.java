@@ -337,6 +337,11 @@ public class ProjectBean implements Serializable {
             }
         }
 
+
+        if (newProjectDto.getMaxMembers() > 0) {
+            projectEntity.setMaxMembers(newProjectDto.getMaxMembers());
+        }
+
         projectEntity.setName(newProjectDto.getName());
         projectEntity.setDescription(newProjectDto.getDescription());
         projectEntity.setLab(labEntity);
@@ -488,7 +493,7 @@ public class ProjectBean implements Serializable {
         if (projectTeam == null) {
             logger.warn("No team found for project with id: {}", projectEntity.getId());
         }
-        Set<ProjectUser> collaboratorsDto = userBean.projectUsersToListOfProjectUser(projectTeam);
+        Set<ProjectUser> projectUsers = userBean.projectUsersToListOfProjectUser(projectTeam);
 
         try {
             List<ChartTask> taskList = taskBean.findTaskByProjectId(projectEntity.getId());
@@ -497,9 +502,12 @@ public class ProjectBean implements Serializable {
             logger.error("Error finding tasks for project with id: {}", projectEntity.getId(), e);
         }
 
+        int vacancies = vacanciesInProject(projectEntity.getId(), projectEntity.getMaxMembers());
+
         detailedProject.setId(projectEntity.getId());
         detailedProject.setName(projectEntity.getName());
         detailedProject.setDescription(projectEntity.getDescription());
+        detailedProject.setMaxMembers(projectEntity.getMaxMembers());
         detailedProject.setLabId(projectEntity.getLab().getCity().getId());
         detailedProject.setState(ProjectStateEnum.getProjectStateValue(projectEntity.getState()));
         detailedProject.setProjectedStartDate(projectEntity.getProjectedStartDate());
@@ -508,8 +516,9 @@ public class ProjectBean implements Serializable {
         detailedProject.setSkills(skillBean.projectSkillToDto(projectEntity.getSkills()));
         detailedProject.setResources(componentResourceBean.componentProjectToCRPreview(projectEntity.getComponentResources()));
         detailedProject.setMainManager(mainManager);
-        detailedProject.setCollaborators(collaboratorsDto);
+        detailedProject.setProjectUsers(projectUsers);
         detailedProject.setTasks(tasks);
+        detailedProject.setVacancies(vacancies);
 
         logger.info("Successfully converted ProjectEntity to DetailedProject");
 
@@ -1020,11 +1029,14 @@ public class ProjectBean implements Serializable {
 
         logger.info("Converting project entity to project preview");
 
+        int vacancies = vacanciesInProject(projectEntity.getId(), projectEntity.getMaxMembers());
+
         ProjectPreview projectPreview = new ProjectPreview();
         try {
             projectPreview.setId(projectEntity.getId());
             projectPreview.setName(projectEntity.getName());
             projectPreview.setDescription(projectEntity.getDescription());
+            projectPreview.setVacancies(vacancies);
 
             LabEntity lab = projectEntity.getLab();
             if (lab != null && lab.getCity() != null) {
@@ -1586,5 +1598,132 @@ public class ProjectBean implements Serializable {
         logger.info("Successfully got projects names");
 
         return projectsNames;
+    }
+
+    /**
+     * Gets the public project with the given ID.
+     * @param projectId The ID of the project to get.
+     * @return The public project with the given ID.
+     */
+    public PublicProject getPublicProject(int projectId) {
+
+        if (!dataValidator.isIdValid(projectId)) {
+            logger.error("Invalid project ID while getting public project");
+            throw new IllegalArgumentException("Invalid project ID while getting public project");
+        }
+
+        logger.info("Getting public project with ID {}", projectId);
+
+        ProjectEntity projectEntity;
+
+        try {
+            projectEntity = projectDao.findProjectById(projectId);
+        } catch (PersistenceException e) {
+            logger.error("Error finding public project with ID {}", projectId, e);
+            throw new RuntimeException(e);
+        }
+
+        if (projectEntity == null) {
+            logger.error("Project not found while getting public project by ID: {}", projectId);
+            throw new IllegalArgumentException("Project not found with ID " + projectId);
+        }
+
+        PublicProject publicProject = entityToPublicProject(projectEntity);
+
+        if (publicProject == null) {
+            logger.error("Error converting project entity to public project while getting project by ID");
+            throw new RuntimeException("Error converting project entity to detailed project while getting project by ID");
+        }
+
+        logger.info("Successfully got public project with ID {}", projectId);
+
+        return publicProject;
+    }
+
+    /**
+     * Converts a project entity to a public project.
+     * @param projectEntity The project entity to convert.
+     * @return The public project converted from the project entity.
+     */
+    public PublicProject entityToPublicProject (ProjectEntity projectEntity) {
+        logger.info("Converting ProjectEntity to PublicProject");
+
+        if (projectEntity == null) {
+            logger.error("Project entity is null while converting to public project");
+            throw new IllegalArgumentException("Project entity is null");
+        }
+
+        PublicProject publicProject = new PublicProject();
+        M2MProjectUser userInProject = new M2MProjectUser();
+        Set<M2MProjectUser> projectTeam = new HashSet<>();
+
+        try {
+            userInProject = m2MProjectUserDao.findMainManagerInProject(projectEntity.getId());
+        } catch (PersistenceException e) {
+            logger.error("Error finding main manager in project with id: {}", projectEntity.getId(), e);
+        }
+
+        ProjectUser mainManager = userBean.projectUserToProjectUserDto(userInProject);
+
+        try {
+            projectTeam = m2MProjectUserDao.findProjectTeam(projectEntity.getId());
+        } catch (PersistenceException e) {
+            logger.error("Error finding project team for project with id: {}", projectEntity.getId(), e);
+        }
+
+        if (projectTeam == null) {
+            logger.warn("No team found for project with id while converting to public project: {}", projectEntity.getId());
+        }
+        Set<ProjectUser> projectUsers = userBean.projectUsersToListOfProjectUser(projectTeam);
+
+        int vacancies = vacanciesInProject(projectEntity.getId(), projectEntity.getMaxMembers());
+
+        publicProject.setId(projectEntity.getId());
+        publicProject.setName(projectEntity.getName());
+        publicProject.setDescription(projectEntity.getDescription());
+        publicProject.setLabId(projectEntity.getLab().getCity().getId());
+        publicProject.setState(ProjectStateEnum.getProjectStateValue(projectEntity.getState()));
+        publicProject.setProjectedStartDate(projectEntity.getProjectedStartDate());
+        publicProject.setDeadline(projectEntity.getDeadline());
+        publicProject.setKeywords(keywordBean.m2mToKeywordDto(projectEntity.getKeywords()));
+        publicProject.setSkills(skillBean.projectSkillToDto(projectEntity.getSkills()));
+        publicProject.setResources(componentResourceBean.componentProjectToCRPreview(projectEntity.getComponentResources()));
+        publicProject.setMainManager(mainManager);
+        publicProject.setProjectUsers(projectUsers);
+        publicProject.setVacancies(vacancies);
+
+        logger.info("Successfully converted ProjectEntity to PublicProject");
+
+        return publicProject;
+    }
+
+    public int vacanciesInProject(int projectId, int projectMaxUsers) {
+        logger.info("Checking if there are available places in the project");
+
+        int vacancies = 0;
+
+        if (!dataValidator.isIdValid(projectId)) {
+            logger.error("Invalid project id while checking available places in the project");
+            throw new IllegalArgumentException("Invalid project id");
+        }
+
+        int numberOfActiveUsers;
+
+        try {
+            numberOfActiveUsers = m2MProjectUserDao.getNumberOfActiveUsersInProject(projectId);
+        } catch (Exception e) {
+            logger.error("Error while getting number of active users in project: {}", e.getMessage());
+            return vacancies;
+        }
+
+        vacancies = projectMaxUsers - numberOfActiveUsers;
+
+        if (vacancies < 0) {
+            logger.info("There are no available places in the project");
+            return 0;
+        }
+
+        logger.info("There are available places in the project");
+        return vacancies;
     }
 }

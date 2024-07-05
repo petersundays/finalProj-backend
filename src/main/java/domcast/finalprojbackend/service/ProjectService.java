@@ -162,6 +162,12 @@ public class ProjectService {
             return response;
         }
 
+        if (!authenticationAndAuthorization.ableToEditProject(projectId)) {
+            response = Response.status(401).entity("Unauthorized: Project is not in a state that can be edited").build();
+            logger.info("User with session token {} tried to edit a project but the project is not in a state that can be edited", token);
+            return response;
+        }
+
         if (!authenticationAndAuthorization.isUserMemberOfTheProjectAndActive(id, projectId)) {
             response = Response.status(401).entity("Unauthorized").build();
             logger.info("User with session token {} tried to edit a project but is not a member of the project", token);
@@ -350,9 +356,9 @@ public class ProjectService {
             return Response.status(400).entity("Invalid id").build();
         }
 
-        if (!ProjectStateEnum.isValidId(state)) {
-            logger.info("User with session token {} tried to update the state of the project with invalid state", token);
-            return Response.status(400).entity("New state is invalid").build();
+        if (!authenticationAndAuthorization.ableToEditProject(projectId)) {
+            logger.info("User with session token {} tried to update the state of the project but the project is not in a state that can be edited", token);
+            return Response.status(401).entity("Unauthorized: Project is not in a state that can be edited").build();
         }
 
         if (!authenticationAndAuthorization.isUserManagerInProject(userId, projectId)) {
@@ -360,6 +366,10 @@ public class ProjectService {
             return Response.status(401).entity("Unauthorized").build();
         }
 
+        if (!ProjectStateEnum.isValidId(state)) {
+            logger.info("User with session token {} tried to update the state of the project with invalid state", token);
+            return Response.status(400).entity("New state is invalid").build();
+        }
         Response response;
 
         try {
@@ -409,6 +419,11 @@ public class ProjectService {
         if (!ProjectStateEnum.isValidId(state)) {
             logger.info("User with session token {} tried to approve the project with invalid state", token);
             return Response.status(400).entity("New state is invalid").build();
+        }
+
+        if (!authenticationAndAuthorization.isProjectReady(projectId)) {
+            logger.info("User with session token {} tried to approve the project but the project is not ready", token);
+            return Response.status(401).entity("Unauthorized: Project is not ready").build();
         }
 
         if (!authenticationAndAuthorization.isUserAdminById(userId)) {
@@ -472,7 +487,7 @@ public class ProjectService {
 
         String ipAddress = request.getRemoteAddr();
         logger.info("User with IP address {} is trying to get projects by criteria", ipAddress);
-        System.out.println("userid: " + userId + " name: " + name + " lab: " + labId + " state: " + stateId + " keyword: " + keyword + " skill: " + skill + " orderBy: " + orderBy + " orderAsc: " + orderAsc + " pageNumber: " + pageNumber + " pageSize: " + pageSize);
+        System.out.println("userid " + userId + " name " + name + " lab " + labId + " state " + stateId + " keyword " + keyword + " skill " + skill + " orderBy " + orderBy + " orderAsc " + orderAsc + " pageNumber " + pageNumber + " pageSize " + pageSize);
 
         Response response;
 
@@ -516,6 +531,11 @@ public class ProjectService {
         if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(projectId) || !dataValidator.isIdValid(userToRemoveId)) {
             logger.info("User with session token {} tried to remove a user from the project, but the ids are invalid", token);
             return Response.status(400).entity("Invalid id").build();
+        }
+
+        if (!authenticationAndAuthorization.ableToEditProject(projectId)) {
+            logger.info("User with session token {} tried to remove the user from the project but the project is not in a state that can be edited", token);
+            return Response.status(401).entity("Unauthorized: Project is not in a state that can be edited").build();
         }
 
         if (!authenticationAndAuthorization.isUserManagerInProject(userId, projectId)) {
@@ -578,6 +598,11 @@ public class ProjectService {
             return Response.status(400).entity("Invalid id").build();
         }
 
+        if (!authenticationAndAuthorization.ableToEditProject(projectId)) {
+            logger.info("User with session token {} tried to invite the user to the project but the project is not in a state that can be edited", token);
+            return Response.status(401).entity("Unauthorized: Project is not in a state that can be edited").build();
+        }
+
         if (!ProjectUserEnum.containsId(role)) {
             logger.info("User with session token {} tried to invite a user to the project with invalid role", token);
             return Response.status(400).entity("Invalid role").build();
@@ -636,6 +661,11 @@ public class ProjectService {
             return Response.status(400).entity("Invalid id").build();
         }
 
+        if (!authenticationAndAuthorization.isProjectCanceledOrFinished(projectId)) {
+            logger.info("User with session token {} tried to answer the invitation to the project but the project is already canceled or finished", token);
+            return Response.status(401).entity("Unauthorized: Project is not in a state that can be edited").build();
+        }
+
         Response response;
         boolean success;
 
@@ -673,6 +703,11 @@ public class ProjectService {
         if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(projectId)) {
             logger.info("User with session token {} tried to apply to the project, but the ids are invalid", token);
             return Response.status(400).entity("Invalid id").build();
+        }
+
+        if (!authenticationAndAuthorization.ableToEditProject(projectId)) {
+            logger.info("User with session token {} tried to apply to the project but the project is not in a state that can be edited", token);
+            return Response.status(401).entity("Unauthorized: Project is not in a state that can be edited").build();
         }
 
         Response response;
@@ -716,6 +751,11 @@ public class ProjectService {
             return Response.status(400).entity("Invalid id").build();
         }
 
+        if (!authenticationAndAuthorization.ableToEditProject(projectId)) {
+            logger.info("User with session token {} tried to answer the application to the project but the project is not in a state that can be edited", token);
+            return Response.status(401).entity("Unauthorized: Project is not in a state that can be edited").build();
+        }
+
         if (!authenticationAndAuthorization.isUserManagerInProject(adminId, projectId)) {
             logger.info("User with session token {} tried to answer the application to the project but is not authorized", token);
             return Response.status(401).entity("Unauthorized").build();
@@ -744,7 +784,7 @@ public class ProjectService {
     }
 
     @GET
-    @Path("detailed")
+    @Path("private")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getProject(@HeaderParam("token") String token,
                                @HeaderParam("id") int userId,
@@ -762,7 +802,7 @@ public class ProjectService {
             return response;
         }
 
-        // Check if the user is authorized to create a new project
+        // Check if the user is authorized to get the project
         if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, userId)) {
             response = Response.status(401).entity("Unauthorized").build();
             logger.info("User with session token {} tried to get the project but is not authorized", token);
@@ -790,6 +830,47 @@ public class ProjectService {
         return response;
     }
 
+    @GET
+    @Path("public")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getPublicProject(@HeaderParam("token") String token,
+                                     @HeaderParam("id") int userId,
+                                     @QueryParam("id") int projectId,
+                                     @Context HttpServletRequest request) {
+
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with IP address {} is trying to get the public project with id {}", ipAddress, projectId);
+
+        Response response;
+
+        if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(projectId)) {
+            response = Response.status(400).entity("Invalid id").build();
+            logger.info("User with session token {} tried to get the public project with invalid id {}", token, projectId);
+            return response;
+        }
+
+        // Check if the user is authorized to get the project
+        if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, userId)) {
+            response = Response.status(401).entity("Unauthorized").build();
+            logger.info("User with session token {} tried to get the public project but is not authorized", token);
+            return response;
+        }
+
+        PublicProject publicProject;
+
+        try {
+            logger.info("User with session token {} and id {} is getting the public project with id {}", token, userId, projectId);
+            publicProject = projectBean.getPublicProject(projectId);
+            response = Response.status(200).entity(publicProject).build();
+            logger.info("User with session token {} and id {} successfully got the public project with id {}", token, userId, projectId);
+        } catch (Exception e) {
+            logger.error("Error getting the public project with id {}: {}", projectId, e.getMessage());
+            response = Response.status(500).entity("Error getting the project").build();
+        }
+
+        return response;
+    }
+
     @PUT
     @Path("/role")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -808,6 +889,11 @@ public class ProjectService {
         if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(projectId) || !dataValidator.isIdValid(userToPromoteId)) {
             logger.info("User with session token {} tried to change role of a user in the project, but the ids are invalid", token);
             return Response.status(400).entity("Invalid id").build();
+        }
+
+        if (!authenticationAndAuthorization.ableToEditProject(projectId)) {
+            logger.info("User with session token {} tried to change role of the user in the project but the project is not in a state that can be edited", token);
+            return Response.status(401).entity("Unauthorized: Project is not in a state that can be edited").build();
         }
 
         if (!authenticationAndAuthorization.isUserManagerInProject(userId, projectId)) {
