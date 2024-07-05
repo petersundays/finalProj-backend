@@ -17,8 +17,6 @@ public class PublicProfileUser extends SearchedUser {
     @XmlElement
     private Set<String> skills; // The user's skills
 
-//    @XmlElement
-//    private Set<ProjectDto> projects; // The user's projects
 
     /**
      * Default constructor for PublicProfileUser.
