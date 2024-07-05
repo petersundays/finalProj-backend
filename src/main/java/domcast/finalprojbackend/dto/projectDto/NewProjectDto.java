@@ -45,6 +45,9 @@ public class NewProjectDto extends ProjectDto implements Serializable {
     @XmlElement
     private Map<Integer, Integer> existentResources;
 
+    @XmlElement
+    private int maxMembers;
+
     /**
      * Empty constructor
      */
@@ -59,7 +62,9 @@ public class NewProjectDto extends ProjectDto implements Serializable {
      * @param keywords the keywords of the project
      * @param existentSkills the skills of the project that already exist in the database
      * @param existentResources the resources of the project that already exist in the database
-
+     * @param newSkills the new skills of the project
+     * @param newResources the new resources of the project
+     *
      */
     public NewProjectDto(String name, String description, int labId, Set<String> keywords, Set<Integer> existentSkills, Map<Integer, Integer> existentResources, Set<SkillDto> newSkills, Set<DetailedCR> newResources) {
         super(name, description, labId);
@@ -108,5 +113,13 @@ public class NewProjectDto extends ProjectDto implements Serializable {
 
     public void setExistentResources(Map<Integer, Integer> existentResources) {
         this.existentResources = existentResources;
+    }
+
+    public int getMaxMembers() {
+        return maxMembers;
+    }
+
+    public void setMaxMembers(int maxMembers) {
+        this.maxMembers = maxMembers;
     }
 }

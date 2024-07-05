@@ -79,6 +79,9 @@ public class ProjectEntity implements Serializable {
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<M2MProjectUser> projectUsers = new HashSet<>();
 
+    @Column(name = "max_members", nullable = false)
+    private int maxMembers = 4;
+
     // Skills required for the project
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<M2MProjectSkill> skills = new HashSet<>();
@@ -195,6 +198,14 @@ public class ProjectEntity implements Serializable {
 
     public void removeProjectUser(M2MProjectUser projectUser) {
         this.projectUsers.remove(projectUser);
+    }
+
+    public int getMaxMembers() {
+        return maxMembers;
+    }
+
+    public void setMaxMembers(int maxMembers) {
+        this.maxMembers = maxMembers;
     }
 
     public Set<M2MProjectSkill> getSkills() {

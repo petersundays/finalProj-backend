@@ -58,9 +58,10 @@ public class PublicProject extends ProjectPreview implements Serializable {
      * @param resources the resources of the project
      * @param mainManager the project's main manager
      * @param projectUsers the users that are part of the project's other executors
+     * @param vacancies the number of vacancies in the project
      */
-    public PublicProject(int id, String name, String description, int labId, int state, LocalDateTime projectedStartDate, LocalDateTime deadline, Set<KeywordDto> keywords, Set<SkillToProject> skills, Set<CRPreview> resources, ProjectUser mainManager, Set<ProjectUser> projectUsers) {
-        super(id, name, description, labId, projectUsers, state);
+    public PublicProject(int id, String name, String description, int labId, int state, LocalDateTime projectedStartDate, LocalDateTime deadline, Set<KeywordDto> keywords, Set<SkillToProject> skills, Set<CRPreview> resources, ProjectUser mainManager, Set<ProjectUser> projectUsers, int vacancies) {
+        super(id, name, description, labId, projectUsers, state, vacancies);
         this.projectedStartDate = projectedStartDate;
         this.deadline = deadline;
         this.keywords = keywords;
