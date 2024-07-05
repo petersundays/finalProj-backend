@@ -38,6 +38,9 @@ public class DetailedProject extends PublicProject implements Serializable {
     @XmlElement
     private Set<ChartTask> tasks;
 
+    @XmlElement
+    private int maxMembers;
+
     /**
      * Empty constructor
      */
@@ -57,11 +60,14 @@ public class DetailedProject extends PublicProject implements Serializable {
      * @param resources the resources of the project
      * @param mainManager the project's main manager
      * @param collaborators the collaborators of the project
+     * @param vacancies the number of vacancies in the project
      * @param tasks the tasks of the project
+     * @param maxMembers the maximum number of members in the project
      */
-    public DetailedProject(int id, String name, String description, int labId, int state, LocalDateTime projectedStartDate, LocalDateTime deadline, Set<KeywordDto> keywords, Set<SkillToProject> skills, Set<CRPreview> resources, ProjectUser mainManager, Set<ProjectUser> collaborators, Set<ChartTask> tasks) {
-        super(id, name, description, labId, state, projectedStartDate,deadline, keywords, skills, resources, mainManager, collaborators);
+    public DetailedProject(int id, String name, String description, int labId, int state, LocalDateTime projectedStartDate, LocalDateTime deadline, Set<KeywordDto> keywords, Set<SkillToProject> skills, Set<CRPreview> resources, ProjectUser mainManager, Set<ProjectUser> collaborators, Set<ChartTask> tasks, int vacancies, int maxMembers) {
+        super(id, name, description, labId, state, projectedStartDate,deadline, keywords, skills, resources, mainManager, collaborators, vacancies);
         this.tasks = tasks;
+        this.maxMembers = maxMembers;
     }
 
     // Getters and setters
@@ -72,5 +78,13 @@ public class DetailedProject extends PublicProject implements Serializable {
 
     public void setTasks(Set<ChartTask> tasks) {
         this.tasks = tasks;
+    }
+
+    public int getMaxMembers() {
+        return maxMembers;
+    }
+
+    public void setMaxMembers(int maxMembers) {
+        this.maxMembers = maxMembers;
     }
 }

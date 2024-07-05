@@ -337,6 +337,11 @@ public class ProjectBean implements Serializable {
             }
         }
 
+
+        if (newProjectDto.getMaxMembers() > 0) {
+            projectEntity.setMaxMembers(newProjectDto.getMaxMembers());
+        }
+
         projectEntity.setName(newProjectDto.getName());
         projectEntity.setDescription(newProjectDto.getDescription());
         projectEntity.setLab(labEntity);
@@ -497,9 +502,12 @@ public class ProjectBean implements Serializable {
             logger.error("Error finding tasks for project with id: {}", projectEntity.getId(), e);
         }
 
+        int vacancies = vacanciesInProject(projectEntity.getId(), projectEntity.getMaxMembers());
+
         detailedProject.setId(projectEntity.getId());
         detailedProject.setName(projectEntity.getName());
         detailedProject.setDescription(projectEntity.getDescription());
+        detailedProject.setMaxMembers(projectEntity.getMaxMembers());
         detailedProject.setLabId(projectEntity.getLab().getCity().getId());
         detailedProject.setState(ProjectStateEnum.getProjectStateValue(projectEntity.getState()));
         detailedProject.setProjectedStartDate(projectEntity.getProjectedStartDate());
@@ -510,6 +518,7 @@ public class ProjectBean implements Serializable {
         detailedProject.setMainManager(mainManager);
         detailedProject.setProjectUsers(projectUsers);
         detailedProject.setTasks(tasks);
+        detailedProject.setVacancies(vacancies);
 
         logger.info("Successfully converted ProjectEntity to DetailedProject");
 
@@ -1020,11 +1029,14 @@ public class ProjectBean implements Serializable {
 
         logger.info("Converting project entity to project preview");
 
+        int vacancies = vacanciesInProject(projectEntity.getId(), projectEntity.getMaxMembers());
+
         ProjectPreview projectPreview = new ProjectPreview();
         try {
             projectPreview.setId(projectEntity.getId());
             projectPreview.setName(projectEntity.getName());
             projectPreview.setDescription(projectEntity.getDescription());
+            projectPreview.setVacancies(vacancies);
 
             LabEntity lab = projectEntity.getLab();
             if (lab != null && lab.getCity() != null) {
@@ -1664,6 +1676,7 @@ public class ProjectBean implements Serializable {
         }
         Set<ProjectUser> projectUsers = userBean.projectUsersToListOfProjectUser(projectTeam);
 
+        int vacancies = vacanciesInProject(projectEntity.getId(), projectEntity.getMaxMembers());
 
         publicProject.setId(projectEntity.getId());
         publicProject.setName(projectEntity.getName());
@@ -1677,9 +1690,40 @@ public class ProjectBean implements Serializable {
         publicProject.setResources(componentResourceBean.componentProjectToCRPreview(projectEntity.getComponentResources()));
         publicProject.setMainManager(mainManager);
         publicProject.setProjectUsers(projectUsers);
+        publicProject.setVacancies(vacancies);
 
         logger.info("Successfully converted ProjectEntity to PublicProject");
 
         return publicProject;
+    }
+
+    public int vacanciesInProject(int projectId, int projectMaxUsers) {
+        logger.info("Checking if there are available places in the project");
+
+        int vacancies = 0;
+
+        if (!dataValidator.isIdValid(projectId)) {
+            logger.error("Invalid project id while checking available places in the project");
+            throw new IllegalArgumentException("Invalid project id");
+        }
+
+        int numberOfActiveUsers;
+
+        try {
+            numberOfActiveUsers = m2MProjectUserDao.getNumberOfActiveUsersInProject(projectId);
+        } catch (Exception e) {
+            logger.error("Error while getting number of active users in project: {}", e.getMessage());
+            return vacancies;
+        }
+
+        vacancies = projectMaxUsers - numberOfActiveUsers;
+
+        if (vacancies < 0) {
+            logger.info("There are no available places in the project");
+            return 0;
+        }
+
+        logger.info("There are available places in the project");
+        return vacancies;
     }
 }

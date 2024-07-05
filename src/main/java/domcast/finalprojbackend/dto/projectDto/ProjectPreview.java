@@ -19,6 +19,10 @@ public class ProjectPreview extends ProjectDto implements Serializable {
     @XmlElement
     private Set<ProjectUser> projectUsers;
 
+    @XmlElement
+    private int vacancies;
+
+
     /**
      * Empty constructor
      */
@@ -33,12 +37,14 @@ public class ProjectPreview extends ProjectDto implements Serializable {
      * @param labId the lab that the project belongs to
      * @param projectUsers the users that are part of the project's other executors
      * @param state the state of the project
+     * @param vacancies the number of vacancies in the project
      */
-    public ProjectPreview(int id, String name, String description, int labId, Set<ProjectUser> projectUsers, int state) {
+    public ProjectPreview(int id, String name, String description, int labId, Set<ProjectUser> projectUsers, int state, int vacancies) {
         super(name, description, labId);
         this.id = id;
         this.state = state;
         this.projectUsers = projectUsers;
+        this.vacancies = vacancies;
     }
 
     // Getters and setters
@@ -65,5 +71,13 @@ public class ProjectPreview extends ProjectDto implements Serializable {
 
     public void setProjectUsers(Set<ProjectUser> projectUsers) {
         this.projectUsers = projectUsers;
+    }
+
+    public int getVacancies() {
+        return vacancies;
+    }
+
+    public void setVacancies(int vacancies) {
+        this.vacancies = vacancies;
     }
 }
