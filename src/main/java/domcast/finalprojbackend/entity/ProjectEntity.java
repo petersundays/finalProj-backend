@@ -40,6 +40,8 @@ import java.util.Set;
 @NamedQuery(name = "Project.removeUserFromProject", query = "DELETE FROM M2MProjectUser pu WHERE pu.project.id = :projectId AND pu.user.id = :userId")
 @NamedQuery(name= "Project.getNumberOfProjects", query = "SELECT COUNT(p) FROM ProjectEntity p")
 @NamedQuery(name= "Project.getProjectsNames", query = "SELECT p.name FROM ProjectEntity p")
+@NamedQuery(name= "Project.isProjectCanceledOrFinished", query = "SELECT p.state FROM ProjectEntity p WHERE p.id = :projectId AND p.state = 600 OR p.state = 500")
+@NamedQuery(name= "Project.isProjectReady", query = "SELECT p.state FROM ProjectEntity p WHERE p.id = :projectId AND p.state = 500")
 
 public class ProjectEntity implements Serializable {
 
