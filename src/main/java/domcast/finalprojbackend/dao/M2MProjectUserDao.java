@@ -2,6 +2,7 @@ package domcast.finalprojbackend.dao;
 
 import domcast.finalprojbackend.entity.M2MComponentProject;
 import domcast.finalprojbackend.entity.M2MProjectUser;
+import domcast.finalprojbackend.entity.ProjectEntity;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.NonUniqueResultException;
@@ -167,6 +168,31 @@ public class M2MProjectUserDao extends AbstractDao<M2MProjectUser> {
         } catch (Exception e) {
             logger.error("An unexpected error occurred while getting number of active users in project with id: {}", projectId, e);
             return 0;
+        }
+    }
+
+    /**
+     * Method to get the projects that exceed the maximum number of users.
+     *
+     * @param number the maximum number of users
+     * @return the projects that exceed the maximum number of users
+     */
+    public Set<ProjectEntity> getProjectsExceedingMaxUsers(long number) {
+        try {
+            List<ProjectEntity> resultList = em.createNamedQuery("M2MProjectUser.getProjectsExceedingMaxUsers", ProjectEntity.class)
+                    .setParameter("number", number)
+                    .getResultList();
+            if (resultList == null) {
+                logger.error("Query result is null for projects exceeding max users");
+                return new HashSet<>();
+            }
+            return new HashSet<>(resultList);
+        } catch (NoResultException e) {
+            logger.error("No projects exceeding max users found", e);
+            return new HashSet<>();
+        } catch (Exception e) {
+            logger.error("An unexpected error occurred while getting projects exceeding max users", e);
+            return new HashSet<>();
         }
     }
 }

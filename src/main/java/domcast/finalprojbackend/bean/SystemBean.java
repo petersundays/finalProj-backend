@@ -1,8 +1,12 @@
 package domcast.finalprojbackend.bean;
 
+import domcast.finalprojbackend.bean.project.ProjectBean;
 import domcast.finalprojbackend.bean.user.TokenBean;
 import domcast.finalprojbackend.bean.user.UserBean;
+import domcast.finalprojbackend.dao.M2MProjectUserDao;
+import domcast.finalprojbackend.dao.ProjectDao;
 import domcast.finalprojbackend.dao.SystemDao;
+import domcast.finalprojbackend.entity.ProjectEntity;
 import domcast.finalprojbackend.entity.SessionTokenEntity;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Schedule;
@@ -11,7 +15,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * SystemBean is a stateless EJB that provides an interface for interacting with system settings.
@@ -26,10 +32,21 @@ public class SystemBean implements Serializable {
     // Inject the SystemDao EJB
     @EJB
     private SystemDao systemDao;
+
     @EJB
     private TokenBean tokenBean;
+
     @EJB
     private UserBean userBean;
+
+    @EJB
+    private ProjectDao projectDao;
+
+    @EJB
+    private M2MProjectUserDao m2MProjectUserDao;
+
+    @EJB
+    private ProjectBean projectBean;
 
     /**
      * Default constructor for SystemBean.
@@ -86,6 +103,27 @@ public class SystemBean implements Serializable {
      * @return boolean indicating if the operation was successful
      */
     public boolean setProjectMaxMembers(int maxMembers) {
+        logger.info("Setting project max users to {}", maxMembers);
+
+        if (maxMembers < 1) {
+            logger.error("Error setting project max users: max members must be greater than 0");
+            return false;
+        }
+
+        Set<ProjectEntity> projects = new HashSet<>();
+        try {
+            projects = m2MProjectUserDao.getProjectsExceedingMaxUsers( (long) maxMembers);
+        } catch (Exception e) {
+            logger.error("Error getting projects exceeding max users", e);
+            return false;
+        }
+
+        if (!projects.isEmpty()) {
+            if (!projectBean.updateListOfProjectsMaxUsers(projects, maxMembers)) {
+                return false;
+            }
+        }
+
         try {
             logger.info("Setting project max users to {}", maxMembers);
             systemDao.setProjectMaxMembers(maxMembers);

@@ -967,4 +967,53 @@ public class ProjectService {
         return response;
     }
 
+    @PUT
+    @Path("/max-members")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response changeMaxMembers(@HeaderParam("token") String token,
+                                  @HeaderParam("id") int userId,
+                                  @QueryParam("projectId") int projectId,
+                                  @QueryParam("maxMembers") int maxMembers,
+                                  @Context HttpServletRequest request) {
+
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with session token {} and id {} is trying to change the max members of the project with id {} from IP address {}", token, userId, projectId, ipAddress);
+
+        // Check if the user's and project's ids are valid
+        if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(projectId)) {
+            logger.info("User with session token {} tried to change the max members of the project, but the ids are invalid", token);
+            return Response.status(400).entity("Invalid id").build();
+        }
+
+        if (!authenticationAndAuthorization.ableToEditProject(projectId)) {
+            logger.info("User with session token {} tried to change the max members of the project but the project is not in a state that can be edited", token);
+            return Response.status(401).entity("Unauthorized: Project is not in a state that can be edited").build();
+        }
+
+        if (!authenticationAndAuthorization.isUserManagerInProject(userId, projectId)) {
+            logger.info("User with session token {} tried to change the max members of the project but is not authorized", token);
+            return Response.status(401).entity("Unauthorized").build();
+        }
+
+        Response response;
+        boolean success;
+
+        try {
+            logger.info("User with session token {} and id {} is changing the max members of the project with id {}", token, userId, projectId);
+            success = projectBean.updateMaxMembers(projectId, maxMembers);
+            if (success) {
+                response = Response.status(200).entity("User with id " + userId + " successfully changed the max members of the project with id " + projectId).build();
+                logger.info("User with session token {} and id {} successfully changed the max members of the project with id {}", token, userId, projectId);
+            } else {
+                response = Response.status(400).entity("User with id " + userId + " could not change the max members of the project with id " + projectId).build();
+                logger.info("User with session token {} and id {} could not change the max members of the project with id {}", token, userId, projectId);
+            }
+        } catch (Exception e) {
+            logger.error("Error while changing the max members of the project with id {}: {}", projectId, e.getMessage());
+            response = Response.status(500).entity("Error while changing the max members of the project").build();
+        }
+        return response;
+    }
+
 }
