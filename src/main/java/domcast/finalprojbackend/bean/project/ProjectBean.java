@@ -277,9 +277,24 @@ public class ProjectBean implements Serializable {
             throw e;
         }
 
+        int maxMembers = 1;
+
+        try {
+            maxMembers = systemBean.getProjectMaxUsers();
+        } catch (Exception e) {
+            logger.error("Error getting project max members: {}", e.getMessage());
+        }
+
+        if (newProjectDto.getMaxMembers() > 0) {
+            if (newProjectDto.getMaxMembers() <= maxMembers) {
+                projectEntity.setMaxMembers(newProjectDto.getMaxMembers());
+            } else {
+                throw new IllegalArgumentException("Max members must be less than or equal to " + maxMembers);
+            }
+        }
+
         // Set project users
         Set<M2MProjectUser> projectUsers = new HashSet<>();
-
 
         try {
 
@@ -335,11 +350,6 @@ public class ProjectBean implements Serializable {
                 // Rethrow the exception to the caller method
                 throw e;
             }
-        }
-
-
-        if (newProjectDto.getMaxMembers() > 0) {
-            projectEntity.setMaxMembers(newProjectDto.getMaxMembers());
         }
 
         projectEntity.setName(newProjectDto.getName());
@@ -1725,5 +1735,100 @@ public class ProjectBean implements Serializable {
 
         logger.info("There are available places in the project");
         return vacancies;
+    }
+
+    /**
+     * Updates the maximum number of users in a list of projects.
+     * @param projects The list of projects to update.
+     * @param maxMembers The new maximum number of users.
+     * @return A boolean value indicating if the projects were updated.
+     */
+    public boolean updateListOfProjectsMaxUsers(Set<ProjectEntity> projects, int maxMembers) {
+
+        if (projects == null) {
+            logger.error("Projects set is null while setting project max users");
+            throw new IllegalArgumentException("Projects set is null while setting project max users");
+        }
+
+        if (projects.isEmpty()) {
+            logger.error("Projects set is empty while setting project max users");
+            return true;
+        }
+
+        logger.info("Setting project max users to {}", maxMembers);
+
+        for (ProjectEntity project : projects) {
+
+            logger.info("Setting project {} max users to {}", project.getId(), maxMembers);
+            try {
+                project.setMaxMembers(maxMembers);
+                projectDao.merge(project);
+            } catch (Exception e) {
+                logger.error("Error setting project max users", e);
+                return false;
+            }
+        }
+
+        logger.info("Successfully set projects max users to {}", maxMembers);
+        return true;
+    }
+
+    public boolean updateMaxMembers(int projectId, int maxMembers) {
+        if (!dataValidator.isIdValid(projectId)) {
+            logger.error("Invalid project ID while updating project max members");
+            throw new IllegalArgumentException("Invalid project ID while updating project max members");
+        }
+
+        if (maxMembers < 1) {
+            logger.error("Invalid max members while updating project max members");
+            throw new IllegalArgumentException("Invalid max members while updating project max members");
+        }
+
+        logger.info("Updating project with ID {} max members to {}", projectId, maxMembers);
+
+        int appMaxMebmers;
+
+        try {
+            appMaxMebmers = systemBean.getProjectMaxUsers();
+        } catch (Exception e) {
+            logger.error("Error getting project max users while updating project max members: {}", e.getMessage());
+            throw new RuntimeException(e);
+        }
+
+        if (appMaxMebmers < 1) {
+            logger.error("Invalid application max members while updating project max members");
+            throw new IllegalArgumentException("Invalid application max members while updating project max members");
+        }
+
+        if (maxMembers > appMaxMebmers) {
+            logger.error("Max members is greater than application max members while updating project max members");
+            throw new IllegalArgumentException("Max members is greater than application max members while updating project max members");
+        }
+
+        ProjectEntity projectEntity;
+
+        try {
+            projectEntity = projectDao.findProjectById(projectId);
+        } catch (PersistenceException e) {
+            logger.error("Error finding project with ID {} while updating project max members", projectId, e);
+            throw new RuntimeException(e);
+        }
+
+        if (projectEntity == null) {
+            logger.error("Project not found with ID {} while updating project max members", projectId);
+            throw new IllegalArgumentException("Project not found with ID " + projectId + " while updating project max members");
+        }
+
+        projectEntity.setMaxMembers(maxMembers);
+
+        try {
+            projectDao.merge(projectEntity);
+        } catch (PersistenceException e) {
+            logger.error("Error merging project while updating project max members: {}", e.getMessage());
+            throw new RuntimeException(e);
+        }
+
+        logger.info("Successfully updated project with ID {} max members to {}", projectId, maxMembers);
+        return true;
     }
 }

@@ -45,6 +45,8 @@ import java.io.Serializable;
         query = "DELETE FROM M2MProjectUser pu WHERE pu.user.id = :userId AND pu.project.id = :projectId")
 @NamedQuery(name = "M2MProjectUser.getNumberOfActiveUsersInProject",
         query = "SELECT COUNT(pu) FROM M2MProjectUser pu WHERE pu.project.id = :projectId AND pu.active = true")
+@NamedQuery(name = "M2MProjectUser.getProjectsExceedingMaxUsers",
+        query = "SELECT pu.project FROM M2MProjectUser pu WHERE pu.active = true GROUP BY pu.project HAVING COUNT(pu) > :number")
 
 public class M2MProjectUser implements Serializable {
     private static final long serialVersionUID = 1L;
