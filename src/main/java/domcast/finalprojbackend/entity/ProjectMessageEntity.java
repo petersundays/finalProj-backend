@@ -3,6 +3,7 @@ package domcast.finalprojbackend.entity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedQuery;
 
 import java.io.Serializable;
 
@@ -20,6 +21,11 @@ import java.io.Serializable;
  *  @author Pedro Domingos
  */
 @Entity
+@NamedQuery(name="Message.countUnreadProjectMessagesForUser",
+        query="SELECT COUNT(m) FROM ProjectMessageEntity m WHERE m.project.id = :projectId AND m.read = false")
+@NamedQuery(name="Message.getAllProjectMessagesWhereProjectIs",
+        query="SELECT m FROM ProjectMessageEntity m WHERE m.project.id = :projectId")
+
 public class ProjectMessageEntity extends MessageEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
