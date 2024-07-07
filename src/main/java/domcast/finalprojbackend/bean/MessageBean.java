@@ -13,6 +13,7 @@ import domcast.finalprojbackend.entity.PersonalMessageEntity;
 import domcast.finalprojbackend.entity.ProjectEntity;
 import domcast.finalprojbackend.entity.ProjectMessageEntity;
 import domcast.finalprojbackend.entity.UserEntity;
+import domcast.finalprojbackend.websocket.NotificationWS;
 import domcast.finalprojbackend.websocket.PersonalMessageWS;
 import domcast.finalprojbackend.websocket.ProjectMessageWS;
 import jakarta.ejb.EJB;
@@ -25,6 +26,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -55,6 +57,8 @@ public class MessageBean implements Serializable {
     @EJB
     private DataValidator dataValidator;
 
+    @EJB
+    private NotificationWS notificationWS;
 
     private static final Logger logger = LogManager.getLogger(TaskBean.class);
 
@@ -109,6 +113,14 @@ public class MessageBean implements Serializable {
 
     }
 
+    /**
+     * Persists a group message
+     * @param content the content of the message
+     * @param sender the sender of the message
+     * @param receiver the receiver of the message
+     * @return the persisted message
+     * @throws PersistenceException if an error occurs during the persist operation
+     */
     public ProjectMessage persistGroupMessage(String content, UserEntity sender, ProjectEntity receiver) {
 
         if (sender == null) {
@@ -153,6 +165,11 @@ public class MessageBean implements Serializable {
         return projectMessageEntityToDto(persistedMessage);
     }
 
+    /**
+     * Converts a personal message entity to a DTO
+     * @param messageEntity the entity to be converted
+     * @return the DTO
+     */
     public PersonalMessage personalMessageEntityToDto (PersonalMessageEntity messageEntity) {
 
         logger.info("Converting personal message entity to DTO");
@@ -174,6 +191,11 @@ public class MessageBean implements Serializable {
         );
     }
 
+    /**
+     * Converts a project message entity to a DTO
+     * @param messageEntity the entity to be converted
+     * @return the DTO
+     */
     public ProjectMessage projectMessageEntityToDto (ProjectMessageEntity messageEntity) {
 
         logger.info("Converting project message entity to DTO");
@@ -193,7 +215,12 @@ public class MessageBean implements Serializable {
                 messageEntity.getTimestamp());
     }
 
-
+    /**
+     * Sends a message to a user
+     * @param userId the id of the user to send the message to
+     * @param jsonMessage the message to be sent
+     * @param sessions the active sessions
+     */
     public void sendToUser(int userId, String jsonMessage, HashMap<String, Session> sessions) {
 
         if (!dataValidator.isIdValid(userId)) {
@@ -230,6 +257,12 @@ public class MessageBean implements Serializable {
         }
     }
 
+    /**
+     * Sends a message to a project
+     * @param projectId the id of the project to send the message to
+     * @param jsonMessage the message to be sent
+     * @param sessions the active sessions
+     */
     public void sendToProject(int projectId, String jsonMessage, HashMap<String, Session> sessions) {
 
         if (!dataValidator.isIdValid(projectId)) {
@@ -253,5 +286,234 @@ public class MessageBean implements Serializable {
                 projectMessageWS.send(token, jsonMessage);
             }
         });
+    }
+
+    /**
+     * Sends a notification to the user
+     * @param userId the id of the user to send the notification to
+     * @param sessions the active sessions
+     */
+    public void sendNotification(int userId, HashMap<String, Session> sessions) {
+
+        logger.info("Entering sendNotification method");
+
+        if (!dataValidator.isIdValid(userId)) {
+            logger.error("Invalid user id while sending notification");
+            throw new IllegalArgumentException("Invalid user id");
+        }
+
+        if (sessions == null || sessions.isEmpty()) {
+            logger.error("No active sessions while sending notification");
+            throw new IllegalArgumentException("No active sessions");
+        }
+
+        List<String> activeSessionTokens;
+        try {
+            activeSessionTokens = tokenDao.findActiveSessionTokensByUserId(userId);
+            for (String token : activeSessionTokens) {
+                Session session = sessions.get(token);
+                if (session != null) {
+                    notificationWS.send(token, NotificationWS.NOTIFICATION);
+                }
+            }
+            if (activeSessionTokens.isEmpty()) {
+                logger.info("Notification receiver is not online");
+            }
+        } catch (NoResultException e) {
+            logger.info("No session tokens found for user with id: {} while sending notification.", userId);
+        } catch (Exception e) {
+            logger.error("Error finding session tokens by user with id: {} while sending notification.", userId, e);
+        }
+    }
+
+    /**
+     * Counts the number of unread personal messages for a user
+     * @param userId the id of the user
+     * @param token the token of the user
+     * throws IllegalArgumentException if the user id or token is invalid
+     *              or if an error occurs during the count operation
+     */
+    public boolean countUnreadPersonalMessagesForUser(int userId, String token) {
+
+        if (!dataValidator.isIdValid(userId)) {
+            logger.error("Invalid user id while counting unread personal messages");
+            throw new IllegalArgumentException("Invalid user id");
+        }
+
+        if (token == null || token.isEmpty()) {
+            logger.error("Invalid token while counting unread personal messages");
+            throw new IllegalArgumentException("Invalid token");
+        }
+
+        logger.info("Counting unread personal messages for user with id: {}", userId);
+
+        boolean hasUnreadMessages = false;
+        int unreadMessages = 0;
+
+        try {
+            unreadMessages = personalMessageDao.countUnreadPersonalMessagesForUser(userId);
+        } catch (Exception e) {
+            logger.error("Error counting unread personal messages for user with id: {}", userId, e);
+        }
+
+        if (unreadMessages < 0) {
+            logger.error("Error counting unread personal messages for user with id: {}", userId);
+            throw new IllegalArgumentException("Error counting unread personal messages");
+        }
+
+        if (unreadMessages > 0) {
+            notificationWS.send(token, NotificationWS.NOTIFICATION);
+            hasUnreadMessages = true;
+        }
+
+        logger.info("User with id: {} has {} unread personal messages", userId, unreadMessages);
+        return hasUnreadMessages;
+    }
+
+    /**
+     * Counts the number of unread project messages for a user, for a specific project
+     * @param userId the id of the user
+     * @param token the token of the user
+     * throws IllegalArgumentException if the user id or token is invalid
+     *              or if an error occurs during the count operation
+     */
+    public boolean countUnreadProjectMessagesForUser(int userId, int projectId, String token) {
+
+        if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(projectId)) {
+            logger.error("Invalid user id or project id while counting unread project messages");
+            throw new IllegalArgumentException("Invalid id");
+        }
+
+        if (token == null || token.isEmpty()) {
+            logger.error("Invalid token while counting unread messages");
+            throw new IllegalArgumentException("Invalid token");
+        }
+
+        logger.info("Counting unread project messages for user with id {} for project with id {}", userId, projectId);
+
+        boolean hasUnreadMessages = false;
+        int unreadMessages = 0;
+
+        try {
+            unreadMessages = projectMessageDao.countUnreadProjectMessagesForUser(projectId);
+        } catch (Exception e) {
+            logger.error("Error counting unread project messages for user with id: {} for project with id: {}", userId, projectId, e);
+        }
+
+        if (unreadMessages < 0) {
+            logger.error("Error counting unread project messages for user with id: {} for project with id: {}", userId, projectId);
+            throw new IllegalArgumentException("Error counting project unread messages");
+        }
+
+        if (unreadMessages > 0) {
+            notificationWS.send(token, NotificationWS.NOTIFICATION);
+            hasUnreadMessages = true;
+        }
+
+        logger.info("User with id: {} has {} unread messages for project with id: {}", userId, unreadMessages, projectId);
+        return hasUnreadMessages;
+
+    }
+
+    /**
+     * Gets all personal messages where the receiver is the user with the given id
+     * @param userId the id of the user
+     * @return a list of personal messages
+     */
+    public List<PersonalMessage> getAllPersonalMessagesWhereReceiverIs(int userId) {
+
+        logger.info("Entering getAllPersonalMessagesWhereReceiverIs method");
+
+        if (!dataValidator.isIdValid(userId)) {
+            logger.error("Invalid user id while getting personal messages");
+            throw new IllegalArgumentException("Invalid user id");
+        }
+
+        logger.info("Getting all personal messages where the receiver is the user with id: {}", userId);
+
+        List<PersonalMessageEntity> personalMessages = new ArrayList<>();
+
+        try {
+            personalMessages = personalMessageDao.getAllPersonalMessagesWhereReceiverIs(userId);
+        } catch (Exception e) {
+            logger.error("Error getting personal messages for user with id: {}", userId, e);
+        }
+
+        if (personalMessages == null) {
+            logger.info("Error getting personal messages for user with id: {}, returning empty list", userId);
+            personalMessages = new ArrayList<>();
+        }
+
+        return personalMessages.stream()
+                .map(this::personalMessageEntityToDto)
+                .toList();
+    }
+
+    /**
+     * Gets all project messages where the project is the one with the given id
+     * @param projectId the id of the project
+     * @return a list with all project messages where the project is the one with the given id
+     */
+    public List<ProjectMessage> getAllProjectMessagesWhereProjectIs(int projectId) {
+
+        logger.info("Entering getAllProjectMessagesWhereProjectIs method");
+
+        if (!dataValidator.isIdValid(projectId)) {
+            logger.error("Invalid project id while getting project messages");
+            throw new IllegalArgumentException("Invalid project id");
+        }
+
+        logger.info("Getting all project messages where the project is the one with id: {}", projectId);
+
+        List<ProjectMessageEntity> projectMessages = new ArrayList<>();
+
+        try {
+            projectMessages = projectMessageDao.getAllProjectMessagesWhereProjectIs(projectId);
+        } catch (Exception e) {
+            logger.error("Error getting project messages for project with id: {}", projectId, e);
+        }
+
+        if (projectMessages == null) {
+            logger.info("Error getting project messages for project with id: {}, returning empty list", projectId);
+            projectMessages = new ArrayList<>();
+        }
+
+        return projectMessages.stream()
+                .map(this::projectMessageEntityToDto)
+                .toList();
+    }
+
+    /**
+     * Gets all personal messages sent by the user with the given id
+     * @param userId the id of the user
+     * @return a list of personal messages
+     */
+    public List<PersonalMessage> getAllPersonalMessagesSentByUser(int userId) {
+
+        logger.info("Entering getAllPersonalMessagesSentByUser method");
+
+        if (!dataValidator.isIdValid(userId)) {
+            logger.error("Invalid user id while getting personal sent messages");
+            throw new IllegalArgumentException("Invalid user id");
+        }
+
+        logger.info("Getting all personal messages sent by the user with id: {}", userId);
+
+        List<PersonalMessageEntity> personalMessages = new ArrayList<>();
+
+        try {
+            personalMessages = personalMessageDao.getAllPersonalMessagesSentByUser(userId);
+        } catch (Exception e) {
+            logger.error("Error getting personal sent messages for user with id: {}", userId, e);
+        }
+
+        if (personalMessages == null) {
+            logger.info("Error getting personal sent messages for user with id: {}, returning empty list", userId);
+            personalMessages = new ArrayList<>();
+        }
+
+        return personalMessages.stream()
+                .map(this::personalMessageEntityToDto)
+                .toList();
     }
 }

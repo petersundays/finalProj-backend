@@ -6,6 +6,9 @@ import jakarta.persistence.PersistenceException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Data access object for project messages
  */
@@ -39,6 +42,43 @@ public class ProjectMessageDao extends AbstractDao<ProjectMessageEntity> {
         } catch (Exception e) {
             logger.error("Unexpected error: {}", e.getMessage());
             throw new PersistenceException("Unexpected error during persist operation", e);
+        }
+    }
+
+    /**
+     * Counts the number of unread project messages for a user
+     * @param projectId the id of the project
+     * @return the number of unread project messages
+     */
+    public int countUnreadProjectMessagesForUser(int projectId) {
+        logger.info("Counting unread project messages for project with id {}", projectId);
+
+        try {
+            return em.createNamedQuery("Message.countUnreadProjectMessagesForUser", Long.class)
+                    .setParameter("projectId", projectId)
+                    .getSingleResult()
+                    .intValue();
+        } catch (Exception e) {
+            logger.error("Error while counting unread project messages: {}", e.getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Gets all project messages where the project is the one with the given id
+     * @param projectId the id of the project
+     * @return a list with all project messages where the project is the one with the given id
+     */
+    public List<ProjectMessageEntity> getAllProjectMessagesWhereProjectIs(int projectId) {
+        logger.info("Getting all project messages where the project is the one with id {}", projectId);
+
+        try {
+            return em.createNamedQuery("Message.getAllProjectMessagesWhereProjectIs", ProjectMessageEntity.class)
+                    .setParameter("projectId", projectId)
+                    .getResultList();
+        } catch (Exception e) {
+            logger.error("Error while getting all project messages where the project is the one with id {}: {}", projectId, e.getMessage());
+            return new ArrayList<>();
         }
     }
 }

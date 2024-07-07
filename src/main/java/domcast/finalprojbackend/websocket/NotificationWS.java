@@ -6,6 +6,7 @@ import domcast.finalprojbackend.bean.user.TokenBean;
 import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.dao.ProjectDao;
 import domcast.finalprojbackend.dao.SessionTokenDao;
+import domcast.finalprojbackend.entity.UserEntity;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Singleton;
 import jakarta.websocket.*;
@@ -42,6 +43,7 @@ public class NotificationWS {
     private static final Logger logger = LogManager.getLogger(NotificationWS.class);
 
     private final HashMap<String, Session> sessions = new HashMap<String, Session>();
+    public static final String NOTIFICATION = "notification";
 
     /**
      * Sends notifications to the user
@@ -107,11 +109,26 @@ public class NotificationWS {
     }
 
     @OnMessage
-    public void toDoOnMessage(Session session, String msg){
-
-        logger.info("A new message is received for notifications: {}", msg);
+    public void toDoOnMessage(Session session, String msg) {
 
         String token = session.getPathParameters().get("token");
 
+        UserEntity userToNotify;
+
+        try {
+            userToNotify = tokenBean.findUserByToken(token);
+        } catch (Exception e) {
+            logger.error("Error finding user by token");
+            return;
+        }
+
+        if (userToNotify == null) {
+            logger.error("User not found by token");
+            return;
+        }
+
+        int userId = userToNotify.getId();
+        
+        messageBean.sendNotification(userId, sessions);
     }
 }
