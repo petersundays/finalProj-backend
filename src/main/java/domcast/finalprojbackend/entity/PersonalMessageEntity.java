@@ -20,6 +20,13 @@ import java.io.Serializable;
  */
 
 @Entity
+@NamedQuery(name="Message.countUnreadPersonalMessagesForUser",
+        query="SELECT COUNT(m) FROM PersonalMessageEntity m WHERE m.receiver.id = :userId AND m.read = false")
+@NamedQuery(name="Message.getAllPersonalMessagesWhereReceiverIs",
+        query="SELECT m FROM PersonalMessageEntity m WHERE m.receiver.id = :userId")
+@NamedQuery(name="Message.getAllPersonalMessagesSentByUser",
+        query="SELECT m FROM PersonalMessageEntity m WHERE m.sender.id = :userId")
+
 public class PersonalMessageEntity extends MessageEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 

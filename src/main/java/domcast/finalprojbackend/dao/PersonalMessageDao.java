@@ -6,6 +6,9 @@ import jakarta.persistence.PersistenceException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Data access object for personal messages
  */
@@ -42,4 +45,58 @@ public class PersonalMessageDao extends AbstractDao<PersonalMessageEntity> {
         }
     }
 
+    /**
+     * Counts the number of unread personal messages for a user
+     * @param userId the id of the user
+     * @return the number of unread personal messages
+     */
+    public int countUnreadPersonalMessagesForUser(int userId) {
+        logger.info("Counting unread personal messages for user with id {}", userId);
+
+        try {
+            return em.createNamedQuery("Message.countUnreadPersonalMessagesForUser", Long.class)
+                    .setParameter("userId", userId)
+                    .getSingleResult()
+                    .intValue();
+        } catch (Exception e) {
+            logger.error("Error while counting unread personal messages: {}", e.getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Gets all personal messages where the receiver is the user with the given id
+     * @param userId the id of the user
+     * @return a list of personal messages
+     */
+    public List<PersonalMessageEntity> getAllPersonalMessagesWhereReceiverIs(int userId) {
+        logger.info("Getting all personal messages where the receiver is the user with id {}", userId);
+
+        try {
+            return em.createNamedQuery("Message.getAllPersonalMessagesWhereReceiverIs", PersonalMessageEntity.class)
+                    .setParameter("userId", userId)
+                    .getResultList();
+        } catch (Exception e) {
+            logger.error("Error while getting personal messages: {}", e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Gets all personal messages sent by the user with the given id
+     * @param userId the id of the user
+     * @return a list of personal messages
+     */
+    public List<PersonalMessageEntity> getAllPersonalMessagesSentByUser(int userId) {
+        logger.info("Getting all personal messages sent by the user with id {}", userId);
+
+        try {
+            return em.createNamedQuery("Message.getAllPersonalMessagesSentByUser", PersonalMessageEntity.class)
+                    .setParameter("userId", userId)
+                    .getResultList();
+        } catch (Exception e) {
+            logger.error("Error while getting personal sent messages: {}", e.getMessage());
+            return new ArrayList<>();
+        }
+    }
 }
