@@ -212,7 +212,7 @@ public class M2MProjectUserDao extends AbstractDao<M2MProjectUser> {
                 logger.error("Query result is null for users in project with id: {}", projectId);
                 return new ArrayList<>();
             }
-            return new ArrayList<>();
+            return resultList;
         } catch (Exception e) {
             logger.error("An unexpected error occurred while getting users in project with id: {}", projectId, e);
             return new ArrayList<>();

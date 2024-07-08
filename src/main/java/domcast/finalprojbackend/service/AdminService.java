@@ -146,12 +146,6 @@ public class AdminService {
             return response;
         }
 
-        if (!authenticationAndAuthorization.isUserAdminById(id)) {
-            response = Response.status(401).entity("Unauthorized").build();
-            logger.info("User is not an admin and tried to get project max members");
-            return response;
-        }
-
         int maxMembers;
 
         try {

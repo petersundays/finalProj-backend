@@ -1,10 +1,11 @@
 package domcast.finalprojbackend.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedQuery;
 
 import java.io.Serializable;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Entity class for the project_message table in the database.
@@ -33,10 +34,6 @@ public class ProjectMessageEntity extends MessageEntity implements Serializable 
     @JoinColumn(name = "project_id", referencedColumnName = "id")
     private ProjectEntity project;
 
-    @OneToMany
-    @JoinColumn(name = "seen_by", referencedColumnName = "id")
-    private Set<UserEntity> seenBy = new HashSet<>();
-
     /**
      * Default constructor
      */
@@ -62,15 +59,4 @@ public class ProjectMessageEntity extends MessageEntity implements Serializable 
         this.project = project;
     }
 
-    public Set<UserEntity> getSeenBy() {
-        return seenBy;
-    }
-
-    public void setSeenBy(Set<UserEntity> seenBy) {
-        this.seenBy = seenBy;
-    }
-
-    public void addSeenBy(UserEntity user) {
-        this.seenBy.add(user);
-    }
 }

@@ -219,7 +219,6 @@ public class MessageBean implements Serializable {
         projectMessage.setSender(sender);
         projectMessage.setProjectId(messageEntity.getProject().getId());
         projectMessage.setTimestamp(messageEntity.getTimestamp());
-        projectMessage.setSeenBy(messageEntity.getSeenBy());
 
         return projectMessage;
     }
@@ -550,89 +549,5 @@ public class MessageBean implements Serializable {
             logger.error("Error marking personal message with id: {} as read", messageId, e);
             throw new IllegalArgumentException("Error marking personal message as read");
         }
-    }
-
-    public boolean markProjectMessageAsRead (int userId, int projectId) {
-
-        logger.info("Entering markProjectMessageAsRead method");
-
-        if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(projectId)) {
-            logger.error("Invalid user id or project id while marking project message as read");
-            throw new IllegalArgumentException("Invalid id");
-        }
-
-        logger.info("Marking project messages as read for user with id: {} for project with id: {}", userId, projectId);
-
-        List<Integer> activeUsersInProject;
-
-        try {
-            activeUsersInProject = m2MProjectUserDao.getUsersInProject(projectId);
-        } catch (Exception e) {
-            logger.error("Error getting active users in project with id: {}", projectId, e);
-            activeUsersInProject = new ArrayList<>();
-        }
-
-        if (activeUsersInProject.isEmpty()) {
-            logger.error("No active users in project with id: {}", projectId);
-            return false;
-        }
-
-        Set<UserEntity> activeUsersIds;
-
-        try {
-            activeUsersIds = userDao.findSetOfUsersByListOfIds(activeUsersInProject);
-        } catch (Exception e) {
-            logger.error("Error getting active users in project with id: {}", projectId, e);
-            activeUsersIds = new HashSet<>();
-        }
-
-        if (activeUsersIds.isEmpty()) {
-            logger.error("No active users in project with id: {}", projectId);
-            return false;
-        }
-
-        UserEntity user;
-
-        try {
-            user = userDao.findUserById(userId);
-        } catch (Exception e) {
-            logger.error("Error getting user with id: {}", userId, e);
-            return false;
-        }
-
-        if (user == null) {
-            logger.error("User with id: {} not found", userId);
-            return false;
-        }
-
-        List<ProjectMessageEntity> projectMessages;
-
-        try {
-            projectMessages = projectMessageDao.getAllProjectMessagesWhereProjectIs(projectId);
-        } catch (Exception e) {
-            logger.error("Error getting project messages for project with id: {}", projectId, e);
-            throw new IllegalArgumentException("Error getting project messages");
-        }
-
-        for (ProjectMessageEntity message : projectMessages) {
-            if (message.getSeenBy().contains(user)) {
-                continue;
-            }
-            message.addSeenBy(user);
-
-            if (message.getSeenBy().containsAll(activeUsersIds)) {
-                logger.info("All users in project with id: {} have seen the message with id: {}", projectId, message.getId());
-                message.setRead(true);
-            }
-
-            try {
-                projectMessageDao.merge(message);
-            } catch (Exception e) {
-                logger.error("Error marking project message with id: {} as read", message.getId(), e);
-                throw new IllegalArgumentException("Error marking project message as read");
-            }
-        }
-
-        return true;
     }
 }
