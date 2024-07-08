@@ -62,7 +62,7 @@ public class ComponentResourceBean implements Serializable {
      * @param detailedCR the detailed component resource to be created.
      * @return the preview component resource if created successfully, null otherwise.
      */
-    public CRPreview createComponentResource(DetailedCR detailedCR, Integer projectId, Integer quantity) throws PersistenceException {
+    public CRPreview createComponentResource(DetailedCR detailedCR, Integer projectId) throws PersistenceException {
         logger.info("Creating component resource");
 
         if (detailedCR == null) {
@@ -73,7 +73,7 @@ public class ComponentResourceBean implements Serializable {
         logger.info("Validating data");
 
         try {
-            dataValidator.isCRMandatoryDataValid(detailedCR, projectId, quantity);
+            dataValidator.isCRMandatoryDataValid(detailedCR, projectId);
         } catch (IllegalArgumentException e) {
             logger.error("Data validation failed: ", e);
             return null;
@@ -81,7 +81,7 @@ public class ComponentResourceBean implements Serializable {
 
         logger.info("Data is valid");
 
-        ComponentResourceEntity componentResourceEntity = registerData(detailedCR, projectId, quantity);
+        ComponentResourceEntity componentResourceEntity = registerData(detailedCR, projectId);
 
         if (componentResourceEntity == null) {
             logger.error("Error registering component resource data");
@@ -113,7 +113,18 @@ public class ComponentResourceBean implements Serializable {
      * @return the preview component resource if created successfully, null otherwise.
      */
     public CRPreview createComponentResource(DetailedCR detailedCR) throws PersistenceException {
-        return createComponentResource(detailedCR, null, null);
+
+        if (detailedCR == null) {
+            logger.error("Component resource is null while creating");
+            return null;
+        }
+
+        if (detailedCR.getQuantity() <= 0) {
+            logger.info("Quantity is invalid while creating, setting it to 1");
+            detailedCR.setQuantity(1);
+        }
+
+        return createComponentResource(detailedCR, null);
     }
 
 /**
@@ -122,7 +133,7 @@ public class ComponentResourceBean implements Serializable {
      * @param detailedCR the detailed component resource to be registered
      * @return the ComponentResourceEntity object if registered, null otherwise
      */
-public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer projectId, Integer quantity) throws PersistenceException {
+public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer projectId) throws PersistenceException {
     logger.info("Registering component resource data");
 
     if (detailedCR == null) {
@@ -150,7 +161,14 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
     }
 
     logger.info("Persisting entity");
-    componentResourceDao.persist(componentResourceEntity);
+
+    try {
+        componentResourceDao.persist(componentResourceEntity);
+        componentResourceDao.flush();
+    } catch (PersistenceException e) {
+        logger.error("Error persisting entity: {}", e.getMessage());
+        return null;
+    }
 
     logger.info("Entity persisted");
 
@@ -158,8 +176,8 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
 
     logger.info("Component resource entity found");
 
-    if (projectId != null && quantity != null) {
-        addCRToProject(projectId, componentResourceFromDb, quantity);
+    if (projectId != null && detailedCR.getQuantity() > 0) {
+        addCRToProject(projectId, componentResourceFromDb, detailedCR.getQuantity());
         logger.info("Relation between component resource and project created");
     }
 
@@ -185,7 +203,7 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
         
         M2MComponentProject previousRelation;
         try {
-            previousRelation = m2MComponentProjectDao.findM2MComponentProjectByComponentIdAndProjectId(projectId, componentResource.getId());
+            previousRelation = m2MComponentProjectDao.findM2MComponentProjectByComponentIdAndProjectId(componentResource.getId(), projectId);
         } catch (PersistenceException e) {
             logger.error("Error finding relation between component resource and project while creating relation: {}", e.getMessage());
             return;
@@ -220,8 +238,9 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
             m2MComponentProject.setQuantity(quantity);
             projectEntity.addComponentResource(m2MComponentProject);
             componentResource.addProject(m2MComponentProject);
-            projectDao.merge(projectEntity);
             componentResourceDao.merge(componentResource);
+            m2MComponentProjectDao.persist(m2MComponentProject);
+            m2MComponentProjectDao.flush();
         } catch (PersistenceException e) {
             logger.error("Error creating relation: {}", e.getMessage());
         }

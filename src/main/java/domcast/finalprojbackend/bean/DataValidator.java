@@ -308,7 +308,7 @@ public class DataValidator {
      * @param projectId  the id of the project where the CR will be created. It can be null if the CR is not being created in a project.
      * @return boolean value indicating if the mandatory data is valid
      */
-    public boolean isCRMandatoryDataValid(DetailedCR detailedCR, Integer projectId, Integer quantity) {
+    public boolean isCRMandatoryDataValid(DetailedCR detailedCR, Integer projectId) {
         if (detailedCR.getName() == null || detailedCR.getName().isBlank()) {
             throw new IllegalArgumentException("Name is null or blank");
         }
@@ -341,7 +341,7 @@ public class DataValidator {
             throw new IllegalArgumentException("ProjectId is not greater than 0");
         }
 
-        if (quantity != null && quantity <= 0) {
+        if (detailedCR.getQuantity() <= 0) {
             throw new IllegalArgumentException("Quantity is not greater than 0");
         }
 

@@ -487,7 +487,6 @@ public class ProjectService {
 
         String ipAddress = request.getRemoteAddr();
         logger.info("User with IP address {} is trying to get projects by criteria", ipAddress);
-        System.out.println("userid " + userId + " name " + name + " lab " + labId + " state " + stateId + " keyword " + keyword + " skill " + skill + " orderBy " + orderBy + " orderAsc " + orderAsc + " pageNumber " + pageNumber + " pageSize " + pageSize);
 
         Response response;
 
