@@ -74,7 +74,7 @@ public class ComponentResourceEntity implements Serializable {
 
     // Supplier contact of the component or resource
     @Column(name = "supplier_contact", nullable = false)
-    private long supplierContact;
+    private String supplierContact;
 
     // Observations of the component or resource
     @Column(name = "observations")
@@ -146,11 +146,11 @@ public class ComponentResourceEntity implements Serializable {
         this.supplier = supplier;
     }
 
-    public long getSupplierContact() {
+    public String getSupplierContact() {
         return supplierContact;
     }
 
-    public void setSupplierContact(long supplierContact) {
+    public void setSupplierContact(String supplierContact) {
         this.supplierContact = supplierContact;
     }
 
