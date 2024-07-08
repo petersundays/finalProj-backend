@@ -1,15 +1,16 @@
 package domcast.finalprojbackend.bean;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import domcast.finalprojbackend.bean.task.TaskBean;
 import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.dao.*;
 import domcast.finalprojbackend.dto.messageDto.PersonalMessage;
 import domcast.finalprojbackend.dto.messageDto.ProjectMessage;
+import domcast.finalprojbackend.dto.messageDto.ProjectNotification;
 import domcast.finalprojbackend.dto.userDto.MessageUser;
-import domcast.finalprojbackend.entity.PersonalMessageEntity;
-import domcast.finalprojbackend.entity.ProjectEntity;
-import domcast.finalprojbackend.entity.ProjectMessageEntity;
-import domcast.finalprojbackend.entity.UserEntity;
+import domcast.finalprojbackend.entity.*;
+import domcast.finalprojbackend.service.ObjectMapperContextResolver;
 import domcast.finalprojbackend.websocket.NotificationWS;
 import domcast.finalprojbackend.websocket.PersonalMessageWS;
 import domcast.finalprojbackend.websocket.ProjectMessageWS;
@@ -57,6 +58,9 @@ public class MessageBean implements Serializable {
 
     @EJB
     private M2MProjectUserDao m2MProjectUserDao;
+
+    @EJB
+    private SessionTokenDao sessionTokenDao;
 
 
     private static final Logger logger = LogManager.getLogger(TaskBean.class);
@@ -548,6 +552,188 @@ public class MessageBean implements Serializable {
         } catch (Exception e) {
             logger.error("Error marking personal message with id: {} as read", messageId, e);
             throw new IllegalArgumentException("Error marking personal message as read");
+        }
+    }
+
+    /**
+     * Creates a notification for a user assotiated with a project
+     * @param projectId the id of the project
+     * projectName the name of the project
+     * sender the user who sends the notification
+     * receiver the user who receives the notification
+     * role the role of the user in the project
+     * action the action that was performed
+     * @return the created notification
+     */
+    public ProjectNotification createNotificationForProject (int projectId, String projectName, UserEntity sender, UserEntity receiver, String role, String action) {
+
+        logger.info("Entering createNotificationForProject method");
+
+        if (!dataValidator.isIdValid(projectId)) {
+            logger.error("Invalid project id while creating notification");
+            throw new IllegalArgumentException("Invalid project id");
+        }
+
+        if (projectName == null || projectName.isEmpty()) {
+            logger.error("Invalid project name while creating notification");
+            throw new IllegalArgumentException("Invalid project name");
+        }
+
+        if (sender == null || receiver == null) {
+            logger.error("Invalid sender or receiver while creating notification");
+            throw new IllegalArgumentException("Invalid sender or receiver");
+        }
+
+        logger.info("Creating notification for project: {} from: {} to: {}", projectName, sender.getFirstName() + sender.getLastName(), receiver.getFirstName() + receiver.getLastName());
+
+        String subject = "You have been " + action + " to project: " + projectName + " as " + role.toLowerCase() + ".";
+        String content = sender.getFirstName() + sender.getLastName() + " has " + action + " you to project: " + projectName;
+
+        PersonalMessage personalMessage;
+
+        try {
+            personalMessage = persistPersonalMessage(subject, content, sender, receiver);
+            logger.info("Notification created for project: {} from: {} to: {}", projectName, sender.getFirstName() + sender.getLastName(), receiver.getFirstName() + receiver.getLastName());
+        } catch (Exception e) {
+            logger.error("Error creating notification for project: {} from: {} to: {}", projectName, sender.getFirstName() + sender.getLastName(), receiver.getFirstName() + receiver.getLastName(), e);
+            throw new IllegalArgumentException("Error creating notification");
+        }
+
+        return personalMessageToProjectNotification(personalMessage, projectId);
+    }
+
+    /**
+     * Converts a personal message to a project notification
+     * @param personalMessage the personal message to be converted
+     * @param projectId the id of the project
+     * @return the project notification
+     */
+    public ProjectNotification personalMessageToProjectNotification(PersonalMessage personalMessage, int projectId) {
+
+        logger.info("Entering personalMessageToProjectNotification method");
+
+        if (personalMessage == null) {
+            logger.error("Personal message is null while converting to project notification");
+            throw new IllegalArgumentException("Personal message is null");
+        }
+
+        if (!dataValidator.isIdValid(projectId)) {
+            logger.error("Invalid project id while converting personal message to project notification");
+            throw new IllegalArgumentException("Invalid project id");
+        }
+
+        logger.info("Converting personal message to project notification for project with id: {}", projectId);
+
+        ProjectNotification projectNotification = new ProjectNotification();
+        projectNotification.setId(personalMessage.getId());
+        projectNotification.setSubject(personalMessage.getSubject());
+        projectNotification.setContent(personalMessage.getContent());
+        projectNotification.setSender(personalMessage.getSender());
+        projectNotification.setReceiver(personalMessage.getReceiver());
+        projectNotification.setTimestamp(personalMessage.getTimestamp());
+        projectNotification.setProjectId(projectId);
+
+        return projectNotification;
+    }
+
+    /**
+     * Gets all online sessions for a user with a given list of tokens
+     * @param tokens the list of tokens
+     * @return a list of online sessions
+     */
+    public HashMap<String, Session> getPersonalMessageOnlineSessions(List<String> tokens) {
+
+        logger.info("Entering getOnlineSessions method");
+
+        if (tokens == null || tokens.isEmpty()) {
+            logger.error("Invalid tokens while getting online sessions");
+            throw new IllegalArgumentException("Invalid tokens");
+        }
+
+        logger.info("Getting online sessions for user with tokens: {}", tokens);
+
+        HashMap<String, Session> allSessions = personalMessageWS.getSessions();
+
+        HashMap<String, Session> onlineSessions = new HashMap<>();
+
+        for (String token : tokens) {
+            Session session = allSessions.get(token);
+            if (session != null) {
+                onlineSessions.put(token, session);
+            }
+        }
+
+        return onlineSessions;
+    }
+
+    /**
+     * Sends a message to all users in a project
+     * @param projectEntity the project to send the message to
+     * @param action the action that was performed
+     */
+    public void sendMessageToProjectUsers(ProjectEntity projectEntity, String action) {
+        UserEntity mainManager;
+
+        try {
+            mainManager = m2MProjectUserDao.findMainManagerInProject(projectEntity.getId()).getUser();
+        } catch (PersistenceException e) {
+            logger.error("Error finding main manager in project with ID: {}", projectEntity.getId(), e);
+            throw new RuntimeException(e);
+        }
+
+
+        for (M2MProjectUser projectUser : projectEntity.getProjectUsers()) {
+
+            ProjectNotification projectNotification;
+
+            try {
+                projectNotification  = createNotificationForProject(
+                        projectEntity.getId(),
+                        projectEntity.getName(),
+                        mainManager,
+                        projectUser.getUser(),
+                        projectUser.getRole().name(),
+                        action
+                );
+            } catch (Exception e) {
+                logger.error("Error creating notification for project: {}", e.getMessage());
+                throw new RuntimeException(e);
+            }
+
+            ObjectMapperContextResolver contextResolver = new ObjectMapperContextResolver();
+            ObjectMapper objectMapper = contextResolver.getContext(null);
+
+            String jsonMessage;
+            try {
+                jsonMessage = objectMapper.writeValueAsString(projectNotification);
+            } catch (JsonProcessingException e) {
+                logger.error("Error serializing message", e);
+                jsonMessage = "You have been added to project " + projectEntity.getName();
+            }
+
+            /*List<String> tokens;
+
+            try {
+                tokens = sessionTokenDao.findActiveSessionTokensByUserId(projectUser.getUser().getId());
+            } catch (Exception e) {
+                logger.error("Error finding active session tokens for user: {}", e.getMessage());
+                throw new RuntimeException(e);
+            }
+
+            HashMap<String, Session> sessions = getPersonalMessageOnlineSessions(tokens);*/
+            HashMap<String, Session> sessions = personalMessageWS.getSessions();
+
+
+            if (sessions != null && !sessions.isEmpty()) {
+                for (Map.Entry<String, Session> entry : sessions.entrySet()) {
+                    try {
+                        sendToUser(projectUser.getUser().getId(), jsonMessage, sessions);
+                    } catch (Exception e) {
+                        logger.error("Error sending project notification: {}", e.getMessage());
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
         }
     }
 }

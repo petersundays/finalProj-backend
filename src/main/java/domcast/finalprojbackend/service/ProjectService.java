@@ -4,7 +4,7 @@ import domcast.finalprojbackend.bean.ComponentResourceBean;
 import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.SkillBean;
 import domcast.finalprojbackend.bean.project.ProjectBean;
-import domcast.finalprojbackend.bean.project.AuthenticationAndAuthorization;
+import domcast.finalprojbackend.bean.AuthenticationAndAuthorization;
 import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
 import domcast.finalprojbackend.dto.projectDto.*;

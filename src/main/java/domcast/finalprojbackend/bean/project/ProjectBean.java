@@ -8,6 +8,7 @@ import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.dao.*;
 import domcast.finalprojbackend.dto.componentResourceDto.CRQuantity;
 import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
+import domcast.finalprojbackend.dto.messageDto.ProjectNotification;
 import domcast.finalprojbackend.dto.projectDto.*;
 import domcast.finalprojbackend.dto.skillDto.SkillDto;
 import domcast.finalprojbackend.dto.taskDto.ChartTask;
@@ -18,7 +19,6 @@ import domcast.finalprojbackend.enums.LabEnum;
 import domcast.finalprojbackend.enums.ProjectStateEnum;
 import domcast.finalprojbackend.enums.ProjectUserEnum;
 import domcast.finalprojbackend.service.ObjectMapperContextResolver;
-import domcast.finalprojbackend.websocket.PersonalMessageWS;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;
@@ -79,7 +79,10 @@ public class ProjectBean implements Serializable {
     private ObjectMapperContextResolver objectMapperContextResolver;
 
     @EJB
-    private PersonalMessageWS personalMessageWS;
+    private MessageBean messageBean;
+
+    @EJB
+    private SessionTokenDao sessionTokenDao;
 
     /**
      * Default constructor for ProjectBean.
@@ -109,6 +112,15 @@ public class ProjectBean implements Serializable {
         return isActive;
     }
 
+    /**
+     * Creates a new project with the given information.
+     * @param newProjectDto The information to create the project with.
+     * @param projectTeam The project team to add to the project.
+     * @param responsibleUserId The ID of the user responsible for the project.
+     * @param cRDtos The new component resources to create and add to the project.
+     * @param newSkills The new skills to add to the project.
+     * @return The new project as a DetailedProject object.
+     */
     public DetailedProject newProject(NewProjectDto newProjectDto, ProjectTeam projectTeam, int responsibleUserId, Set<DetailedCR> cRDtos, ArrayList<SkillDto> newSkills) {
 
         if (newProjectDto == null) {
@@ -228,9 +240,21 @@ public class ProjectBean implements Serializable {
 
         logger.info("Successfully created new project with name {}", newProjectDto.getName());
 
+        messageBean.sendMessageToProjectUsers(projectEntity, ProjectNotification.ADDED);
+
         return detailedProject;
     }
 
+    /**
+     * Registers the basic information of a project.
+     * @param newProjectDto The information to register the project with.
+     * @param projectEntity The project entity to register the information with.
+     * @param projectTeam The project team to add to the project.
+     * @param responsibleUserId The ID of the user responsible for the project.
+     * @param newSkills The new skills to add to the project.
+     * @param newCRs The new component resources to create and add to the project.
+     * @return The project entity with the registered information.
+    */
     public ProjectEntity registerProjectInfo (NewProjectDto newProjectDto, ProjectEntity projectEntity, ProjectTeam projectTeam, int responsibleUserId, Set<Integer> newSkills, Map<Integer, Integer> newCRs) {
 
         if (newProjectDto == null || projectEntity == null) {

@@ -1,7 +1,7 @@
 package domcast.finalprojbackend.service;
 
 import domcast.finalprojbackend.bean.SystemBean;
-import domcast.finalprojbackend.bean.project.AuthenticationAndAuthorization;
+import domcast.finalprojbackend.bean.AuthenticationAndAuthorization;
 import domcast.finalprojbackend.bean.user.TokenBean;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
