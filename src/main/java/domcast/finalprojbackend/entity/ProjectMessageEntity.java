@@ -1,11 +1,10 @@
 package domcast.finalprojbackend.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.NamedQuery;
+import jakarta.persistence.*;
 
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Entity class for the project_message table in the database.
@@ -24,7 +23,7 @@ import java.io.Serializable;
 @NamedQuery(name="Message.countUnreadProjectMessagesForUser",
         query="SELECT COUNT(m) FROM ProjectMessageEntity m WHERE m.project.id = :projectId AND m.read = false")
 @NamedQuery(name="Message.getAllProjectMessagesWhereProjectIs",
-        query="SELECT m FROM ProjectMessageEntity m WHERE m.project.id = :projectId")
+        query="SELECT m FROM ProjectMessageEntity m WHERE m.project.id = :projectId ORDER BY m.timestamp DESC")
 
 public class ProjectMessageEntity extends MessageEntity implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -33,6 +32,10 @@ public class ProjectMessageEntity extends MessageEntity implements Serializable 
     @ManyToOne
     @JoinColumn(name = "project_id", referencedColumnName = "id")
     private ProjectEntity project;
+
+    @OneToMany
+    @JoinColumn(name = "seen_by", referencedColumnName = "id")
+    private Set<UserEntity> seenBy = new HashSet<>();
 
     /**
      * Default constructor
@@ -43,13 +46,11 @@ public class ProjectMessageEntity extends MessageEntity implements Serializable 
     /**
      * Constructor with parameters
      * @param project the project of the project message
-     * @param message the message of the project message
      */
-    public ProjectMessageEntity(ProjectEntity project, MessageEntity message) {
+    public ProjectMessageEntity(ProjectEntity project) {
         super();
         this.project = project;
     }
-
 
     // Getters and setters
 
@@ -59,5 +60,17 @@ public class ProjectMessageEntity extends MessageEntity implements Serializable 
 
     public void setProject (ProjectEntity project) {
         this.project = project;
+    }
+
+    public Set<UserEntity> getSeenBy() {
+        return seenBy;
+    }
+
+    public void setSeenBy(Set<UserEntity> seenBy) {
+        this.seenBy = seenBy;
+    }
+
+    public void addSeenBy(UserEntity user) {
+        this.seenBy.add(user);
     }
 }

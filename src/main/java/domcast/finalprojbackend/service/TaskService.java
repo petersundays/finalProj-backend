@@ -2,7 +2,7 @@ package domcast.finalprojbackend.service;
 
 import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.task.TaskBean;
-import domcast.finalprojbackend.bean.user.AuthenticationAndAuthorization;
+import domcast.finalprojbackend.bean.project.AuthenticationAndAuthorization;
 import domcast.finalprojbackend.dto.taskDto.ChartTask;
 import domcast.finalprojbackend.dto.taskDto.DetailedTask;
 import domcast.finalprojbackend.dto.taskDto.EditTask;

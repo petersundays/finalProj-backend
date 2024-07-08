@@ -99,4 +99,41 @@ public class PersonalMessageDao extends AbstractDao<PersonalMessageEntity> {
             return new ArrayList<>();
         }
     }
+
+    /**
+     * Marks a personal message as read
+     * @param messageId the id of the message
+     */
+    public void markPersonalMessageAsRead(int messageId) {
+        logger.info("Marking personal message with id {} as read", messageId);
+
+        try {
+            em.createNamedQuery("Message.markPersonalMessageAsRead")
+                    .setParameter("messageId", messageId)
+                    .executeUpdate();
+        } catch (Exception e) {
+            logger.error("Error while marking personal message as read: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Checks if a user is the receiver of a personal message
+     * @param messageId the ID of the message
+     * @param userId the id of the user
+     * @return true if the user is the receiver of the message, false otherwise
+     */
+    public boolean isUserReceiverOfPersonalMessage(int messageId, int userId) {
+        logger.info("Checking if user with id {} is the receiver of the personal message with id {}", userId, messageId);
+
+        try {
+            return em.createNamedQuery("Message.isUserReceiverOfPersonalMessage", Long.class)
+                    .setParameter("messageId", messageId)
+                    .setParameter("userId", userId)
+                    .getSingleResult()
+                    .intValue() > 0;
+        } catch (Exception e) {
+            logger.error("Error while checking if user is the receiver of the personal message: {}", e.getMessage());
+            return false;
+        }
+    }
 }

@@ -1,11 +1,7 @@
-package domcast.finalprojbackend.bean.user;
+package domcast.finalprojbackend.bean.project;
 
 import domcast.finalprojbackend.bean.DataValidator;
-import domcast.finalprojbackend.bean.project.ProjectBean;
-import domcast.finalprojbackend.dao.ProjectDao;
-import domcast.finalprojbackend.dao.SessionTokenDao;
-import domcast.finalprojbackend.dao.UserDao;
-import domcast.finalprojbackend.dao.ValidationTokenDao;
+import domcast.finalprojbackend.dao.*;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import org.apache.logging.log4j.LogManager;
@@ -34,6 +30,9 @@ public class AuthenticationAndAuthorization {
 
     @EJB
     private ProjectDao projectDao;
+
+    @EJB
+    private PersonalMessageDao personalMessageDao;
 
     /**
      * Checks if the password is correct
@@ -253,6 +252,23 @@ public class AuthenticationAndAuthorization {
         }
 
         return !isProjectCanceledOrFinished(projectId) && !isProjectReady(projectId);
+    }
+
+    /**
+     * Checks if the user is the receiver of a personal message
+     * @param messageId the ID of the message
+     * @param userId the id of the user
+     * @return true if the user is the receiver of the message, false otherwise
+     */
+    public boolean isUserReceiverOfPersonalMessage(int messageId, int userId) {
+        logger.info("Checking if user with id {} is the receiver of the personal message with id {}", userId, messageId);
+
+        try {
+            return personalMessageDao.isUserReceiverOfPersonalMessage(messageId, userId);
+        } catch (Exception e) {
+            logger.error("Error while checking if user is the receiver of the personal message: {}", e.getMessage());
+            return false;
+        }
     }
 
 }

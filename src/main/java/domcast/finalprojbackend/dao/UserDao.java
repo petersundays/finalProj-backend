@@ -13,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * UserDao is a Data Access Object (DAO) class for UserEntity.
@@ -276,6 +277,11 @@ public class UserDao extends AbstractDao<UserEntity> {
         return count > 0;
     }
 
+    /**
+     * Checks if the user is an admin by id.
+     * @param id the id of the user
+     * @return true if the user is an admin, false otherwise
+     */
     public boolean isUserAdminById(int id) {
         logger.info("Checking if user is admin by id");
         try {
@@ -289,6 +295,24 @@ public class UserDao extends AbstractDao<UserEntity> {
         } catch (Exception e) {
             logger.error("Error while checking if user is admin by id: {}", e.getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Finds a set of users by a list of ids.
+     *
+     * @param ids the list of ids of the users
+     * @return the set of UserEntity objects if found, null otherwise
+     */
+    public Set<UserEntity> findSetOfUsersByListOfIds(List<Integer> ids) {
+        logger.info("Finding set of users by list of ids");
+
+        try {
+            return (Set<UserEntity>) em.createNamedQuery("User.findSetOfUsersByListOfIds").setParameter("ids", ids)
+                    .getResultList();
+        } catch (NoResultException e) {
+            logger.error("Set of users with list of ids not found");
+            return null;
         }
     }
 }

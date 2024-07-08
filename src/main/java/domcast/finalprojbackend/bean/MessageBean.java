@@ -2,10 +2,7 @@ package domcast.finalprojbackend.bean;
 
 import domcast.finalprojbackend.bean.task.TaskBean;
 import domcast.finalprojbackend.bean.user.UserBean;
-import domcast.finalprojbackend.dao.PersonalMessageDao;
-import domcast.finalprojbackend.dao.ProjectMessageDao;
-import domcast.finalprojbackend.dao.SessionTokenDao;
-import domcast.finalprojbackend.dao.UserDao;
+import domcast.finalprojbackend.dao.*;
 import domcast.finalprojbackend.dto.messageDto.PersonalMessage;
 import domcast.finalprojbackend.dto.messageDto.ProjectMessage;
 import domcast.finalprojbackend.dto.userDto.MessageUser;
@@ -26,9 +23,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 @Stateless
 public class MessageBean implements Serializable {
@@ -60,6 +55,10 @@ public class MessageBean implements Serializable {
     @EJB
     private NotificationWS notificationWS;
 
+    @EJB
+    private M2MProjectUserDao m2MProjectUserDao;
+
+
     private static final Logger logger = LogManager.getLogger(TaskBean.class);
 
     private static final long serialVersionUID = 1L;
@@ -75,21 +74,27 @@ public class MessageBean implements Serializable {
      * @return the persisted message
      * @throws PersistenceException if an error occurs during the persist operation
      */
-    public PersonalMessage persistPersonalMessage(String content, UserEntity sender, UserEntity receiver) {
+    public PersonalMessage persistPersonalMessage(String subject, String content, UserEntity sender, UserEntity receiver) {
 
         if (sender == null || receiver == null) {
-            logger.error("Message not sent");
+            logger.error("Personal message not sent");
             throw new IllegalArgumentException("Sender or receiver is null");
         }
 
+        if (subject == null) {
+            logger.info("Subject is null, setting to empty string");
+            subject = "";
+        }
+
         if (content == null || content.isEmpty()) {
-            logger.error("Message not sent");
+            logger.error("Personal message not sent");
             throw new IllegalArgumentException("Content is null or empty");
         }
 
-        logger.info("Sending message from: {} to: {}", sender.getFirstName() + sender.getLastName(), receiver.getFirstName() + receiver.getLastName());
+        logger.info("Sending personal message from: {} to: {}", sender.getFirstName() + sender.getLastName(), receiver.getFirstName() + receiver.getLastName());
 
         PersonalMessageEntity messageEntity = new PersonalMessageEntity();
+        messageEntity.setSubject(subject);
         messageEntity.setContent(content);
         messageEntity.setSender(sender);
         messageEntity.setReceiver(receiver);
@@ -98,15 +103,15 @@ public class MessageBean implements Serializable {
 
         try {
             persistedMessage = personalMessageDao.persistPersonalMessage(messageEntity);
-            logger.info("Message persisted");
+            logger.info("Personal message persisted");
         } catch (PersistenceException e) {
-            logger.error("Message not persisted");
-            throw new PersistenceException("Message not persisted");
+            logger.error("Personal message not persisted");
+            throw new PersistenceException("Personal message not persisted");
         }
 
         if (persistedMessage == null) {
-            logger.error("Message not persisted");
-            throw new PersistenceException("Message not persisted");
+            logger.error("Personal message not persisted");
+            throw new PersistenceException("Personal message not persisted");
         }
 
         return personalMessageEntityToDto(persistedMessage);
@@ -124,21 +129,21 @@ public class MessageBean implements Serializable {
     public ProjectMessage persistGroupMessage(String content, UserEntity sender, ProjectEntity receiver) {
 
         if (sender == null) {
-            logger.error("Message not sent");
+            logger.error("Group message not sent");
             throw new IllegalArgumentException("Sender is null");
         }
 
         if (receiver == null) {
-            logger.error("Message not sent to project.");
+            logger.error("Group message not sent to project.");
             throw new IllegalArgumentException("Receiver is null");
         }
 
         if (content == null || content.isEmpty()) {
-            logger.error("Message not sent for project: {}", receiver.getName());
+            logger.error("Group message not sent for project: {}", receiver.getName());
             throw new IllegalArgumentException("Content is null or empty");
         }
 
-        logger.info("Sending message from: {} to project: {}", sender.getFirstName() + sender.getLastName(), receiver.getName());
+        logger.info("Sending group message from: {} to project: {}", sender.getFirstName() + sender.getLastName(), receiver.getName());
 
         ProjectMessageEntity messageEntity = new ProjectMessageEntity();
 
@@ -151,15 +156,15 @@ public class MessageBean implements Serializable {
 
         try {
             persistedMessage = projectMessageDao.persistProjectMessage(messageEntity);
-            logger.info("Message persisted for project: {}", receiver.getName());
+            logger.info("Group message persisted for project: {}", receiver.getName());
         } catch (PersistenceException e) {
-            logger.error("Message not persisted for project: {}", receiver.getName());
-            throw new PersistenceException("Message not persisted");
+            logger.error("Group message not persisted for project: {}", receiver.getName());
+            throw new PersistenceException("Group message not persisted");
         }
 
         if (persistedMessage == null) {
-            logger.error("Message not persisted for project: {}", receiver.getName());
-            throw new PersistenceException("Message not persisted");
+            logger.error("Group message not persisted for project: {}", receiver.getName());
+            throw new PersistenceException("Group message not persisted");
         }
 
         return projectMessageEntityToDto(persistedMessage);
@@ -184,6 +189,7 @@ public class MessageBean implements Serializable {
 
         return new PersonalMessage(
                 messageEntity.getId(),
+                messageEntity.getSubject(),
                 messageEntity.getContent(),
                 sender,
                 receiver,
@@ -207,12 +213,15 @@ public class MessageBean implements Serializable {
 
         MessageUser sender = userBean.entityToMessageUser(messageEntity.getSender());
 
-        return new ProjectMessage(
-                messageEntity.getId(),
-                messageEntity.getContent(),
-                sender,
-                messageEntity.getProject().getId(),
-                messageEntity.getTimestamp());
+        ProjectMessage projectMessage = new ProjectMessage();
+        projectMessage.setId(messageEntity.getId());
+        projectMessage.setContent(messageEntity.getContent());
+        projectMessage.setSender(sender);
+        projectMessage.setProjectId(messageEntity.getProject().getId());
+        projectMessage.setTimestamp(messageEntity.getTimestamp());
+        projectMessage.setSeenBy(messageEntity.getSeenBy());
+
+        return projectMessage;
     }
 
     /**
@@ -515,5 +524,115 @@ public class MessageBean implements Serializable {
         return personalMessages.stream()
                 .map(this::personalMessageEntityToDto)
                 .toList();
+    }
+
+    /**
+     * Marks a personal message as read
+     * @param messageId the ID of the message
+     * @return true if the message was marked as read, false otherwise
+     */
+    public boolean markPersonalMessageAsRead(int messageId) {
+
+        logger.info("Entering markPersonalMessageAsRead method");
+
+        if (!dataValidator.isIdValid(messageId)) {
+            logger.error("Invalid message id while marking personal message as read");
+            throw new IllegalArgumentException("Invalid message id");
+        }
+
+        logger.info("Marking personal message with id: {} as read", messageId);
+
+        try {
+            personalMessageDao.markPersonalMessageAsRead(messageId);
+            logger.info("Personal message with id: {} marked as read", messageId);
+            return true;
+        } catch (Exception e) {
+            logger.error("Error marking personal message with id: {} as read", messageId, e);
+            throw new IllegalArgumentException("Error marking personal message as read");
+        }
+    }
+
+    public boolean markProjectMessageAsRead (int userId, int projectId) {
+
+        logger.info("Entering markProjectMessageAsRead method");
+
+        if (!dataValidator.isIdValid(userId) || !dataValidator.isIdValid(projectId)) {
+            logger.error("Invalid user id or project id while marking project message as read");
+            throw new IllegalArgumentException("Invalid id");
+        }
+
+        logger.info("Marking project messages as read for user with id: {} for project with id: {}", userId, projectId);
+
+        List<Integer> activeUsersInProject;
+
+        try {
+            activeUsersInProject = m2MProjectUserDao.getUsersInProject(projectId);
+        } catch (Exception e) {
+            logger.error("Error getting active users in project with id: {}", projectId, e);
+            activeUsersInProject = new ArrayList<>();
+        }
+
+        if (activeUsersInProject.isEmpty()) {
+            logger.error("No active users in project with id: {}", projectId);
+            return false;
+        }
+
+        Set<UserEntity> activeUsersIds;
+
+        try {
+            activeUsersIds = userDao.findSetOfUsersByListOfIds(activeUsersInProject);
+        } catch (Exception e) {
+            logger.error("Error getting active users in project with id: {}", projectId, e);
+            activeUsersIds = new HashSet<>();
+        }
+
+        if (activeUsersIds.isEmpty()) {
+            logger.error("No active users in project with id: {}", projectId);
+            return false;
+        }
+
+        UserEntity user;
+
+        try {
+            user = userDao.findUserById(userId);
+        } catch (Exception e) {
+            logger.error("Error getting user with id: {}", userId, e);
+            return false;
+        }
+
+        if (user == null) {
+            logger.error("User with id: {} not found", userId);
+            return false;
+        }
+
+        List<ProjectMessageEntity> projectMessages;
+
+        try {
+            projectMessages = projectMessageDao.getAllProjectMessagesWhereProjectIs(projectId);
+        } catch (Exception e) {
+            logger.error("Error getting project messages for project with id: {}", projectId, e);
+            throw new IllegalArgumentException("Error getting project messages");
+        }
+
+        for (ProjectMessageEntity message : projectMessages) {
+            if (message.getSeenBy().contains(user)) {
+                continue;
+            }
+            message.addSeenBy(user);
+
+            if (message.getSeenBy().containsAll(activeUsersIds)) {
+                logger.info("All users in project with id: {} have seen the message with id: {}", projectId, message.getId());
+                message.setRead(true);
+            }
+
+            try {
+                projectMessageDao.merge(message);
+            } catch (Exception e) {
+                logger.error("Error marking project message with id: {} as read", message.getId(), e);
+                throw new IllegalArgumentException("Error marking project message as read");
+            }
+        }
+
+        return true;
     }
 }
