@@ -47,7 +47,7 @@ public class Message implements Serializable {
 
     /**
      * Constructor with parameters
-     * @param id the id of the message
+     * @param id the ID of the message
      * @param content the content of the message
      * @param sender the sender of the message
      * @param timestamp the timestamp of the message

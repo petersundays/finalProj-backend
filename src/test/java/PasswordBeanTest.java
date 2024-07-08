@@ -1,4 +1,4 @@
-import domcast.finalprojbackend.bean.user.AuthenticationAndAuthorization;
+import domcast.finalprojbackend.bean.project.AuthenticationAndAuthorization;
 import domcast.finalprojbackend.bean.user.PasswordBean;
 import domcast.finalprojbackend.dao.UserDao;
 import jakarta.persistence.EntityManager;

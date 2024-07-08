@@ -1,11 +1,13 @@
 package domcast.finalprojbackend.dto.messageDto;
 
 import domcast.finalprojbackend.dto.userDto.MessageUser;
+import domcast.finalprojbackend.entity.UserEntity;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.Set;
 
 /**
  * Data transfer object for the message table in the database.
@@ -26,6 +28,9 @@ public class ProjectMessage extends Message implements Serializable {
     @XmlElement
     private int projectId;
 
+    @XmlElement
+    private Set<UserEntity> seenBy;
+
     /**
      * Default constructor
      */
@@ -34,15 +39,16 @@ public class ProjectMessage extends Message implements Serializable {
 
     /**
      * Constructor with all parameters
-     * @param id the id of the message
+     * @param id the ID of the message
      * @param content the content of the message
      * @param sender the sender of the message
      * @param projectId the project to which the message is being sent
      * @param timestamp the timestamp of the message
      */
-    public ProjectMessage(int id, String content, MessageUser sender, int projectId, LocalDateTime timestamp) {
+    public ProjectMessage(int id, String content, MessageUser sender, int projectId, LocalDateTime timestamp, Set<UserEntity> seenBy) {
         super(id, content, sender, timestamp);
         this.projectId = projectId;
+        this.seenBy = seenBy;
     }
 
     public int getProjectId() {
@@ -51,6 +57,14 @@ public class ProjectMessage extends Message implements Serializable {
 
     public void setProjectId(int projectId) {
         this.projectId = projectId;
+    }
+
+    public Set<UserEntity> getSeenBy() {
+        return seenBy;
+    }
+
+    public void setSeenBy(Set<UserEntity> seenBy) {
+        this.seenBy = seenBy;
     }
 
 }

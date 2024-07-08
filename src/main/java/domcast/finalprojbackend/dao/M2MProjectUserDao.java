@@ -9,6 +9,7 @@ import jakarta.persistence.NonUniqueResultException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -193,6 +194,28 @@ public class M2MProjectUserDao extends AbstractDao<M2MProjectUser> {
         } catch (Exception e) {
             logger.error("An unexpected error occurred while getting projects exceeding max users", e);
             return new HashSet<>();
+        }
+    }
+
+    /**
+     * Method to get the users in a project.
+     *
+     * @param projectId the id of the project
+     * @return the users in the project
+     */
+    public List<Integer> getUsersInProject(int projectId) {
+        try {
+            List<Integer> resultList = em.createNamedQuery("M2MProjectUser.getUsersInProject", Integer.class)
+                    .setParameter("projectId", projectId)
+                    .getResultList();
+            if (resultList == null) {
+                logger.error("Query result is null for users in project with id: {}", projectId);
+                return new ArrayList<>();
+            }
+            return new ArrayList<>();
+        } catch (Exception e) {
+            logger.error("An unexpected error occurred while getting users in project with id: {}", projectId, e);
+            return new ArrayList<>();
         }
     }
 }

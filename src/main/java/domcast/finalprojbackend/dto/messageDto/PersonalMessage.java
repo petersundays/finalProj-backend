@@ -24,6 +24,9 @@ import java.time.LocalDateTime;
 public class PersonalMessage extends Message implements Serializable {
 
     @XmlElement
+    private String subject;
+
+    @XmlElement
     private MessageUser receiver;
 
     /**
@@ -34,16 +37,27 @@ public class PersonalMessage extends Message implements Serializable {
 
     /**
      * Constructor with all parameters
+     * @param id the ID of the message
+     * @param subject the subject of the message
      * @param content the content of the message
      * @param sender the sender of the message
      * @param receiver the receiver of the message
      */
-    public PersonalMessage(int id, String content, MessageUser sender, MessageUser receiver, LocalDateTime timestamp) {
+    public PersonalMessage(int id, String subject, String content, MessageUser sender, MessageUser receiver, LocalDateTime timestamp) {
         super(id, content, sender, timestamp);
+        this.subject = subject;
         this.receiver = receiver;
     }
 
     // Getters and setters
+
+    public String getSubject() {
+        return subject;
+    }
+
+    public void setSubject(String subject) {
+        this.subject = subject;
+    }
 
     public MessageUser getReceiver() {
         return receiver;

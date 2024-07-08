@@ -26,9 +26,16 @@ import java.io.Serializable;
         query="SELECT m FROM PersonalMessageEntity m WHERE m.receiver.id = :userId")
 @NamedQuery(name="Message.getAllPersonalMessagesSentByUser",
         query="SELECT m FROM PersonalMessageEntity m WHERE m.sender.id = :userId")
+@NamedQuery(name="Message.markPersonalMessageAsRead",
+        query="UPDATE PersonalMessageEntity m SET m.read = true WHERE m.id = :messageId")
+@NamedQuery(name="Message.isUserReceiverOfPersonalMessage",
+        query="SELECT COUNT(m) FROM PersonalMessageEntity m WHERE m.id = :messageId AND m.receiver.id = :userId")
 
 public class PersonalMessageEntity extends MessageEntity implements Serializable {
     private static final long serialVersionUID = 1L;
+
+    @Column(name = "subject")
+    private String subject;
 
     // Receiver of the personal message
     @ManyToOne
@@ -40,6 +47,14 @@ public class PersonalMessageEntity extends MessageEntity implements Serializable
     }
 
     // Getters and setters
+
+    public String getSubject() {
+        return subject;
+    }
+
+    public void setSubject(String subject) {
+        this.subject = subject;
+    }
 
     public UserEntity getReceiver() {
         return receiver;
