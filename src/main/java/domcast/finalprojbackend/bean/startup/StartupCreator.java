@@ -235,8 +235,44 @@ public class StartupCreator implements Serializable {
                 "Maintain the project after deployment"
         };
 
+        Set<String> observations = new HashSet<>(Arrays.asList(
+                "Requires regular maintenance",
+                "Outdated model, consider replacement",
+                "Under warranty until 2025",
+                "High performance in low temperature environments",
+                "Compatible with both Windows and Linux operating systems",
+                "Energy efficient model, reduces operational costs",
+                "Requires special handling during installation",
+                "Not compatible with version 2.1 of the software",
+                "Known issues with battery life",
+                "Recall notice issued for models produced before 2021",
+                "Custom firmware installed for enhanced security",
+                "Includes additional accessories for setup",
+                "Limited availability of replacement parts",
+                "Recommended for indoor use only",
+                "Firmware updates available quarterly",
+                "User manual available in English and Spanish",
+                "Extended warranty available for purchase",
+                "Supports multi-user configuration",
+                "Optimized for high-traffic use",
+                "Water-resistant up to 1 meter"
+        ));
+
+        Set<String> descriptions = new HashSet<>(Arrays.asList(
+                "High precision data analysis tool for climate patterns",
+                "Advanced AI module for machine learning applications",
+                "Next-gen quantum computing processor for complex calculations",
+                "Innovative cancer cell detection system using biotechnology",
+                "State-of-the-art spacecraft designed for deep space exploration",
+                "Efficient solar panel system with high energy conversion rate",
+                "Autonomous vehicle control system with real-time decision making",
+                "Secure blockchain node for decentralized applications",
+                "Advanced firewall for comprehensive cybersecurity protection",
+                "High-throughput DNA sequencer for genetic research"
+        ));
+
         // Create a HashSet to store the already used supplier contacts and part numbers
-        Set<Long> usedSupplierContacts = new HashSet<>();
+        Set<String> usedSupplierContacts = new HashSet<>();
         Set<Long> usedPartNumbers = new HashSet<>();
 
         // Shuffle the skills, interests, labs, and users list
@@ -306,9 +342,11 @@ public class StartupCreator implements Serializable {
                 } while (usedComponentResourceNamesAndBrands.contains(name + brand));
                 usedComponentResourceNamesAndBrands.add(name + brand);
 
+                int descriptionIndex = random.nextInt(descriptions.size());
+                String description = new ArrayList<>(descriptions).get(descriptionIndex);
+                componentResource.setDescription(description);
 
                 componentResource.setName(name);
-                componentResource.setDescription("Description for " + name);
                 componentResource.setBrand(brand);
 
                 // Generate a unique part number
@@ -321,14 +359,41 @@ public class StartupCreator implements Serializable {
 
                 componentResource.setSupplier(componentResourceSuppliers[j % componentResourceSuppliers.length]); // Use modulo to avoid IndexOutOfBoundsException
 
-                // Generate a unique supplier contact
-                long range = 9999999999L - 1000000000L + 1;
-                long supplierContact;
-                do {
-                    supplierContact = 1000000000L + (long)(Math.random() * range);
-                } while (usedSupplierContacts.contains(supplierContact));
-                usedSupplierContacts.add(supplierContact);
-                componentResource.setSupplierContact(supplierContact);
+                String supplierContact;
+
+                // Decide randomly to generate a phone number or an email address
+                if (random.nextBoolean()) {
+                    // Generate a phone number as a string
+                    long range = 9999999999L - 1000000000L + 1;
+                    long number = 1000000000L + (long)(Math.random() * range);
+                    supplierContact = String.valueOf(number); // Convert the phone number to String
+                } else {
+                    // Generate an email address as a string (Example logic, adapt as necessary)
+                    String[] emailDomains = {"example.com", "mail.com", "domain.com"};
+                    int index = random.nextInt(emailDomains.length);
+                    supplierContact = "supplier" + random.nextInt(1000) + "@" + emailDomains[index];
+                }
+
+                // Ensure uniqueness
+                if (!usedSupplierContacts.contains(supplierContact)) {
+                    usedSupplierContacts.add(supplierContact);
+                    // Step 4: Set the supplier contact on componentResource as a string
+                    componentResource.setSupplierContact(supplierContact);
+                } else {
+                    String email;
+                    do {
+                        // Generate a random email address
+                        email = "supplier" + (random.nextInt(9000) + 1000) + "@example.com";
+                    } while (usedSupplierContacts.contains(email));
+                    usedSupplierContacts.add(email);
+                    componentResource.setSupplierContact(email);
+                }
+
+                if (random.nextBoolean()) {
+                    int index = random.nextInt(observations.size());
+                    String observation = new ArrayList<>(observations).get(index);
+                    componentResource.setObservations(observation);
+                }
 
                 // Randomly set the type as COMPONENT or RESOURCE
                 componentResource.setType(random.nextBoolean() ? ComponentResourceEnum.COMPONENT : ComponentResourceEnum.RESOURCE);

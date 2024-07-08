@@ -55,9 +55,8 @@ public class ComponentResourceBeanTest {
         detailedCR.setPartNumber(555555L);
         detailedCR.setType(ComponentResourceEnum.COMPONENT.getId());
         detailedCR.setSupplier("Test Supplier");
-        detailedCR.setSupplierContact(123456789);
+        detailedCR.setSupplierContact("123456789");
         Integer projectId = 1; // Ensure this is greater than 0
-        Integer quantity = 1; // Ensure this is greater than 0
 
         ComponentResourceEntity mockEntity = new ComponentResourceEntity();
         mockEntity.setName(detailedCR.getName());

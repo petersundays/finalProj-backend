@@ -422,7 +422,7 @@ public ComponentResourceEntity registerData(DetailedCR detailedCR, Integer proje
             componentResourceEntity.setSupplier(detailedCR.getSupplier());
         }
 
-        if (detailedCR.getSupplierContact() > 0) {
+        if (!detailedCR.getSupplierContact().isBlank() && detailedCR.getSupplierContact() != null) {
             componentResourceEntity.setSupplierContact(detailedCR.getSupplierContact());
         }
 
