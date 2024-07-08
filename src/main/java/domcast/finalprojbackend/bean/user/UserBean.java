@@ -7,6 +7,7 @@ import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.InterestBean;
 import domcast.finalprojbackend.bean.SkillBean;
 import domcast.finalprojbackend.bean.SystemBean;
+import domcast.finalprojbackend.bean.project.AuthenticationAndAuthorization;
 import domcast.finalprojbackend.dao.*;
 import domcast.finalprojbackend.dto.interestDto.InterestDto;
 import domcast.finalprojbackend.dto.skillDto.SkillDto;

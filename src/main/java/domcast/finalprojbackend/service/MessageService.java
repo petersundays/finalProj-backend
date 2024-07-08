@@ -2,7 +2,7 @@ package domcast.finalprojbackend.service;
 
 import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.MessageBean;
-import domcast.finalprojbackend.bean.user.AuthenticationAndAuthorization;
+import domcast.finalprojbackend.bean.project.AuthenticationAndAuthorization;
 import domcast.finalprojbackend.dto.messageDto.PersonalMessage;
 import domcast.finalprojbackend.dto.messageDto.ProjectMessage;
 import jakarta.inject.Inject;
@@ -231,6 +231,52 @@ public class MessageService {
         } catch (Exception e) {
             logger.error("Error while counting unread messages for project with id {}: {}", projectId, e.getMessage());
             response = Response.status(500).entity("Error while counting unread messages").build();
+        }
+
+        return response;
+    }
+
+    @PUT
+    @Path("/mark-personal-read")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response markPersonalMessageAsRead(@HeaderParam("token") String token,
+                                              @HeaderParam("id") int id,
+                                              @QueryParam("message") int messageId,
+                                              @Context HttpServletRequest request) {
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with ip address {} is trying to mark a personal message as read", ipAddress);
+
+        Response response;
+
+        // Check if the user's and message's ids are valid
+        if (!dataValidator.isIdValid(id) || !dataValidator.isIdValid(messageId)) {
+            response = Response.status(400).entity("Invalid id").build();
+            logger.info("User with session token {} tried to mark a personal message as read but has an invalid id", token);
+            return response;
+        }
+
+        // Check if the user is correctly authenticated and authorized
+        if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, id)) {
+            response = Response.status(401).entity("Unauthorized").build();
+            logger.info("User with session token {} tried to mark a personal message as read but is unauthorized", token);
+            return response;
+        }
+
+        if (!authenticationAndAuthorization.isUserReceiverOfPersonalMessage(id, messageId)) {
+            response = Response.status(401).entity("Unauthorized").build();
+            logger.info("User with session token {} tried to mark a personal message as read but is not the receiver of the message", token);
+            return response;
+        }
+
+        boolean markedAsRead;
+
+        try {
+            markedAsRead = messageBean.markPersonalMessageAsRead(messageId);
+            logger.info("User with ip address {} marked a personal message as read", ipAddress);
+            response = Response.status(200).entity(markedAsRead).build();
+        } catch (Exception e) {
+            logger.error("Error while marking a personal message as read: {}", e.getMessage());
+            response = Response.status(500).entity("Error while marking a personal message as read").build();
         }
 
         return response;

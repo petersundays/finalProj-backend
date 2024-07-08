@@ -2,7 +2,7 @@ package domcast.finalprojbackend.service;
 
 import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.InterestBean;
-import domcast.finalprojbackend.bean.user.AuthenticationAndAuthorization;
+import domcast.finalprojbackend.bean.project.AuthenticationAndAuthorization;
 import domcast.finalprojbackend.dto.interestDto.InterestToList;
 import domcast.finalprojbackend.dto.userDto.EnumDTO;
 import domcast.finalprojbackend.enums.InterestEnum;

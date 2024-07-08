@@ -40,13 +40,14 @@ import java.io.Serializable;
         query = "SELECT pu FROM M2MProjectUser pu WHERE pu.user.id = :userId AND pu.project.id = :projectId")
 @NamedQuery(name = "M2MProjectUser.findMainManagerUserIdInProject",
         query = "SELECT pu.user.id FROM M2MProjectUser pu WHERE pu.project.id = :projectId AND pu.role = 300")
-
 @NamedQuery(name = "M2MProjectUser.removeProjectUser",
         query = "DELETE FROM M2MProjectUser pu WHERE pu.user.id = :userId AND pu.project.id = :projectId")
 @NamedQuery(name = "M2MProjectUser.getNumberOfActiveUsersInProject",
         query = "SELECT COUNT(pu) FROM M2MProjectUser pu WHERE pu.project.id = :projectId AND pu.active = true")
 @NamedQuery(name = "M2MProjectUser.getProjectsExceedingMaxUsers",
         query = "SELECT pu.project FROM M2MProjectUser pu WHERE pu.active = true GROUP BY pu.project HAVING COUNT(pu) > :number")
+@NamedQuery(name = "M2MProjectUser.getUsersInProject",
+        query = "SELECT pu.user.id FROM M2MProjectUser pu WHERE pu.project.id = :projectId AND pu.active = true")
 
 public class M2MProjectUser implements Serializable {
     private static final long serialVersionUID = 1L;

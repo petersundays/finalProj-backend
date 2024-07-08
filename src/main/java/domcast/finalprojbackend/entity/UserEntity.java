@@ -48,6 +48,7 @@ import java.util.Set;
 @NamedQuery(name = "User.isUserAdminByToken", query = "SELECT u FROM UserEntity u JOIN u.sessionTokens st WHERE st.token = :token AND u.type = domcast.finalprojbackend.enums.TypeOfUserEnum.ADMIN")
 @NamedQuery(name = "User.existsByFirstAndLastName", query = "SELECT COUNT(u) FROM UserEntity u WHERE u.firstName = :firstName AND u.lastName = :lastName")
 @NamedQuery(name = "User.isUserAdminById", query = "SELECT COUNT(u) FROM UserEntity u WHERE u.id = :id AND u.type = 300")
+@NamedQuery(name= "User.findSetOfUsersByListOfIds", query = "SELECT u FROM UserEntity u WHERE u.id IN :ids")
 
 public class UserEntity implements Serializable {
     private static final long serialVersionUID = 1L;

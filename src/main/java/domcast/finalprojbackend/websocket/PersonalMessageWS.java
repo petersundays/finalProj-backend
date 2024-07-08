@@ -150,10 +150,12 @@ public class PersonalMessageWS {
 
         int senderId = userSender.getId();
         String content;
+        String subject;
 
         Gson gson = new Gson();
         try {
             JsonObject jsonObject = gson.fromJson(msg, JsonObject.class);
+            subject = jsonObject.get("subject").getAsString();
             content = jsonObject.get("content").getAsString();
         } catch (JsonSyntaxException e) {
             logger.error("Error parsing message content");
@@ -164,7 +166,7 @@ public class PersonalMessageWS {
         PersonalMessage message;
 
         try {
-            message = messageBean.persistPersonalMessage(content, userSender, userReceiver);
+            message = messageBean.persistPersonalMessage(subject, content, userSender, userReceiver);
         } catch (Exception e) {
             logger.error("Error persisting message");
             return;
