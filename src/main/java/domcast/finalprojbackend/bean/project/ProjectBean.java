@@ -18,6 +18,7 @@ import domcast.finalprojbackend.enums.LabEnum;
 import domcast.finalprojbackend.enums.ProjectStateEnum;
 import domcast.finalprojbackend.enums.ProjectUserEnum;
 import domcast.finalprojbackend.service.ObjectMapperContextResolver;
+import domcast.finalprojbackend.websocket.PersonalMessageWS;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;
@@ -76,6 +77,9 @@ public class ProjectBean implements Serializable {
 
     @Inject
     private ObjectMapperContextResolver objectMapperContextResolver;
+
+    @EJB
+    private PersonalMessageWS personalMessageWS;
 
     /**
      * Default constructor for ProjectBean.
@@ -223,6 +227,7 @@ public class ProjectBean implements Serializable {
         }
 
         logger.info("Successfully created new project with name {}", newProjectDto.getName());
+
         return detailedProject;
     }
 
@@ -1227,11 +1232,6 @@ public class ProjectBean implements Serializable {
         }
 
         logger.info("Found project with ID {}", projectId);
-
-        for (M2MProjectUser m2MProjectUser : projectEntity.getProjectUsers()) {
-            System.out.println("User ID: " + m2MProjectUser.getUser().getId() + " Active: " + m2MProjectUser.isActive());
-        }
-
 
         if (!dataValidator.availablePlacesInProject(projectId)) {
             logger.error("Project with ID {} is full while inviting user to project", projectId);

@@ -65,7 +65,7 @@ public class ComponentResourceBeanTest {
         when(componentResourceDao.findCREntityByNameAndBrand(anyString(), anyString())).thenReturn(mockEntity);
 
         // Act
-        CRPreview result = componentResourceBean.createComponentResource(detailedCR, projectId, quantity);
+        CRPreview result = componentResourceBean.createComponentResource(detailedCR, projectId);
 
         // Assert
         assertNotNull(result);
@@ -84,7 +84,8 @@ public class ComponentResourceBeanTest {
         detailedCR.setName("Test Name");
         detailedCR.setBrand("Test Brand");
         detailedCR.setType(ComponentResourceEnum.COMPONENT.getId());
-        when(dataValidator.isCRMandatoryDataValid(detailedCR, null, null)).thenReturn(false);
+        detailedCR.setQuantity(1);
+        when(dataValidator.isCRMandatoryDataValid(detailedCR, null)).thenReturn(false);
 
         // Act
         CRPreview result = componentResourceBean.createComponentResource(detailedCR);
@@ -104,13 +105,13 @@ public class ComponentResourceBeanTest {
         detailedCR.setName("Test Name");
         detailedCR.setBrand("Test Brand");
         detailedCR.setType(ComponentResourceEnum.COMPONENT.getId());
+        detailedCR.setQuantity(1);
         Integer projectId = 1;
-        Integer quantity = 1;
         when(componentResourceDao.doesCRExistByNameAndBrand(anyString(), anyString())).thenReturn(false);
         when(componentResourceDao.findCREntityByNameAndBrand(anyString(), anyString())).thenReturn(new ComponentResourceEntity());
 
         // Act
-        ComponentResourceEntity result = componentResourceBean.registerData(detailedCR, projectId, quantity);
+        ComponentResourceEntity result = componentResourceBean.registerData(detailedCR, projectId);
 
         // Assert
         assertNotNull(result);
@@ -129,12 +130,12 @@ public class ComponentResourceBeanTest {
         detailedCR.setName("Test Name");
         detailedCR.setBrand("Test Brand");
         detailedCR.setType(ComponentResourceEnum.COMPONENT.getId());
+        detailedCR.setQuantity(1);
         Integer projectId = 1;
-        Integer quantity = 1;
         when(componentResourceDao.doesCRExistByNameAndBrand(anyString(), anyString())).thenReturn(true);
 
         // Act
-        ComponentResourceEntity result = componentResourceBean.registerData(detailedCR, projectId, quantity);
+        ComponentResourceEntity result = componentResourceBean.registerData(detailedCR, projectId);
 
         // Assert
         assertNull(result);

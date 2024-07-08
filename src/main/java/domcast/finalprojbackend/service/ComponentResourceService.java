@@ -121,7 +121,7 @@ public class ComponentResourceService {
         CRPreview crPreview;
 
         try {
-            crPreview = componentResourceBean.createComponentResource(detailedCR, projectId, detailedCR.getQuantity());
+            crPreview = componentResourceBean.createComponentResource(detailedCR, projectId);
             if (crPreview == null) {
                 logger.error("Error creating component resource for project with id {}", projectId);
                 return Response.status(500).entity("Error creating component resource").build();
