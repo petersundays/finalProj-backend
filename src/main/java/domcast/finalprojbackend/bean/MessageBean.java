@@ -10,6 +10,7 @@ import domcast.finalprojbackend.dto.messageDto.ProjectMessage;
 import domcast.finalprojbackend.dto.messageDto.ProjectNotification;
 import domcast.finalprojbackend.dto.userDto.MessageUser;
 import domcast.finalprojbackend.entity.*;
+import domcast.finalprojbackend.enums.ProjectStateEnum;
 import domcast.finalprojbackend.service.ObjectMapperContextResolver;
 import domcast.finalprojbackend.websocket.NotificationWS;
 import domcast.finalprojbackend.websocket.PersonalMessageWS;
@@ -565,7 +566,7 @@ public class MessageBean implements Serializable {
      * action the action that was performed
      * @return the created notification
      */
-    public ProjectNotification createNotificationForProject (int projectId, String projectName, UserEntity sender, UserEntity receiver, String role, String action) {
+    public ProjectNotification createNotificationForProject (int projectId, String projectName, UserEntity sender, UserEntity receiver, String role, String state, String action) {
 
         logger.info("Entering createNotificationForProject method");
 
@@ -586,8 +587,42 @@ public class MessageBean implements Serializable {
 
         logger.info("Creating notification for project: {} from: {} to: {}", projectName, sender.getFirstName() + sender.getLastName(), receiver.getFirstName() + receiver.getLastName());
 
-        String subject = "You have been " + action + " to project: " + projectName + " as " + role.toLowerCase() + ".";
-        String content = sender.getFirstName() + sender.getLastName() + " has " + action + " you to project: " + projectName;
+        if (role == null || role.isEmpty()) {
+            logger.info("Role is null, setting to empty string");
+            role = "";
+        }
+
+        if (state == null || state.isEmpty()) {
+            logger.info("State is null, setting to empty string");
+            state = "";
+        }
+
+        if (action == null || action.isEmpty()) {
+            logger.error("Invalid action while creating notification");
+            throw new IllegalArgumentException("Invalid action");
+        }
+
+        String subject = "";
+        String content = "";
+
+        if (action.equals(ProjectNotification.ADDED) || action.equals(ProjectNotification.REMOVED) || action.equals(ProjectNotification.INVITED)) {
+            subject = "You have been " + action + " project: " + projectName + ".";
+            content = sender.getFirstName() + " " + sender.getLastName() + " has " + action + " project: " + projectName;
+            if (action.equals(ProjectNotification.ADDED) && !role.isEmpty()) {
+                content += " as " + role;
+            }
+        } else if (action.equals(ProjectNotification.STATUS_CHANGED)) {
+            subject = "The status of project: '" + projectName + "' has changed.";
+            content = "The status of project: " + projectName + " has changed.";
+            if (!state.isEmpty()) {
+                if (state.equalsIgnoreCase(ProjectStateEnum.IN_PROGRESS.name())) {
+                    state = "in progress";
+                }
+                state = state.toLowerCase();
+                content += "\n" + "The new status is: '" + state + "'.";
+            }
+        }
+
 
         PersonalMessage personalMessage;
 
@@ -671,7 +706,7 @@ public class MessageBean implements Serializable {
      * @param projectEntity the project to send the message to
      * @param action the action that was performed
      */
-    public void sendMessageToProjectUsers(ProjectEntity projectEntity, String action) {
+    public void sendMessageToProjectUsers(ProjectEntity projectEntity, String action, String state) {
         UserEntity mainManager;
 
         try {
@@ -681,6 +716,9 @@ public class MessageBean implements Serializable {
             throw new RuntimeException(e);
         }
 
+        if (state == null) {
+            state = "";
+        }
 
         for (M2MProjectUser projectUser : projectEntity.getProjectUsers()) {
 
@@ -693,6 +731,7 @@ public class MessageBean implements Serializable {
                         mainManager,
                         projectUser.getUser(),
                         projectUser.getRole().name(),
+                        state,
                         action
                 );
             } catch (Exception e) {
@@ -711,16 +750,6 @@ public class MessageBean implements Serializable {
                 jsonMessage = "You have been added to project " + projectEntity.getName();
             }
 
-            /*List<String> tokens;
-
-            try {
-                tokens = sessionTokenDao.findActiveSessionTokensByUserId(projectUser.getUser().getId());
-            } catch (Exception e) {
-                logger.error("Error finding active session tokens for user: {}", e.getMessage());
-                throw new RuntimeException(e);
-            }
-
-            HashMap<String, Session> sessions = getPersonalMessageOnlineSessions(tokens);*/
             HashMap<String, Session> sessions = personalMessageWS.getSessions();
 
 

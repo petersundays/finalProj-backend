@@ -26,9 +26,10 @@ public class ProjectNotification extends PersonalMessage implements Serializable
     @XmlElement
     private int projectId;
 
-    public static final String ADDED = "added";
-    public static final String REMOVED = "removed";
-    public static final String INVITED = "invited";
+    public static final String ADDED = "added to";
+    public static final String REMOVED = "removed from";
+    public static final String INVITED = "invited to";
+    public static final String STATUS_CHANGED = "status changed";
 
     /**
      * Default constructor

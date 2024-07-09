@@ -240,7 +240,7 @@ public class ProjectBean implements Serializable {
 
         logger.info("Successfully created new project with name {}", newProjectDto.getName());
 
-        messageBean.sendMessageToProjectUsers(projectEntity, ProjectNotification.ADDED);
+        messageBean.sendMessageToProjectUsers(projectEntity, ProjectNotification.ADDED, "");
 
         return detailedProject;
     }
@@ -896,6 +896,8 @@ public class ProjectBean implements Serializable {
         }
 
         logger.info("Successfully edited state of project with ID {}", projectId);
+
+        messageBean.sendMessageToProjectUsers(projectEntity, ProjectNotification.STATUS_CHANGED, newStateEnum.name());
         return detailedProject;
     }
 
