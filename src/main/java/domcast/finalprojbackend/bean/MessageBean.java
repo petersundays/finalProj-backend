@@ -640,6 +640,18 @@ public class MessageBean implements Serializable {
         } else if (action.equals(ProjectNotification.APPLIED)) {
             subject = "New application for project: '" + projectName + "'.";
             content = sender.getFirstName() + " " + sender.getLastName() + " has applied to project: " + projectName;
+        } else if (action.equals(ProjectNotification.APPLICATION_REJECTED)) {
+            subject = "Application rejected for project: '" + projectName + "'.";
+            content = sender.getFirstName() + " " + sender.getLastName() + " has been rejected from project: " + projectName;
+        } else if (action.equals(ProjectNotification.APPLICATION_ACCEPTED)) {
+            subject = "Application accepted for project: '" + projectName + "'.";
+            content = sender.getFirstName() + " " + sender.getLastName() + " has been accepted to project: " + projectName;
+        } else if (action.equals(ProjectNotification.REJECTED_INVITATION)) {
+            subject = "Invitation rejected for project: '" + projectName + "'.";
+            content = sender.getFirstName() + " " + sender.getLastName() + " has rejected the invitation to project: " + projectName;
+        } else if (action.equals(ProjectNotification.ACCEPTED_INVITATION)) {
+            subject = "Invitation accepted for project: '" + projectName + "'.";
+            content = sender.getFirstName() + " " + sender.getLastName() + " has accepted the invitation to project: " + projectName;
         }
 
         PersonalMessage personalMessage;
@@ -750,9 +762,8 @@ public class MessageBean implements Serializable {
         if (state == null) {
             state = "";
         }
-
+int i = 1;
         for (M2MProjectUser projectUser : projectUsers) {
-
             ProjectNotification projectNotification;
 
             try {
@@ -794,6 +805,7 @@ public class MessageBean implements Serializable {
                     }
                 }
             }
+            i++;
         }
     }
 }

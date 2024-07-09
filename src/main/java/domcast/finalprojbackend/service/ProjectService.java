@@ -661,7 +661,7 @@ public class ProjectService {
             return Response.status(400).entity("Invalid id").build();
         }
 
-        if (!authenticationAndAuthorization.isProjectCanceledOrFinished(projectId)) {
+        if (authenticationAndAuthorization.isProjectCanceledOrFinished(projectId)) {
             logger.info("User with session token {} tried to answer the invitation to the project but the project is already canceled or finished", token);
             return Response.status(401).entity("Unauthorized: Project is not in a state that can be edited").build();
         }

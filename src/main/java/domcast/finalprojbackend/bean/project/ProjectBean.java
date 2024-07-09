@@ -1371,9 +1371,7 @@ public class ProjectBean implements Serializable {
 
         if (inviterId > 0) {
             sender = inviterId;
-            userInvited = new M2MProjectUser();
-            userInvited.setUser(userEntity);
-            userInvited.setRole(projectUserEnum);
+            userInvited = m2MProjectUser;
             projectUsers.add(userInvited);
             action = ProjectNotification.INVITED;
         } else {
@@ -1381,8 +1379,6 @@ public class ProjectBean implements Serializable {
             projectUsers = getProjectManagers(projectEntity);
             action = ProjectNotification.APPLIED;
         }
-
-
 
         messageBean.sendMessageToProjectUsers(
                 projectUsers,
@@ -1499,7 +1495,39 @@ public class ProjectBean implements Serializable {
             throw new RuntimeException(e);
         }
 
-        ////////////////// SEND A MESSAGE //////////////////
+        Set<M2MProjectUser> projectUsers;
+        int senderId = 0;
+        String action;
+
+        if (application) {
+            projectUsers = new HashSet<>();
+            projectUsers.add(m2MProjectUser);
+
+            if (answer) {
+                action = ProjectNotification.APPLICATION_ACCEPTED;
+            } else {
+                action = ProjectNotification.APPLICATION_REJECTED;
+            }
+
+        } else {
+            projectUsers = getProjectManagers(projectEntity);
+            senderId = userId;
+
+            if (answer) {
+                action = ProjectNotification.ACCEPTED_INVITATION;
+            } else {
+                action = ProjectNotification.REJECTED_INVITATION;
+            }
+        }
+
+        messageBean.sendMessageToProjectUsers(
+                projectUsers,
+                projectEntity.getId(),
+                projectEntity.getName(),
+                action,
+                "",
+                senderId
+        );
 
 // ** if application, send message to user, else send message to managers ** //
 
@@ -1959,7 +1987,7 @@ public class ProjectBean implements Serializable {
         }
 
         Set<M2MProjectUser> projectManagersSet = new HashSet<>(projectManagers);
-        
+
         logger.info("Successfully got project managers for project with ID {}", projectEntity.getId());
         return projectManagersSet;
     }
