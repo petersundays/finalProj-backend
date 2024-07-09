@@ -39,6 +39,10 @@ public class ProjectNotification extends PersonalMessage implements Serializable
     public static final String APPLICATION_ACCEPTED = "accepted";
     public static final String REJECTED_INVITATION = "rejected the invitation";
     public static final String ACCEPTED_INVITATION = "accepted the invitation";
+    public static final String NEW_TASK = "new task";
+    public static final String TASK_STATUS_CHANGED = "task status changed";
+    public static final String TASK_EDITED = "task edited";
+    public static final String TASK_DELETED = "task deleted";
 
     /**
      * Default constructor

@@ -652,6 +652,18 @@ public class MessageBean implements Serializable {
         } else if (action.equals(ProjectNotification.ACCEPTED_INVITATION)) {
             subject = "Invitation accepted for project: '" + projectName + "'.";
             content = sender.getFirstName() + " " + sender.getLastName() + " has accepted the invitation to project: " + projectName;
+        } else if (action.equals(ProjectNotification.NEW_TASK)) {
+            subject = "New task in project: '" + projectName + "'.";
+            content = sender.getFirstName() + " " + sender.getLastName() + " has been assigned a new task in project: " + projectName;
+        } else if (action.equals(ProjectNotification.TASK_STATUS_CHANGED)) {
+            subject = "Task status changed in project: '" + projectName + "'.";
+            content = "The status of a task in project: " + projectName + " has changed to: " + state + ".";
+        } else if (action.equals(ProjectNotification.TASK_EDITED)) {
+            subject = "Task edited in project: '" + projectName + "'.";
+            content = sender.getFirstName() + " " + sender.getLastName() + " has edited a task in project: " + projectName;
+        } else if (action.equals(ProjectNotification.TASK_DELETED)) {
+            subject = "Task deleted in project: '" + projectName + "'.";
+            content = sender.getFirstName() + " " + sender.getLastName() + " has deleted a task in project: " + projectName;
         }
 
         PersonalMessage personalMessage;
