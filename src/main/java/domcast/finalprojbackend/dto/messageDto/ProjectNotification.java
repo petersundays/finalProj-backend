@@ -30,6 +30,11 @@ public class ProjectNotification extends PersonalMessage implements Serializable
     public static final String REMOVED = "removed from";
     public static final String INVITED = "invited to";
     public static final String STATUS_CHANGED = "status changed";
+    public static final String PROJECT_APPROVAL = "project approval";
+    public static final String APPROVED = "approved";
+    public static final String CANCELED = "canceled";
+    public static final String LEFT_PROJECT = "left the project";
+    public static final String APPLIED = "applied to";
 
     /**
      * Default constructor

@@ -240,7 +240,16 @@ public class ProjectBean implements Serializable {
 
         logger.info("Successfully created new project with name {}", newProjectDto.getName());
 
-        messageBean.sendMessageToProjectUsers(projectEntity, ProjectNotification.ADDED, "");
+        Set<M2MProjectUser> projectUsers = projectEntity.getProjectUsers();
+
+        messageBean.sendMessageToProjectUsers(
+                projectUsers,
+                projectEntity.getId(),
+                projectEntity.getName(),
+                ProjectNotification.ADDED,
+                "",
+                0
+        );
 
         return detailedProject;
     }
@@ -897,7 +906,16 @@ public class ProjectBean implements Serializable {
 
         logger.info("Successfully edited state of project with ID {}", projectId);
 
-        messageBean.sendMessageToProjectUsers(projectEntity, ProjectNotification.STATUS_CHANGED, newStateEnum.name());
+        Set<M2MProjectUser> projectUsers = projectEntity.getProjectUsers();
+
+        messageBean.sendMessageToProjectUsers(
+                projectUsers,
+                projectEntity.getId(),
+                projectEntity.getName(),
+                ProjectNotification.STATUS_CHANGED,
+                newStateEnum.name(),
+                0
+        );
         return detailedProject;
     }
 
@@ -926,7 +944,7 @@ public class ProjectBean implements Serializable {
     }
 
 
-    public boolean approveProject(int projectId, int newState) {
+    public boolean approveProject(int projectId, int newState, int adminId) {
 
         if (!dataValidator.isIdValid(projectId)) {
             logger.error("Project ID is invalid while approving project");
@@ -970,6 +988,18 @@ public class ProjectBean implements Serializable {
         }
 
         logger.info("Successfully approved project with ID {}", projectId);
+
+        Set<M2MProjectUser> projectManagers = getProjectManagers(projectEntity);
+
+        messageBean.sendMessageToProjectUsers(
+                projectManagers,
+                projectEntity.getId(),
+                projectEntity.getName(),
+                ProjectNotification.PROJECT_APPROVAL,
+                newStateEnum.name(),
+                adminId
+        );
+
         return true;
     }
 
@@ -1114,7 +1144,7 @@ public class ProjectBean implements Serializable {
         return projectPreview;
     }
 
-    public DetailedProject removeUserFromProject (int projectId, int userId) {
+    public DetailedProject removeUserFromProject (int projectId, int userId, boolean removed) {
 
         if (!dataValidator.isIdValid(projectId) || !dataValidator.isIdValid(userId)) {
             logger.error("Invalid project ID or user ID while removing user from project");
@@ -1216,6 +1246,19 @@ public class ProjectBean implements Serializable {
 
         logger.info("Successfully removed user with ID {} from project with ID {}", userId, projectId);
 
+        Set<M2MProjectUser> projectManagers = getProjectManagers(projectEntity);
+
+        String action = removed ? ProjectNotification.REMOVED : ProjectNotification.LEFT_PROJECT;
+
+        messageBean.sendMessageToProjectUsers(
+                projectManagers,
+                projectEntity.getId(),
+                projectEntity.getName(),
+                action,
+                "",
+                0
+        );
+
         return detailedProject;
     }
 
@@ -1227,7 +1270,7 @@ public class ProjectBean implements Serializable {
      * @param role      the role of the user in the project
      * @return boolean value indicating if the user was invited to the project
      */
-    public boolean inviteToProject(int projectId, int userId, int role) {
+    public boolean inviteToProject(int projectId, int userId, int role, int inviterId) {
 
         if (!dataValidator.isIdValid(projectId) || !dataValidator.isIdValid(userId)) {
             logger.error("Invalid project ID or user ID while inviting user to project");
@@ -1317,11 +1360,41 @@ public class ProjectBean implements Serializable {
             invited = true;
         }
 
-        ////////////////// SEND MESSAGE TO USER //////////////////
+        int sender;
+        Set<M2MProjectUser> projectUsers = new HashSet<>();
+        M2MProjectUser userInvited;
+        String action;
 
-        // **** if Candidate, send message to managers, else send message to user **** //
+        if (inviterId < 0) {
+            inviterId = 0;
+        }
+
+        if (inviterId > 0) {
+            sender = inviterId;
+            userInvited = new M2MProjectUser();
+            userInvited.setUser(userEntity);
+            userInvited.setRole(projectUserEnum);
+            projectUsers.add(userInvited);
+            action = ProjectNotification.INVITED;
+        } else {
+            sender = userId;
+            projectUsers = getProjectManagers(projectEntity);
+            action = ProjectNotification.APPLIED;
+        }
+
+
+
+        messageBean.sendMessageToProjectUsers(
+                projectUsers,
+                projectEntity.getId(),
+                projectEntity.getName(),
+                action,
+                "",
+                sender
+        );
 
         ////////////////// Create log in project //////////////////
+
         logger.info("Successfully invited user with ID {} to project with ID {}", userId, projectId);
 
         return invited;
@@ -1448,7 +1521,7 @@ public class ProjectBean implements Serializable {
         logger.info("Applying to project.");
         boolean applied;
 
-        applied = inviteToProject(projectId, userId, ProjectUserEnum.CANDIDATE.getId());
+        applied = inviteToProject(projectId, userId, ProjectUserEnum.CANDIDATE.getId(), 0);
 
         return applied;
     }
@@ -1856,5 +1929,38 @@ public class ProjectBean implements Serializable {
 
         logger.info("Successfully updated project with ID {} max members to {}", projectId, maxMembers);
         return true;
+    }
+
+    /**
+     * Method to get the project managers of a project.
+     * @param projectEntity The project to get the managers of.
+     * @return A set of project managers of the project.
+     */
+    public Set<M2MProjectUser> getProjectManagers(ProjectEntity projectEntity) {
+        if (projectEntity == null) {
+            logger.error("Project entity is null while getting project managers");
+            throw new IllegalArgumentException("Project entity is null while getting project managers");
+        }
+
+        logger.info("Getting project managers for project with ID {}", projectEntity.getId());
+
+        List<M2MProjectUser> projectManagers;
+
+        try {
+            projectManagers = m2MProjectUserDao.findProjectManagers(projectEntity.getId());
+        } catch (PersistenceException e) {
+            logger.error("Error finding project managers for project with ID {}: {}", projectEntity.getId(), e.getMessage());
+            throw new RuntimeException(e);
+        }
+
+        if (projectManagers == null) {
+            logger.error("No project managers found for project with ID {}", projectEntity.getId());
+            throw new IllegalArgumentException("No project managers found for project with ID " + projectEntity.getId());
+        }
+
+        Set<M2MProjectUser> projectManagersSet = new HashSet<>(projectManagers);
+        
+        logger.info("Successfully got project managers for project with ID {}", projectEntity.getId());
+        return projectManagersSet;
     }
 }
