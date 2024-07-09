@@ -2,7 +2,7 @@ package domcast.finalprojbackend.service;
 
 import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.task.TaskBean;
-import domcast.finalprojbackend.bean.project.AuthenticationAndAuthorization;
+import domcast.finalprojbackend.bean.AuthenticationAndAuthorization;
 import domcast.finalprojbackend.dto.taskDto.ChartTask;
 import domcast.finalprojbackend.dto.taskDto.DetailedTask;
 import domcast.finalprojbackend.dto.taskDto.EditTask;
@@ -55,6 +55,11 @@ public class TaskService  {
         if (!dataValidator.isIdValid(userId) && !dataValidator.isIdValid(newTask.getProjectId())) {
             logger.info("User with session token {} tried to create a task unsuccessfully", token);
             return Response.status(400).entity("Invalid id").build();
+        }
+
+        if (!authenticationAndAuthorization.ableToEditProject(newTask.getProjectId())) {
+            logger.info("User with session token {} tried to create a task unsuccessfully", token);
+            return Response.status(401).entity("Project is not able to be edited").build();
         }
 
         // Check if the user is authorized to create the task
@@ -155,6 +160,11 @@ public class TaskService  {
             return Response.status(400).entity("Invalid id").build();
         }
 
+        if (!authenticationAndAuthorization.ableToEditProject(projectId)) {
+            logger.info("User with session token {} tried to change the state of a task unsuccessfully", token);
+            return Response.status(401).entity("Project is not able to be edited").build();
+        }
+
         // Check if the user is authorized to change the state of the task
         if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, userId) &&
                 !authenticationAndAuthorization.isUserMemberOfTheProjectAndActive(userId, projectId)) {
@@ -167,7 +177,7 @@ public class TaskService  {
 
         // Change the state of the task
         try {
-            detailedTask = taskBean.updateTaskState(taskId, state);
+            detailedTask = taskBean.updateTaskState(taskId, state, userId);
             logger.info("User with session token {} changed the state of the task with id {} to {} from IP address {}", token, taskId, state, ipAddress);
             response = Response.status(200).entity(detailedTask).build();
         } catch (IllegalArgumentException e) {
@@ -234,6 +244,11 @@ public class TaskService  {
             return Response.status(400).entity("Invalid id").build();
         }
 
+        if (!authenticationAndAuthorization.ableToEditProject(editTask.getProjectId())) {
+            logger.info("User with session token {} tried to apply to the project but the project is not in a state that can be edited", token);
+            return Response.status(401).entity("Unauthorized: Project is not in a state that can be edited").build();
+        }
+
         // Check if the user is authorized to update the task
         if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, userId) &&
                 !authenticationAndAuthorization.isUserMemberOfTheProjectAndActive(userId, editTask.getProjectId())) {
@@ -246,7 +261,7 @@ public class TaskService  {
 
         // Update the task
         try {
-            detailedTask = taskBean.editTask(editTask, taskId);
+            detailedTask = taskBean.editTask(editTask, taskId, userId);
             logger.info("User with session token {} updated the task with id {} from IP address {}", token, taskId, ipAddress);
             response = Response.status(200).entity(detailedTask).build();
         } catch (IllegalArgumentException e) {
@@ -307,6 +322,11 @@ public class TaskService  {
             return Response.status(400).entity("Invalid id").build();
         }
 
+        if (!authenticationAndAuthorization.ableToEditProject(projectId)) {
+            logger.info("User with session token {} tried to delete a task unsuccessfully", token);
+            return Response.status(401).entity("Project is not able to be edited").build();
+        }
+
         // Check if the user is authorized to delete the task
         if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, userId) &&
                 !authenticationAndAuthorization.isUserMemberOfTheProjectAndActive(userId, projectId)) {
@@ -319,7 +339,7 @@ public class TaskService  {
 
         // Delete the task
 try {
-            deleted = taskBean.deleteTask(taskId);
+            deleted = taskBean.deleteTask(taskId, userId);
             logger.info("User with session token {} deleted the task with id {} from IP address {}", token, taskId, ipAddress);
             response = Response.status(200).entity(deleted).build();
         } catch (IllegalArgumentException e) {

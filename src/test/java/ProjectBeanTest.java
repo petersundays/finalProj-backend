@@ -706,10 +706,11 @@ public class ProjectBeanTest {
         // Arrange
         int projectId = -1; // Invalid projectId
         int userId = 2;
+        boolean removed = false;
         when(dataValidator.isIdValid(projectId)).thenReturn(false); // Simulate invalid projectId
 
         // Act & Assert
-        assertThrows(IllegalArgumentException.class, () -> projectBean.removeUserFromProject(projectId, userId));
+        assertThrows(IllegalArgumentException.class, () -> projectBean.removeUserFromProject(projectId, userId, removed));
     }
 
 }

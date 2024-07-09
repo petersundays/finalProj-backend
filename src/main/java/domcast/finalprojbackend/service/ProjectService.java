@@ -4,7 +4,7 @@ import domcast.finalprojbackend.bean.ComponentResourceBean;
 import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.SkillBean;
 import domcast.finalprojbackend.bean.project.ProjectBean;
-import domcast.finalprojbackend.bean.project.AuthenticationAndAuthorization;
+import domcast.finalprojbackend.bean.AuthenticationAndAuthorization;
 import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
 import domcast.finalprojbackend.dto.projectDto.*;
@@ -435,7 +435,7 @@ public class ProjectService {
 
         try {
             logger.info("User with session token {} and id {} is approving the project with id {}", token, userId, projectId);
-            if (projectBean.approveProject(projectId, state)) {
+            if (projectBean.approveProject(projectId, state, userId)) {
                 if (state == ProjectStateEnum.APPROVED.getId()) {
                     response = Response.status(200).entity("Project successfully approved").build();
                     logger.info("User with session token {} and id {} successfully approved the project with id {}", token, userId, projectId);
@@ -537,7 +537,7 @@ public class ProjectService {
             return Response.status(401).entity("Unauthorized: Project is not in a state that can be edited").build();
         }
 
-        if (!authenticationAndAuthorization.isUserManagerInProject(userId, projectId)) {
+        if (!authenticationAndAuthorization.isUserManagerInProject(userId, projectId) && userId != userToRemoveId) {
             logger.info("User with session token {} tried to remove the user with id {} from the project but is not authorized", token, userToRemoveId);
             return Response.status(401).entity("Unauthorized").build();
         }
@@ -545,10 +545,11 @@ public class ProjectService {
         Response response;
 
         DetailedProject detailedProject;
+        boolean removed = (userId != userToRemoveId);
 
         try {
             logger.info("User with session token {} and id {} is removing the user with id {} from the project with id {}", token, userId, userToRemoveId, projectId);
-            detailedProject = projectBean.removeUserFromProject(projectId, userToRemoveId);
+            detailedProject = projectBean.removeUserFromProject(projectId, userToRemoveId, removed);
             if (detailedProject != null) {
                 response = Response.status(200).entity("User with id " + userToRemoveId + " successfully removed from the project with id " + projectId).build();
                 logger.info("User with session token {} and id {} successfully removed the user with id {} from the project with id {}", token, userId, userToRemoveId, projectId);
@@ -617,7 +618,7 @@ public class ProjectService {
 
         try {
             logger.info("User with session token {} and id {} is inviting the user with id {} to the project with id {}", token, userId, userToInviteId, projectId);
-            invited = projectBean.inviteToProject(projectId, userToInviteId, role);
+            invited = projectBean.inviteToProject(projectId, userToInviteId, role, userId);
             if (invited) {
                 response = Response.status(200).entity("User with id " + userToInviteId + " successfully invited to the project with id " + projectId).build();
                 logger.info("User with session token {} and id {} successfully invited the user with id {} to the project with id {}", token, userId, userToInviteId, projectId);
@@ -660,7 +661,7 @@ public class ProjectService {
             return Response.status(400).entity("Invalid id").build();
         }
 
-        if (!authenticationAndAuthorization.isProjectCanceledOrFinished(projectId)) {
+        if (authenticationAndAuthorization.isProjectCanceledOrFinished(projectId)) {
             logger.info("User with session token {} tried to answer the invitation to the project but the project is already canceled or finished", token);
             return Response.status(401).entity("Unauthorized: Project is not in a state that can be edited").build();
         }

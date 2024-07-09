@@ -218,4 +218,26 @@ public class M2MProjectUserDao extends AbstractDao<M2MProjectUser> {
             return new ArrayList<>();
         }
     }
+
+    /**
+     * Method to find the project managers in a project.
+     *
+     * @param projectId the id of the project
+     * @return the project managers in the project
+     */
+    public List<M2MProjectUser> findProjectManagers(int projectId) {
+        try {
+            List<M2MProjectUser> resultList = em.createNamedQuery("M2MProjectUser.findProjectManagers", M2MProjectUser.class)
+                    .setParameter("projectId", projectId)
+                    .getResultList();
+            if (resultList == null) {
+                logger.error("Query result is null for project managers in project with id: {}", projectId);
+                return new ArrayList<>();
+            }
+            return resultList;
+        } catch (Exception e) {
+            logger.error("An unexpected error occurred while finding project managers in project with id: {}", projectId, e);
+            return new ArrayList<>();
+        }
+    }
 }

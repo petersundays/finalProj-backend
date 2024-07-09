@@ -48,6 +48,8 @@ import java.io.Serializable;
         query = "SELECT pu.project FROM M2MProjectUser pu WHERE pu.active = true GROUP BY pu.project HAVING COUNT(pu) > :number")
 @NamedQuery(name = "M2MProjectUser.getUsersInProject",
         query = "SELECT pu.user.id FROM M2MProjectUser pu WHERE pu.project.id = :projectId AND pu.active = true")
+@NamedQuery(name = "M2MProjectUser.findProjectManagers",
+        query = "SELECT pu FROM M2MProjectUser pu WHERE pu.project.id = :projectId AND (pu.role = 200 OR pu.role = 300) AND pu.active = true")
 
 public class M2MProjectUser implements Serializable {
     private static final long serialVersionUID = 1L;

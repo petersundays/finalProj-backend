@@ -194,4 +194,9 @@ public class PersonalMessageWS {
         // Send the message to all active sessions of the receiver
         messageBean.sendToUser(receiverId, jsonMessage, sessions);
     }
+
+    public HashMap<String, Session> getSessions() {
+        return sessions;
+    }
+
 }
