@@ -122,6 +122,9 @@ public class ProjectEntity implements Serializable {
     @OneToMany(mappedBy = "projectId", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<TaskEntity> tasks = new HashSet<>();
 
+    @OneToMany(mappedBy = "project")
+    private Set<RecordEntity> records = new HashSet<>();
+
     // Default constructor
     public ProjectEntity() {
     }
@@ -294,5 +297,13 @@ public class ProjectEntity implements Serializable {
 
     public void addComponentResource(M2MComponentProject componentResource) {
         this.componentResources.add(componentResource);
+    }
+
+    public Set<RecordEntity> getRecords() {
+        return records;
+    }
+
+    public void setRecords(Set<RecordEntity> records) {
+        this.records = records;
     }
 }

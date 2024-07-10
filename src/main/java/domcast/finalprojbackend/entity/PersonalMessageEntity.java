@@ -1,5 +1,7 @@
 package domcast.finalprojbackend.entity;
 
+import domcast.finalprojbackend.enums.MessageEnum;
+import domcast.finalprojbackend.enums.converters.MessageEnumConverter;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
@@ -42,6 +44,10 @@ public class PersonalMessageEntity extends MessageEntity implements Serializable
     @JoinColumn(name = "receiverUserId", referencedColumnName = "id")
     private UserEntity receiver;
 
+    @Convert(converter = MessageEnumConverter.class)
+    @Column(name = "type", nullable = false)
+    private MessageEnum type;
+
     // Default constructor
     public PersonalMessageEntity() {
     }
@@ -62,5 +68,13 @@ public class PersonalMessageEntity extends MessageEntity implements Serializable
 
     public void setReceiver(UserEntity receiver) {
         this.receiver = receiver;
+    }
+
+    public MessageEnum getType() {
+        return type;
+    }
+
+    public void setType(MessageEnum type) {
+        this.type = type;
     }
 }

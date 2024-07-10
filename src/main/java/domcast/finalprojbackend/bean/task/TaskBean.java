@@ -7,12 +7,12 @@ import domcast.finalprojbackend.dao.M2MProjectUserDao;
 import domcast.finalprojbackend.dao.ProjectDao;
 import domcast.finalprojbackend.dao.TaskDao;
 import domcast.finalprojbackend.dao.UserDao;
-import domcast.finalprojbackend.dto.messageDto.ProjectNotification;
 import domcast.finalprojbackend.dto.taskDto.ChartTask;
 import domcast.finalprojbackend.dto.taskDto.DetailedTask;
 import domcast.finalprojbackend.dto.taskDto.EditTask;
 import domcast.finalprojbackend.dto.taskDto.NewTask;
 import domcast.finalprojbackend.entity.*;
+import domcast.finalprojbackend.enums.MessageEnum;
 import domcast.finalprojbackend.enums.TaskStateEnum;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
@@ -143,9 +143,10 @@ public class TaskBean implements Serializable {
                 projectManagers,
                 project.getId(),
                 project.getName(),
-                ProjectNotification.NEW_TASK,
+                MessageEnum.NEW_TASK.name(),
                 "",
-                sender
+                sender,
+                MessageEnum.NEW_TASK
         );
 
         return chartTask;
@@ -521,7 +522,7 @@ public class TaskBean implements Serializable {
         taskDao.merge(taskEntity);
 
 
-        sendTaskNotification(taskEntity, ProjectNotification.TASK_STATUS_CHANGED, TaskStateEnum.fromId(stateId).name(), userId);
+        sendTaskNotification(taskEntity, MessageEnum.TASK_STATUS_CHANGED.name(), TaskStateEnum.fromId(stateId).name(), userId, MessageEnum.TASK_STATUS_CHANGED);
 
         return createDetailedTask(taskId);
     }
@@ -668,7 +669,7 @@ public class TaskBean implements Serializable {
                     taskEntity.getState().getId(),
                     externalExecutors);
 
-        sendTaskNotification(taskEntity, ProjectNotification.TASK_EDITED, "", userId);
+        sendTaskNotification(taskEntity, MessageEnum.TASK_EDITED.name(), "", userId, MessageEnum.TASK_EDITED);
 
         return detailedTask;
     }
@@ -680,7 +681,7 @@ public class TaskBean implements Serializable {
      * @param state the state of the task
      * @param userId the id of the user
      */
-    private void sendTaskNotification(TaskEntity taskEntity, String taskEdited, String state, int userId) {
+    private void sendTaskNotification(TaskEntity taskEntity, String taskEdited, String state, int userId, MessageEnum type) {
 
         ProjectEntity project = taskEntity.getProjectId();
         Set<M2MProjectUser> projectManagers;
@@ -704,6 +705,9 @@ public class TaskBean implements Serializable {
             projectManagers.add(taskResponsible);
         }
 
+        if (type == null) {
+            type = MessageEnum.TASK_EDITED;
+        }
 
         messageBean.sendMessageToProjectUsers(
                 projectManagers,
@@ -711,7 +715,8 @@ public class TaskBean implements Serializable {
                 project.getName(),
                 taskEdited,
                 state,
-                userId
+                userId,
+                type
         );
     }
 
@@ -784,7 +789,7 @@ public class TaskBean implements Serializable {
                     taskEntity.setDependentTasks(dependentRelationship);
                 }
             }
-
+            MessageEnum.ADDED.name();
             if (editedTask.getState() > 0) {
                 taskEntity.setState(TaskStateEnum.fromId(editedTask.getState()));
             }
@@ -927,7 +932,7 @@ public class TaskBean implements Serializable {
 
         logger.info("Task with id {} deleted", taskId);
 
-        sendTaskNotification(taskEntity, ProjectNotification.TASK_DELETED, "", userId);
+        sendTaskNotification(taskEntity, MessageEnum.TASK_DELETED.name(), "", userId, MessageEnum.TASK_DELETED);
 
         return true;
     }

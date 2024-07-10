@@ -17,26 +17,39 @@ import domcast.finalprojbackend.enums.intefarce.ConvertibleToEnumDTO;
  * @author Pedro Domingos
  */
 
-public enum RecordTopicEnum implements ConvertibleToEnumDTO {
+public enum MessageEnum implements ConvertibleToEnumDTO {
 
-    // The record can have one of the following topics
-    TEAM (1, "Team"),
-    PROJECT_DATA (2, "Project Data"),
-    EXECUTION_PLAN (3, "Execution Plan"),
-    PROJECT_STATE (4, "Project State"),
-    TASK_STATE (5, "Task State"),
-    ANNOTATION (6, "Annotation");
+    ADDED (1, "added to"),
+    REMOVED (2, "removed from"),
+    INVITED (3, "invited to"),
+    STATUS_CHANGED (4, "status changed"),
+    PROJECT_APPROVAL (5, "project approval"),
+    APPROVED (6, "approved"),
+    CANCELED (7, "canceled"),
+    LEFT_PROJECT (8, "left the project"),
+    APPLIED (9, "applied to"),
+    APPLICATION_REJECTED (10, "rejected"),
+    APPLICATION_ACCEPTED (11, "accepted"),
+    REJECTED_INVITATION (12, "rejected the invitation"),
+    ACCEPTED_INVITATION (13, "accepted the invitation"),
+    NEW_TASK (14, "new task"),
+    TASK_STATUS_CHANGED (15, "task status changed"),
+    TASK_EDITED (16, "task edited"),
+    TASK_DELETED (17, "task deleted"),
+    EMAIL (18, "email"),
+    ANNOTATION (19, "annotation");
 
     // The id of the topic
     private final int id;
+
     // The value of the topic
     private final String value;
 
-    // Constructor
-    RecordTopicEnum(int id, String value) {
+    MessageEnum(int id, String value) {
         this.id = id;
         this.value = value;
     }
+
 
     // Getter of the id of the topic
     public int getId() {
@@ -53,8 +66,8 @@ public enum RecordTopicEnum implements ConvertibleToEnumDTO {
      * @param id the id of the topic.
      * @return the topic.
      */
-    public static RecordTopicEnum fromId(int id) {
-        for (RecordTopicEnum topic : RecordTopicEnum.values()) {
+    public static MessageEnum fromId(int id) {
+        for (MessageEnum topic : MessageEnum.values()) {
             if (topic.getId() == id) {
                 return topic;
             }
@@ -68,7 +81,7 @@ public enum RecordTopicEnum implements ConvertibleToEnumDTO {
      * @return true if the enum is valid, false otherwise.
      */
     public static boolean isValidEnum(int id) {
-        for (RecordTopicEnum topic : RecordTopicEnum.values()) {
+        for (MessageEnum topic : MessageEnum.values()) {
             if (topic.getId() == id) {
                 return true;
             }

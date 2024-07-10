@@ -26,24 +26,6 @@ public class ProjectNotification extends PersonalMessage implements Serializable
     @XmlElement
     private int projectId;
 
-    public static final String ADDED = "added to";
-    public static final String REMOVED = "removed from";
-    public static final String INVITED = "invited to";
-    public static final String STATUS_CHANGED = "status changed";
-    public static final String PROJECT_APPROVAL = "project approval";
-    public static final String APPROVED = "approved";
-    public static final String CANCELED = "canceled";
-    public static final String LEFT_PROJECT = "left the project";
-    public static final String APPLIED = "applied to";
-    public static final String APPLICATION_REJECTED = "rejected";
-    public static final String APPLICATION_ACCEPTED = "accepted";
-    public static final String REJECTED_INVITATION = "rejected the invitation";
-    public static final String ACCEPTED_INVITATION = "accepted the invitation";
-    public static final String NEW_TASK = "new task";
-    public static final String TASK_STATUS_CHANGED = "task status changed";
-    public static final String TASK_EDITED = "task edited";
-    public static final String TASK_DELETED = "task deleted";
-
     /**
      * Default constructor
      */

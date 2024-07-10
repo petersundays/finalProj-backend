@@ -115,7 +115,7 @@ public class TaskEntity implements Serializable {
     private Set<M2MTaskDependencies> dependentTasks = new HashSet<>();
 
     // Records of the task
-    @OneToMany(mappedBy = "task")
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<RecordEntity> records = new HashSet<>();
 
     // Default constructor
