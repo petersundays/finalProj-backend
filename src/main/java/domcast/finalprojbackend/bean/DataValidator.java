@@ -217,7 +217,7 @@ public class DataValidator {
             logger.error("Error while finding presentation task in project: {}", e.getMessage());
             return false;
         }
-        System.out.println("DAAAAAATE: " + !newTask.getProjectedStartDate().isBefore(LocalDateTime.now().toLocalDate().atStartOfDay()) );
+
         return newTask.getTitle() != null && !newTask.getTitle().isBlank() &&
                 newTask.getDescription() != null && !newTask.getDescription().isBlank() &&
                 newTask.getProjectedStartDate() != null &&

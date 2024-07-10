@@ -166,7 +166,7 @@ public class PersonalMessageWS {
         PersonalMessage message;
 
         try {
-            message = messageBean.persistPersonalMessage(subject, content, userSender, userReceiver);
+            message = messageBean.persistPersonalMessage(subject, content, userSender, userReceiver, null);
         } catch (Exception e) {
             logger.error("Error persisting message");
             return;

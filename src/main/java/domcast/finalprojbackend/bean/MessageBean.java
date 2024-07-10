@@ -10,6 +10,7 @@ import domcast.finalprojbackend.dto.messageDto.ProjectMessage;
 import domcast.finalprojbackend.dto.messageDto.ProjectNotification;
 import domcast.finalprojbackend.dto.userDto.MessageUser;
 import domcast.finalprojbackend.entity.*;
+import domcast.finalprojbackend.enums.MessageAndLogEnum;
 import domcast.finalprojbackend.enums.ProjectStateEnum;
 import domcast.finalprojbackend.service.ObjectMapperContextResolver;
 import domcast.finalprojbackend.websocket.NotificationWS;
@@ -26,6 +27,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Stateless
 public class MessageBean implements Serializable {
@@ -63,6 +65,12 @@ public class MessageBean implements Serializable {
     @EJB
     private SessionTokenDao sessionTokenDao;
 
+    @EJB
+    private RecordBean recordBean;
+
+    @EJB
+    private RecordDao recordDao;
+
 
     private static final Logger logger = LogManager.getLogger(TaskBean.class);
 
@@ -79,7 +87,7 @@ public class MessageBean implements Serializable {
      * @return the persisted message
      * @throws PersistenceException if an error occurs during the persist operation
      */
-    public PersonalMessage persistPersonalMessage(String subject, String content, UserEntity sender, UserEntity receiver) {
+    public PersonalMessage persistPersonalMessage(String subject, String content, UserEntity sender, UserEntity receiver, MessageAndLogEnum type) {
 
         if (sender == null || receiver == null) {
             logger.error("Personal message not sent");
@@ -96,6 +104,12 @@ public class MessageBean implements Serializable {
             throw new IllegalArgumentException("Content is null or empty");
         }
 
+        if (type == null) {
+            System.out.println(" ****** olha lá , oh burro! ******");
+            logger.error("Invalid message type");
+            type = MessageAndLogEnum.EMAIL;
+        }
+
         logger.info("Sending personal message from: {} to: {}", sender.getFirstName() + sender.getLastName(), receiver.getFirstName() + receiver.getLastName());
 
         PersonalMessageEntity messageEntity = new PersonalMessageEntity();
@@ -103,6 +117,7 @@ public class MessageBean implements Serializable {
         messageEntity.setContent(content);
         messageEntity.setSender(sender);
         messageEntity.setReceiver(receiver);
+        messageEntity.setType(type);
 
         PersonalMessageEntity persistedMessage;
 
@@ -558,26 +573,20 @@ public class MessageBean implements Serializable {
 
     /**
      * Creates a notification for a user assotiated with a project
-     * @param projectId the id of the project
-     * projectName the name of the project
+     * @param project the project
      * sender the user who sends the notification
      * receiver the user who receives the notification
      * role the role of the user in the project
      * action the action that was performed
      * @return the created notification
      */
-    public ProjectNotification createNotificationForProject (int projectId, String projectName, UserEntity sender, UserEntity receiver, String role, String state, String action) {
+    public ProjectNotification createNotificationAndRecordForProject(ProjectEntity project, UserEntity sender, UserEntity receiver, String role, String state, String action, MessageAndLogEnum type, TaskEntity task) {
 
         logger.info("Entering createNotificationForProject method");
 
-        if (!dataValidator.isIdValid(projectId)) {
-            logger.error("Invalid project id while creating notification");
-            throw new IllegalArgumentException("Invalid project id");
-        }
-
-        if (projectName == null || projectName.isEmpty()) {
-            logger.error("Invalid project name while creating notification");
-            throw new IllegalArgumentException("Invalid project name");
+        if (project == null) {
+            logger.error("Invalid project while creating notification");
+            throw new IllegalArgumentException("Invalid project");
         }
 
         if (sender == null || receiver == null) {
@@ -585,7 +594,7 @@ public class MessageBean implements Serializable {
             throw new IllegalArgumentException("Invalid sender or receiver");
         }
 
-        logger.info("Creating notification for project: {} from: {} to: {}", projectName, sender.getFirstName() + sender.getLastName(), receiver.getFirstName() + receiver.getLastName());
+        logger.info("Creating notification for project: {} from: {} to: {}", project.getName(), sender.getFirstName() + sender.getLastName(), receiver.getFirstName() + receiver.getLastName());
 
         if (role == null || role.isEmpty()) {
             logger.info("Role is null, setting to empty string");
@@ -595,6 +604,11 @@ public class MessageBean implements Serializable {
         if (state == null || state.isEmpty()) {
             logger.info("State is null, setting to empty string");
             state = "";
+        } else {
+            // Split the state string by underscores, capitalize the first letter of each word, and join them with spaces
+            state = Arrays.stream(state.split("_"))
+                    .map(word -> word.substring(0, 1).toUpperCase() + word.substring(1).toLowerCase())
+                    .collect(Collectors.joining(" "));
         }
 
         if (action == null || action.isEmpty()) {
@@ -602,82 +616,135 @@ public class MessageBean implements Serializable {
             throw new IllegalArgumentException("Invalid action");
         }
 
+        if (type == null) {
+            logger.error("Invalid type while creating notification, setting to email");
+            type = MessageAndLogEnum.EMAIL;
+        }
+
         String subject = "";
         String content = "";
+        String taskName = task != null ? (": " + task.getTitle() + ";") : "";
 
-        if (action.equals(ProjectNotification.ADDED) || action.equals(ProjectNotification.INVITED)) {
-            subject = "You have been " + action + " project: " + projectName + ".";
-            content = sender.getFirstName() + " " + sender.getLastName() + " has " + action + " project: " + projectName;
-            if (action.equals(ProjectNotification.ADDED) && !role.isEmpty()) {
-                content += " as " + role;
-            }
-        } else if (action.equals(ProjectNotification.STATUS_CHANGED)) {
-            subject = "The status of project: '" + projectName + "' has changed.";
-            content = "The status of project: " + projectName + " has changed.";
-            if (!state.isEmpty()) {
-                if (state.equalsIgnoreCase(ProjectStateEnum.IN_PROGRESS.name())) {
-                    state = "in progress";
+        MessageAndLogEnum messageAndLogEnum;
+        try {
+            messageAndLogEnum = MessageAndLogEnum.valueOf(action.toUpperCase().replace(" ", "_"));
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid action: {}", action);
+            throw new IllegalArgumentException("Invalid action: " + action);
+        }
+
+        switch (messageAndLogEnum) {
+            case ADDED, INVITED -> {
+                subject = "You have been " + messageAndLogEnum.getValue() + " project: " + project.getName() + ".";
+                content = sender.getFirstName() + " " + sender.getLastName() + " has " + messageAndLogEnum.getValue() + " project: " + project.getName();
+                if (messageAndLogEnum == MessageAndLogEnum.ADDED && !role.isEmpty()) {
+                    content += " as " + role;
                 }
-                state = state.toLowerCase();
-                content += "\n" + "The new status is: '" + state + "'.";
             }
-        } else if (action.equals(ProjectNotification.PROJECT_APPROVAL)) {
-            if (!state.isEmpty()) {
-                if (state.equalsIgnoreCase(ProjectNotification.APPROVED)) {
-                    state = "approved";
-                } else if (state.equalsIgnoreCase(ProjectNotification.CANCELED)) {
-                    state = "canceled";
+            case STATUS_CHANGED -> {
+                subject = "The status of project: '" + project.getName() + "' has changed.";
+                content = "The status of project: " + project.getName() + " has changed.";
+                if (!state.isEmpty()) {
+                    if (state.equalsIgnoreCase(ProjectStateEnum.IN_PROGRESS.name())) {
+                        state = "in progress";
+                    }
+                    state = state.toLowerCase();
+                    content += "\nThe new status is: '" + state + "'.";
                 }
-                subject = "Project: " + state + ".";
-                content = "Project: " + "'" + projectName + "'" + " has been " + state + ".";
             }
-        } else if (action.equals(ProjectNotification.LEFT_PROJECT)) {
-            subject = "User left project: '" + projectName + "'.";
-            content = receiver.getFirstName() + " " + receiver.getLastName() + " has left project: " + projectName;
-        } else if (action.equals(ProjectNotification.REMOVED)) {
-            subject = "User removed from project: '" + projectName + "'.";
-            content = receiver.getFirstName() + " " + receiver.getLastName() + " has been removed from project: '" + "'.";
-        } else if (action.equals(ProjectNotification.APPLIED)) {
-            subject = "New application for project: '" + projectName + "'.";
-            content = sender.getFirstName() + " " + sender.getLastName() + " has applied to project: " + projectName;
-        } else if (action.equals(ProjectNotification.APPLICATION_REJECTED)) {
-            subject = "Application rejected for project: '" + projectName + "'.";
-            content = sender.getFirstName() + " " + sender.getLastName() + " has been rejected from project: " + projectName;
-        } else if (action.equals(ProjectNotification.APPLICATION_ACCEPTED)) {
-            subject = "Application accepted for project: '" + projectName + "'.";
-            content = sender.getFirstName() + " " + sender.getLastName() + " has been accepted to project: " + projectName;
-        } else if (action.equals(ProjectNotification.REJECTED_INVITATION)) {
-            subject = "Invitation rejected for project: '" + projectName + "'.";
-            content = sender.getFirstName() + " " + sender.getLastName() + " has rejected the invitation to project: " + projectName;
-        } else if (action.equals(ProjectNotification.ACCEPTED_INVITATION)) {
-            subject = "Invitation accepted for project: '" + projectName + "'.";
-            content = sender.getFirstName() + " " + sender.getLastName() + " has accepted the invitation to project: " + projectName;
-        } else if (action.equals(ProjectNotification.NEW_TASK)) {
-            subject = "New task in project: '" + projectName + "'.";
-            content = sender.getFirstName() + " " + sender.getLastName() + " has been assigned a new task in project: " + projectName;
-        } else if (action.equals(ProjectNotification.TASK_STATUS_CHANGED)) {
-            subject = "Task status changed in project: '" + projectName + "'.";
-            content = "The status of a task in project: " + projectName + " has changed to: " + state + ".";
-        } else if (action.equals(ProjectNotification.TASK_EDITED)) {
-            subject = "Task edited in project: '" + projectName + "'.";
-            content = sender.getFirstName() + " " + sender.getLastName() + " has edited a task in project: " + projectName;
-        } else if (action.equals(ProjectNotification.TASK_DELETED)) {
-            subject = "Task deleted in project: '" + projectName + "'.";
-            content = sender.getFirstName() + " " + sender.getLastName() + " has deleted a task in project: " + projectName;
+            case PROJECT_APPROVAL -> {
+                if (!state.isEmpty()) {
+                    if (state.equalsIgnoreCase(MessageAndLogEnum.APPROVED.getValue())) {
+                        state = "approved";
+                    } else if (state.equalsIgnoreCase(MessageAndLogEnum.CANCELED.getValue())) {
+                        state = "canceled";
+                    }
+                    subject = "Project: " + state + ".";
+                    content = "Project: '" + project.getName() + "' has been " + state + ".";
+                }
+            }
+            case LEFT_PROJECT -> {
+                subject = "User left project: '" + project.getName() + "'.";
+                content = receiver.getFirstName() + " " + receiver.getLastName() + " has left project: " + project.getName();
+            }
+            case REMOVED -> {
+                subject = "User removed from project: '" + project.getName() + "'.";
+                content = receiver.getFirstName() + " " + receiver.getLastName() + " has been removed from project: '" + project.getName() + "'.";
+            }
+            case APPLIED -> {
+                subject = "New application for project: '" + project.getName() + "'.";
+                content = sender.getFirstName() + " " + sender.getLastName() + " has applied to project: " + project.getName();
+            }
+            case APPLICATION_REJECTED -> {
+                subject = "Application rejected for project: '" + project.getName() + "'.";
+                content = sender.getFirstName() + " " + sender.getLastName() + " has been rejected from project: " + project.getName();
+            }
+            case APPLICATION_ACCEPTED -> {
+                subject = "Application accepted for project: '" + project.getName() + "'.";
+                content = sender.getFirstName() + " " + sender.getLastName() + " has been accepted to project: " + project.getName();
+            }
+            case REJECTED_INVITATION -> {
+                subject = "Invitation rejected for project: '" + project.getName() + "'.";
+                content = sender.getFirstName() + " " + sender.getLastName() + " has rejected the invitation to project: " + project.getName();
+            }
+            case ACCEPTED_INVITATION -> {
+                subject = "Invitation accepted for project: '" + project.getName() + "'.";
+                content = sender.getFirstName() + " " + sender.getLastName() + " has accepted the invitation to project: " + project.getName();
+            }
+            case NEW_TASK -> {
+                subject = "New task" + taskName + " in project: '" + project.getName() + "'.";
+                content = sender.getFirstName() + " " + sender.getLastName() + " has been assigned a new task" + taskName + "  in project: " + project.getName();
+            }
+            case TASK_STATUS_CHANGED -> {
+                subject = "Task" + taskName + "  status changed in project: '" + project.getName() + "'.";
+                content = "The status of a task" + taskName + "  in project: " + project.getName() + " has changed to: " + state + ".";
+            }
+            case TASK_EDITED -> {
+                subject = "Task" + taskName + "  edited in project: '" + project.getName() + "'.";
+                content = sender.getFirstName() + " " + sender.getLastName() + " has edited a task" + taskName + "  in project: " + project.getName();
+            }
+            case TASK_DELETED -> {
+                subject = "Task" + taskName + "  deleted in project: '" + project.getName() + "'.";
+                content = sender.getFirstName() + " " + sender.getLastName() + " has deleted a task" + taskName + "  in project: " + project.getName();
+            }
+            case EMAIL -> {
+                subject = "Email notification";
+                content = "You have received an email notification";
+            }
         }
 
         PersonalMessage personalMessage;
 
         try {
-            personalMessage = persistPersonalMessage(subject, content, sender, receiver);
-            logger.info("Notification created for project: {} from: {} to: {}", projectName, sender.getFirstName() + sender.getLastName(), receiver.getFirstName() + receiver.getLastName());
+            personalMessage = persistPersonalMessage(subject, content, sender, receiver, type);
+            logger.info("Notification created for project: {} from: {} to: {}", project.getName(), sender.getFirstName() + sender.getLastName(), receiver.getFirstName() + receiver.getLastName());
         } catch (Exception e) {
-            logger.error("Error creating notification for project: {} from: {} to: {}", projectName, sender.getFirstName() + sender.getLastName(), receiver.getFirstName() + receiver.getLastName(), e);
+            logger.error("Error creating notification for project: {} from: {} to: {}", project.getName(), sender.getFirstName() + sender.getLastName(), receiver.getFirstName() + receiver.getLastName(), e);
             throw new IllegalArgumentException("Error creating notification");
         }
 
-        return personalMessageToProjectNotification(personalMessage, projectId);
+        boolean recordExists = false;
+
+        try {
+            recordExists = recordDao.checkIfRecordExists(project.getId(), sender.getId(), type);
+            if (recordExists) {
+                logger.info("Record already exists for project: {} from: {} to: {}", project.getName(), sender.getFirstName() + sender.getLastName(), receiver.getFirstName() + receiver.getLastName());
+            } else {
+                logger.info("Record does not exist for project: {} from: {} to: {}", project.getName(), sender.getFirstName() + sender.getLastName(), receiver.getFirstName() + receiver.getLastName());
+            }
+        } catch (Exception e) {
+            logger.error("Error finding record for project: {} from: {} to: {}", project.getName(), sender.getFirstName() + sender.getLastName(), receiver.getFirstName() + receiver.getLastName(), e);
+        }
+
+        LocalDateTime timestamp = LocalDateTime.now();
+
+        if (!recordExists) {
+            recordBean.newRecord(sender, project, timestamp, content, type, task);
+        }
+
+        return personalMessageToProjectNotification(personalMessage, project.getId());
     }
+
 
     /**
      * Converts a personal message to a project notification
@@ -746,20 +813,19 @@ public class MessageBean implements Serializable {
     /**
      * Sends a message to all users in a project
      * @param projectUsers the users to send the message to
-     * @param projectId the id of the project
-     * @param projectName the name of the project
+     * @param project the project
      * @param action the action that was performed
      * @param state the state of the project
      * @param senderId the id of the sender
      */
-    public void sendMessageToProjectUsers(Set<M2MProjectUser> projectUsers, int projectId, String projectName, String action, String state, int senderId) {
+    public void sendMessageToProjectUsers(Set<M2MProjectUser> projectUsers, ProjectEntity project, String action, String state, int senderId, MessageAndLogEnum type, TaskEntity task) {
         UserEntity sender;
 
         if (senderId == 0) {
             try {
-                sender = m2MProjectUserDao.findMainManagerInProject(projectId).getUser();
+                sender = m2MProjectUserDao.findMainManagerInProject(project.getId()).getUser();
             } catch (PersistenceException e) {
-                logger.error("Error finding main manager in project with ID: {}", projectId, e);
+                logger.error("Error finding main manager in project with ID: {}", project.getId(), e);
                 throw new RuntimeException(e);
             }
         } else {
@@ -774,19 +840,20 @@ public class MessageBean implements Serializable {
         if (state == null) {
             state = "";
         }
-int i = 1;
+
         for (M2MProjectUser projectUser : projectUsers) {
             ProjectNotification projectNotification;
 
             try {
-                projectNotification  = createNotificationForProject(
-                        projectId,
-                        projectName,
+                projectNotification  = createNotificationAndRecordForProject(
+                        project,
                         sender,
                         projectUser.getUser(),
                         projectUser.getRole().name(),
                         state,
-                        action
+                        action,
+                        type,
+                        task
                 );
             } catch (Exception e) {
                 logger.error("Error creating notification for project: {}", e.getMessage());
@@ -801,7 +868,7 @@ int i = 1;
                 jsonMessage = objectMapper.writeValueAsString(projectNotification);
             } catch (JsonProcessingException e) {
                 logger.error("Error serializing message", e);
-                jsonMessage = "You have been added to project " + projectName;
+                jsonMessage = "You have been added to project " + project.getName();
             }
 
             HashMap<String, Session> sessions = personalMessageWS.getSessions();
@@ -817,7 +884,6 @@ int i = 1;
                     }
                 }
             }
-            i++;
         }
     }
 }

@@ -130,6 +130,10 @@ public class UserEntity implements Serializable {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<M2MProjectUser> projectUsers = new HashSet<>();
 
+    @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<RecordEntity> records = new HashSet<>();
+
+
     // Validation method to check if the user is confirmed
     // If the user is confirmed, the first name, last name, and workplace must not be null
     // If the user is not confirmed, the first name, last name, and workplace can be null
@@ -313,6 +317,14 @@ public class UserEntity implements Serializable {
 
     public void addProjectUser(M2MProjectUser projectUser) {
         this.projectUsers.add(projectUser);
+    }
+
+    public Set<RecordEntity> getRecords() {
+        return records;
+    }
+
+    public void setRecords(Set<RecordEntity> records) {
+        this.records = records;
     }
 }
 

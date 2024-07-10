@@ -3,6 +3,7 @@ package domcast.finalprojbackend.dao;
 import domcast.finalprojbackend.entity.TaskEntity;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.NoResultException;
+import jakarta.persistence.NonUniqueResultException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -64,7 +65,11 @@ public class TaskDao extends AbstractDao<TaskEntity> {
                     .setParameter("responsibleId", responsibleId)
                     .setParameter("projectId", projectId)
                     .getSingleResult();
+        } catch (NonUniqueResultException e) {
+            logger.error("Task with title {}, responsible id {} and project id {} already exists", title, responsibleId, projectId);
+            return null;
         } catch (NoResultException e) {
+            logger.error("Task with title {}, responsible id {} and project id {} not found", title, responsibleId, projectId);
             return null;
         }
     }

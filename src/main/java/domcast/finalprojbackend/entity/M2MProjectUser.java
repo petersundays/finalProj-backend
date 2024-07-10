@@ -6,6 +6,8 @@ import domcast.finalprojbackend.enums.converters.ProjectUserEnumConverter;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Entity class for the project_user table in the database.
@@ -136,4 +138,5 @@ public class M2MProjectUser implements Serializable {
     public void setActive(boolean active) {
         this.active = active;
     }
+
 }
