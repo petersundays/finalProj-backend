@@ -15,7 +15,10 @@ import java.io.Serializable;
  * @author Pedro Domingos
  */
 @XmlRootElement
-public class ProjectUser extends InvitedOrCandidate implements Serializable {
+public class ProjectUser extends RecordAuthor implements Serializable {
+
+    @XmlElement
+    private int id;
 
     @XmlElement
     private int role;
@@ -34,11 +37,21 @@ public class ProjectUser extends InvitedOrCandidate implements Serializable {
      * @param role Role of the user.
      */
     public ProjectUser(int id, String firstName, String lastName, int role) {
-        super(id, firstName, lastName);
+        super(firstName, lastName);
+        this.id = id;
         this.role = role;
     }
 
     // Getters and setters
+
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
 
     public int getRole() {
         return role;

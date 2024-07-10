@@ -4,7 +4,7 @@ import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.InterestBean;
 import domcast.finalprojbackend.bean.AuthenticationAndAuthorization;
 import domcast.finalprojbackend.dto.interestDto.InterestToList;
-import domcast.finalprojbackend.dto.EnumDTO;
+import domcast.finalprojbackend.dto.userDto.EnumDTO;
 import domcast.finalprojbackend.enums.InterestEnum;
 import domcast.finalprojbackend.enums.util.EnumUtil;
 import jakarta.inject.Inject;

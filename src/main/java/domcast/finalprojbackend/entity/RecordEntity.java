@@ -27,8 +27,6 @@ import java.time.LocalDateTime;
 
 @NamedQuery(name = "Record.DoesRecordExist",
             query = "SELECT r FROM RecordEntity r WHERE r.project.id = :projectId AND r.author.id = :authorId AND r.type = :type AND r.timestamp BETWEEN :startTimestamp AND :endTimestamp")
-@NamedQuery(name = "Record.getRecordsByProject",
-            query = "SELECT r FROM RecordEntity r WHERE r.project.id = :projectId")
 
 public class RecordEntity implements Serializable {
     private static final long serialVersionUID = 1L;

@@ -5,7 +5,7 @@ import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.AuthenticationAndAuthorization;
 import domcast.finalprojbackend.dto.componentResourceDto.CRPreview;
 import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
-import domcast.finalprojbackend.dto.EnumDTO;
+import domcast.finalprojbackend.dto.userDto.EnumDTO;
 import domcast.finalprojbackend.enums.ComponentResourceEnum;
 import domcast.finalprojbackend.enums.util.EnumUtil;
 import jakarta.inject.Inject;

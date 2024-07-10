@@ -1,4 +1,4 @@
-package domcast.finalprojbackend.dto;
+package domcast.finalprojbackend.dto.userDto;
 
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;

@@ -9,7 +9,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 /**
  * RecordDao is a Data Access Object (DAO) class for RecordEntity.
@@ -58,24 +57,6 @@ public class RecordDao extends AbstractDao<RecordEntity> {
         } catch (NonUniqueResultException e) {
             logger.error("Multiple records found with project id {}, author id {}, and type {}", projectId, authorId, type);
             return true;
-        }
-    }
-
-    /**
-     * Finds all records where project id is projectId.
-     *
-     * @param projectId the project id
-     * @return the RecordEntity object if found, null otherwise
-     */
-    public List<RecordEntity> getRecordsByProject(int projectId) {
-        logger.info("Getting records by project id {}", projectId);
-        try {
-            return em.createNamedQuery("Record.getRecordsByProject", RecordEntity.class)
-                    .setParameter("projectId", projectId)
-                    .getResultList();
-        } catch (NoResultException e) {
-            logger.error("No records found with project id {}", projectId);
-            return null;
         }
     }
 

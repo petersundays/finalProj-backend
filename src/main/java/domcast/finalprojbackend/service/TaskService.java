@@ -7,7 +7,7 @@ import domcast.finalprojbackend.dto.taskDto.ChartTask;
 import domcast.finalprojbackend.dto.taskDto.DetailedTask;
 import domcast.finalprojbackend.dto.taskDto.EditTask;
 import domcast.finalprojbackend.dto.taskDto.NewTask;
-import domcast.finalprojbackend.dto.EnumDTO;
+import domcast.finalprojbackend.dto.userDto.EnumDTO;
 import domcast.finalprojbackend.enums.TaskStateEnum;
 import domcast.finalprojbackend.enums.util.EnumUtil;
 import jakarta.inject.Inject;

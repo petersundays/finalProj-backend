@@ -3,7 +3,11 @@ package domcast.finalprojbackend.bean.user;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import domcast.finalprojbackend.bean.*;
+import domcast.finalprojbackend.bean.DataValidator;
+import domcast.finalprojbackend.bean.InterestBean;
+import domcast.finalprojbackend.bean.SkillBean;
+import domcast.finalprojbackend.bean.SystemBean;
+import domcast.finalprojbackend.bean.AuthenticationAndAuthorization;
 import domcast.finalprojbackend.dao.*;
 import domcast.finalprojbackend.dto.interestDto.InterestDto;
 import domcast.finalprojbackend.dto.skillDto.SkillDto;
@@ -1281,7 +1285,6 @@ public class UserBean implements Serializable {
         m2MProjectUser.setRole(projectUserEnum);
         m2MProjectUser.setActive(false);
         m2MProjectUser.setApproved(false);
-        m2MProjectUser.setInvited(true);
 
         return m2MProjectUser;
 
@@ -1346,43 +1349,5 @@ public class UserBean implements Serializable {
         logger.info("Successfully converted UserEntity to RecordAuthor for user with id: {}", user.getId());
 
         return recordAuthor;
-    }
-
-    /**
-     * Converts a list of M2MProjectUser objects to a list of InvitedOrCandidate objects.
-     * This method is used when a project's invited or candidate users are requested.
-     *
-     * @param userEntities The list of M2MProjectUser objects that represent the project's invited or candidate users.
-     *                     If the list is null, an IllegalArgumentException is thrown.
-     * @return A list of InvitedOrCandidate objects that contain the project's invited or candidate users' details.
-     */
-    public List<InvitedOrCandidate> entityToInvitedOrCandidate (List<M2MProjectUser> userEntities) {
-        if (userEntities == null) {
-            throw new IllegalArgumentException("List of M2MProjectUser cannot be null");
-        }
-
-        if (userEntities.isEmpty()) {
-            logger.info("List of M2MProjectUser is empty");
-            return new ArrayList<>();
-        }
-
-        logger.info("Converting list of M2MProjectUser to InvitedOrCandidate");
-
-        List<InvitedOrCandidate> invitedOrCandidates = new ArrayList<>();
-        for (M2MProjectUser userEntity : userEntities) {
-            if (userEntity == null) {
-                logger.warn("Encountered null M2MProjectUser in list, skipping this entry");
-                continue;
-            }
-            InvitedOrCandidate invitedOrCandidate = new InvitedOrCandidate();
-            invitedOrCandidate.setId(userEntity.getUser().getId());
-            invitedOrCandidate.setFirstName(userEntity.getUser().getFirstName());
-            invitedOrCandidate.setLastName(userEntity.getUser().getLastName());
-            invitedOrCandidates.add(invitedOrCandidate);
-        }
-
-        logger.info("Successfully converted list of M2MProjectUser to InvitedOrCandidate");
-
-        return invitedOrCandidates;
     }
 }

@@ -6,13 +6,11 @@ import domcast.finalprojbackend.bean.*;
 import domcast.finalprojbackend.bean.task.TaskBean;
 import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.dao.*;
-import domcast.finalprojbackend.dto.RecordDto;
 import domcast.finalprojbackend.dto.componentResourceDto.CRQuantity;
 import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
 import domcast.finalprojbackend.dto.projectDto.*;
 import domcast.finalprojbackend.dto.skillDto.SkillDto;
 import domcast.finalprojbackend.dto.taskDto.ChartTask;
-import domcast.finalprojbackend.dto.userDto.InvitedOrCandidate;
 import domcast.finalprojbackend.dto.userDto.ProjectTeam;
 import domcast.finalprojbackend.dto.userDto.ProjectUser;
 import domcast.finalprojbackend.entity.*;
@@ -88,9 +86,6 @@ public class ProjectBean implements Serializable {
 
     @EJB
     private RecordBean recordBean;
-
-    @EJB
-    private RecordDao recordDao;
 
     /**
      * Default constructor for ProjectBean.
@@ -559,48 +554,6 @@ public class ProjectBean implements Serializable {
             logger.error("Error finding tasks for project with id: {}", projectEntity.getId(), e);
         }
 
-        List<RecordEntity> records = new ArrayList<>();
-
-        try {
-            records = recordDao.getRecordsByProject(projectEntity.getId());
-            logger.info("Records found for project with id: {}", projectEntity.getId());
-        } catch (PersistenceException e) {
-            logger.error("Error finding records for project with id: {}", projectEntity.getId(), e);
-        }
-
-        List<RecordDto> recordDtos = new ArrayList<>();
-
-        for (RecordEntity record : records) {
-            recordDtos.add(recordBean.entityToRecordDto(record));
-        }
-
-
-        List<M2MProjectUser> invitedEntities;
-
-        try {
-            invitedEntities = m2MProjectUserDao.findInvitedUsers(projectEntity.getId());
-            logger.info("Invited users found for project with id: {}", projectEntity.getId());
-        } catch (PersistenceException e) {
-            logger.error("Error finding invited users for project with id: {}", projectEntity.getId(), e);
-            invitedEntities = new ArrayList<>();
-        }
-
-        List<InvitedOrCandidate> invited = userBean.entityToInvitedOrCandidate(invitedEntities);
-
-        List<M2MProjectUser> candidatesEntities;
-
-        try {
-            candidatesEntities = m2MProjectUserDao.findCandidates(projectEntity.getId());
-            logger.info("Candidates found for project with id: {}", projectEntity.getId());
-        } catch (PersistenceException e) {
-            logger.error("Error finding candidates for project with id: {}", projectEntity.getId(), e);
-            candidatesEntities = new ArrayList<>();
-        }
-
-        List<InvitedOrCandidate> candidates = userBean.entityToInvitedOrCandidate(candidatesEntities);
-
-
-
         int vacancies = vacanciesInProject(projectEntity.getId(), projectEntity.getMaxMembers());
 
         detailedProject.setId(projectEntity.getId());
@@ -618,10 +571,6 @@ public class ProjectBean implements Serializable {
         detailedProject.setProjectUsers(projectUsers);
         detailedProject.setTasks(tasks);
         detailedProject.setVacancies(vacancies);
-        detailedProject.setRecords(recordDtos);
-        detailedProject.setInvited(invited);
-        detailedProject.setCandidates(candidates);
-
 
         logger.info("Successfully converted ProjectEntity to DetailedProject");
 
@@ -1449,6 +1398,8 @@ public class ProjectBean implements Serializable {
                 null
         );
 
+        ////////////////// Create log in project //////////////////
+
         logger.info("Successfully invited user with ID {} to project with ID {}", userId, projectId);
 
         return invited;
@@ -1509,7 +1460,6 @@ public class ProjectBean implements Serializable {
 
             m2MProjectUser.setActive(true);
             m2MProjectUser.setApproved(true);
-            m2MProjectUser.setInvited(false);
             projectEntity.addProjectUser(m2MProjectUser);
 
             if (application) {
