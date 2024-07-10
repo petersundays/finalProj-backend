@@ -122,7 +122,7 @@ public class ProjectEntity implements Serializable {
     @OneToMany(mappedBy = "projectId", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<TaskEntity> tasks = new HashSet<>();
 
-    @OneToMany(mappedBy = "project")
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<RecordEntity> records = new HashSet<>();
 
     // Default constructor

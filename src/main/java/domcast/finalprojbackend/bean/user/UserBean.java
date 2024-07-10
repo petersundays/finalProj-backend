@@ -1326,4 +1326,28 @@ public class UserBean implements Serializable {
         }
         return new ArrayList<>(map.keySet());
     }
+
+    /**
+     * Converts a UserEntity object to a RecordAuthor object.
+     * This method is used when a user's profile is requested.
+     *
+     * @param user The UserEntity object that represents the user whose profile is requested.
+     *             If the user is null, an IllegalArgumentException is thrown.
+     * @return A RecordAuthor object that contains the user's profile details.
+     */
+    public RecordAuthor entityToRecordAuthor(UserEntity user) {
+        if (user == null) {
+            throw new IllegalArgumentException("UserEntity cannot be null");
+        }
+
+        logger.info("Converting UserEntity to RecordAuthor for user with id: {}", user.getId());
+
+        RecordAuthor recordAuthor = new RecordAuthor();
+        recordAuthor.setFirstName(user.getFirstName());
+        recordAuthor.setLastName(user.getLastName());
+
+        logger.info("Successfully converted UserEntity to RecordAuthor for user with id: {}", user.getId());
+
+        return recordAuthor;
+    }
 }

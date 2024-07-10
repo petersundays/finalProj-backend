@@ -1,6 +1,6 @@
 package domcast.finalprojbackend.enums.converters;
 
-import domcast.finalprojbackend.enums.MessageEnum;
+import domcast.finalprojbackend.enums.MessageAndLogEnum;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
@@ -14,23 +14,23 @@ import jakarta.persistence.Converter;
  */
 
 @Converter(autoApply = true)
-public class MessageEnumConverter implements AttributeConverter<MessageEnum, Integer> {
+public class MessageAndLogEnumConverter implements AttributeConverter<MessageAndLogEnum, Integer> {
 
     // Method to convert from MessageEnum to Integer.
     @Override
-    public Integer convertToDatabaseColumn(MessageEnum messageEnum) {
-        if (messageEnum == null) {
+    public Integer convertToDatabaseColumn(MessageAndLogEnum messageAndLogEnum) {
+        if (messageAndLogEnum == null) {
             return null;
         }
-        return messageEnum.getId();
+        return messageAndLogEnum.getId();
     }
 
     // Method to convert from Integer to MessageEnum.
     @Override
-    public MessageEnum convertToEntityAttribute(Integer id) {
+    public MessageAndLogEnum convertToEntityAttribute(Integer id) {
         if (id == null) {
             return null;
         }
-        return MessageEnum.fromId(id);
+        return MessageAndLogEnum.fromId(id);
     }
 }

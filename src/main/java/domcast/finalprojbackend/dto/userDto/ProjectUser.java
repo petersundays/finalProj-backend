@@ -15,16 +15,10 @@ import java.io.Serializable;
  * @author Pedro Domingos
  */
 @XmlRootElement
-public class ProjectUser implements Serializable {
+public class ProjectUser extends RecordAuthor implements Serializable {
 
     @XmlElement
     private int id;
-
-    @XmlElement
-    private String firstName;
-
-    @XmlElement
-    private String lastName;
 
     @XmlElement
     private int role;
@@ -33,6 +27,19 @@ public class ProjectUser implements Serializable {
      * Empty constructor
      */
     public ProjectUser() {
+    }
+
+    /**
+     * Constructor with the id, first name, last name and role of the user.
+     * @param id ID of the user.
+     * @param firstName First name of the user.
+     * @param lastName Last name of the user.
+     * @param role Role of the user.
+     */
+    public ProjectUser(int id, String firstName, String lastName, int role) {
+        super(firstName, lastName);
+        this.id = id;
+        this.role = role;
     }
 
     // Getters and setters
@@ -44,22 +51,6 @@ public class ProjectUser implements Serializable {
 
     public void setId(int id) {
         this.id = id;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
     }
 
     public int getRole() {

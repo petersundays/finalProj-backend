@@ -1,7 +1,7 @@
 package domcast.finalprojbackend.entity;
 
-import domcast.finalprojbackend.enums.RecordTopicEnum;
-import domcast.finalprojbackend.enums.converters.RecordTopicEnumConverter;
+import domcast.finalprojbackend.enums.MessageAndLogEnum;
+import domcast.finalprojbackend.enums.converters.MessageAndLogEnumConverter;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
@@ -25,6 +25,9 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "record")
 
+@NamedQuery(name = "Record.DoesRecordExist",
+            query = "SELECT r FROM RecordEntity r WHERE r.project.id = :projectId AND r.author.id = :authorId AND r.type = :type AND r.timestamp BETWEEN :startTimestamp AND :endTimestamp")
+
 public class RecordEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -40,7 +43,7 @@ public class RecordEntity implements Serializable {
 
     @ManyToOne
     @JoinColumn(name = "author_id", nullable = false)
-    private M2MProjectUser author;
+    private UserEntity author;
 
     @Column(name = "timestamp", nullable = false)
     private LocalDateTime timestamp;
@@ -48,9 +51,9 @@ public class RecordEntity implements Serializable {
     @Column(name = "content", nullable = false)
     private String content;
 
-    @Convert(converter = RecordTopicEnumConverter.class)
+    @Convert(converter = MessageAndLogEnumConverter.class)
     @Column(name = "type", nullable = false)
-    private RecordTopicEnum type;
+    private MessageAndLogEnum type;
 
     @ManyToOne
     @JoinColumn(name = "task_id", referencedColumnName = "id")
@@ -79,11 +82,11 @@ public class RecordEntity implements Serializable {
         this.project = project;
     }
 
-    public M2MProjectUser getAuthor() {
+    public UserEntity getAuthor() {
         return author;
     }
 
-    public void setAuthor(M2MProjectUser author) {
+    public void setAuthor(UserEntity author) {
         this.author = author;
     }
 
@@ -103,11 +106,11 @@ public class RecordEntity implements Serializable {
         this.content = content;
     }
 
-    public RecordTopicEnum getType() {
+    public MessageAndLogEnum getType() {
         return type;
     }
 
-    public void setType(RecordTopicEnum type) {
+    public void setType(MessageAndLogEnum type) {
         this.type = type;
     }
 

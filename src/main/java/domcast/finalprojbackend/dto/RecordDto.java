@@ -1,6 +1,6 @@
 package domcast.finalprojbackend.dto;
 
-import domcast.finalprojbackend.dto.userDto.ProjectUser;
+import domcast.finalprojbackend.dto.userDto.RecordAuthor;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 
@@ -22,7 +22,7 @@ import java.time.LocalDateTime;
 public class RecordDto implements Serializable {
 
     @XmlElement
-    private ProjectUser author;
+    private RecordAuthor author;
 
     @XmlElement
     private LocalDateTime timestamp;
@@ -37,7 +37,7 @@ public class RecordDto implements Serializable {
     public RecordDto() {
     }
 
-    public RecordDto(ProjectUser author, LocalDateTime timestamp, String content, int type) {
+    public RecordDto(RecordAuthor author, LocalDateTime timestamp, String content, int type) {
         this.author = author;
         this.timestamp = timestamp;
         this.content = content;
@@ -47,11 +47,11 @@ public class RecordDto implements Serializable {
     // Getters and Setters
 
 
-    public ProjectUser getAuthor() {
+    public RecordAuthor getAuthor() {
         return author;
     }
 
-    public void setAuthor(ProjectUser author) {
+    public void setAuthor(RecordAuthor author) {
         this.author = author;
     }
 

@@ -17,7 +17,7 @@ import domcast.finalprojbackend.enums.intefarce.ConvertibleToEnumDTO;
  * @author Pedro Domingos
  */
 
-public enum MessageEnum implements ConvertibleToEnumDTO {
+public enum MessageAndLogEnum implements ConvertibleToEnumDTO {
 
     ADDED (1, "added to"),
     REMOVED (2, "removed from"),
@@ -45,7 +45,7 @@ public enum MessageEnum implements ConvertibleToEnumDTO {
     // The value of the topic
     private final String value;
 
-    MessageEnum(int id, String value) {
+    MessageAndLogEnum(int id, String value) {
         this.id = id;
         this.value = value;
     }
@@ -66,8 +66,8 @@ public enum MessageEnum implements ConvertibleToEnumDTO {
      * @param id the id of the topic.
      * @return the topic.
      */
-    public static MessageEnum fromId(int id) {
-        for (MessageEnum topic : MessageEnum.values()) {
+    public static MessageAndLogEnum fromId(int id) {
+        for (MessageAndLogEnum topic : MessageAndLogEnum.values()) {
             if (topic.getId() == id) {
                 return topic;
             }
@@ -81,7 +81,7 @@ public enum MessageEnum implements ConvertibleToEnumDTO {
      * @return true if the enum is valid, false otherwise.
      */
     public static boolean isValidEnum(int id) {
-        for (MessageEnum topic : MessageEnum.values()) {
+        for (MessageAndLogEnum topic : MessageAndLogEnum.values()) {
             if (topic.getId() == id) {
                 return true;
             }

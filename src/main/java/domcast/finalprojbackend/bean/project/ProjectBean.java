@@ -15,7 +15,7 @@ import domcast.finalprojbackend.dto.userDto.ProjectTeam;
 import domcast.finalprojbackend.dto.userDto.ProjectUser;
 import domcast.finalprojbackend.entity.*;
 import domcast.finalprojbackend.enums.LabEnum;
-import domcast.finalprojbackend.enums.MessageEnum;
+import domcast.finalprojbackend.enums.MessageAndLogEnum;
 import domcast.finalprojbackend.enums.ProjectStateEnum;
 import domcast.finalprojbackend.enums.ProjectUserEnum;
 import domcast.finalprojbackend.service.ObjectMapperContextResolver;
@@ -83,6 +83,9 @@ public class ProjectBean implements Serializable {
 
     @EJB
     private SessionTokenDao sessionTokenDao;
+
+    @EJB
+    private RecordBean recordBean;
 
     /**
      * Default constructor for ProjectBean.
@@ -244,12 +247,12 @@ public class ProjectBean implements Serializable {
 
         messageBean.sendMessageToProjectUsers(
                 projectUsers,
-                projectEntity.getId(),
-                projectEntity.getName(),
-                MessageEnum.ADDED.name(),
+                projectEntity,
+                MessageAndLogEnum.ADDED.name(),
                 "",
                 0,
-                MessageEnum.ADDED
+                MessageAndLogEnum.ADDED,
+                null
         );
 
         return detailedProject;
@@ -911,12 +914,12 @@ public class ProjectBean implements Serializable {
 
         messageBean.sendMessageToProjectUsers(
                 projectUsers,
-                projectEntity.getId(),
-                projectEntity.getName(),
-                MessageEnum.STATUS_CHANGED.name(),
+                projectEntity,
+                MessageAndLogEnum.STATUS_CHANGED.name(),
                 newStateEnum.name(),
                 0,
-                MessageEnum.STATUS_CHANGED
+                MessageAndLogEnum.STATUS_CHANGED,
+                null
         );
         return detailedProject;
     }
@@ -995,12 +998,12 @@ public class ProjectBean implements Serializable {
 
         messageBean.sendMessageToProjectUsers(
                 projectManagers,
-                projectEntity.getId(),
-                projectEntity.getName(),
-                MessageEnum.PROJECT_APPROVAL.name(),
+                projectEntity,
+                MessageAndLogEnum.PROJECT_APPROVAL.name(),
                 newStateEnum.name(),
                 adminId,
-                MessageEnum.PROJECT_APPROVAL
+                MessageAndLogEnum.PROJECT_APPROVAL,
+                null
         );
 
         return true;
@@ -1251,17 +1254,17 @@ public class ProjectBean implements Serializable {
 
         Set<M2MProjectUser> projectManagers = getProjectManagers(projectEntity);
 
-        String action = removed ? MessageEnum.REMOVED.name() : MessageEnum.LEFT_PROJECT.name();
-        MessageEnum type = removed ? MessageEnum.REMOVED : MessageEnum.LEFT_PROJECT;
+        String action = removed ? MessageAndLogEnum.REMOVED.name() : MessageAndLogEnum.LEFT_PROJECT.name();
+        MessageAndLogEnum type = removed ? MessageAndLogEnum.REMOVED : MessageAndLogEnum.LEFT_PROJECT;
 
         messageBean.sendMessageToProjectUsers(
                 projectManagers,
-                projectEntity.getId(),
-                projectEntity.getName(),
+                projectEntity,
                 action,
                 "",
                 0,
-                type
+                type,
+                null
         );
 
         return detailedProject;
@@ -1378,21 +1381,21 @@ public class ProjectBean implements Serializable {
             sender = inviterId;
             userInvited = m2MProjectUser;
             projectUsers.add(userInvited);
-            action = MessageEnum.INVITED.name();
+            action = MessageAndLogEnum.INVITED.name();
         } else {
             sender = userId;
             projectUsers = getProjectManagers(projectEntity);
-            action = MessageEnum.APPLIED.name();
+            action = MessageAndLogEnum.APPLIED.name();
         }
 
         messageBean.sendMessageToProjectUsers(
                 projectUsers,
-                projectEntity.getId(),
-                projectEntity.getName(),
+                projectEntity,
                 action,
                 "",
                 sender,
-                MessageEnum.APPLIED
+                MessageAndLogEnum.APPLIED,
+                null
         );
 
         ////////////////// Create log in project //////////////////
@@ -1504,18 +1507,18 @@ public class ProjectBean implements Serializable {
         Set<M2MProjectUser> projectUsers;
         int senderId = 0;
         String action;
-        MessageEnum type;
+        MessageAndLogEnum type;
 
         if (application) {
             projectUsers = new HashSet<>();
             projectUsers.add(m2MProjectUser);
 
             if (answer) {
-                action = MessageEnum.APPLICATION_ACCEPTED.name();
-                type = MessageEnum.APPLICATION_ACCEPTED;
+                action = MessageAndLogEnum.APPLICATION_ACCEPTED.name();
+                type = MessageAndLogEnum.APPLICATION_ACCEPTED;
             } else {
-                action = MessageEnum.APPLICATION_REJECTED.name();
-                type = MessageEnum.APPLICATION_REJECTED;
+                action = MessageAndLogEnum.APPLICATION_REJECTED.name();
+                type = MessageAndLogEnum.APPLICATION_REJECTED;
             }
 
         } else {
@@ -1523,25 +1526,23 @@ public class ProjectBean implements Serializable {
             senderId = userId;
 
             if (answer) {
-                action = MessageEnum.ACCEPTED_INVITATION.name();
-                type = MessageEnum.ACCEPTED_INVITATION;
+                action = MessageAndLogEnum.ACCEPTED_INVITATION.name();
+                type = MessageAndLogEnum.ACCEPTED_INVITATION;
             } else {
-                action = MessageEnum.REJECTED_INVITATION.name();
-                type = MessageEnum.REJECTED_INVITATION;
+                action = MessageAndLogEnum.REJECTED_INVITATION.name();
+                type = MessageAndLogEnum.REJECTED_INVITATION;
             }
         }
 
         messageBean.sendMessageToProjectUsers(
                 projectUsers,
-                projectEntity.getId(),
-                projectEntity.getName(),
+                projectEntity,
                 action,
                 "",
                 senderId,
-                type
+                type,
+                null
         );
-
-        ////////////////// Create project logs //////////////////
 
         logger.info(message);
 
