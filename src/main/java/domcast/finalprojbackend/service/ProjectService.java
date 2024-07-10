@@ -9,7 +9,7 @@ import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
 import domcast.finalprojbackend.dto.projectDto.*;
 import domcast.finalprojbackend.dto.skillDto.SkillDto;
-import domcast.finalprojbackend.dto.userDto.EnumDTO;
+import domcast.finalprojbackend.dto.EnumDTO;
 import domcast.finalprojbackend.dto.userDto.ProjectTeam;
 import domcast.finalprojbackend.enums.ProjectStateEnum;
 import domcast.finalprojbackend.enums.ProjectUserEnum;
