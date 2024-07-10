@@ -1,15 +1,13 @@
 package domcast.finalprojbackend.dto.projectDto;
 
-import domcast.finalprojbackend.dto.KeywordDto;
-import domcast.finalprojbackend.dto.componentResourceDto.CRPreview;
-import domcast.finalprojbackend.dto.skillDto.SkillToProject;
+import domcast.finalprojbackend.dto.RecordDto;
 import domcast.finalprojbackend.dto.taskDto.ChartTask;
-import domcast.finalprojbackend.dto.userDto.ProjectUser;
+import domcast.finalprojbackend.dto.userDto.InvitedOrCandidate;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -41,33 +39,19 @@ public class DetailedProject extends PublicProject implements Serializable {
     @XmlElement
     private int maxMembers;
 
+    @XmlElement
+    private List<InvitedOrCandidate> invited;
+
+    @XmlElement
+    private List<InvitedOrCandidate> candidates;
+
+    @XmlElement
+    private List<RecordDto> records;
+
     /**
      * Empty constructor
      */
     public DetailedProject() {
-    }
-
-    /**
-     * Constructor with all the attributes
-     * @param id the id of the project
-     * @param name the name of the project
-     * @param description the description of the project
-     * @param state the state of the project
-     * @param projectedStartDate the projected start date of the project
-     * @param deadline the deadline of the project
-     * @param keywords the keywords of the project
-     * @param skills the skills of the project
-     * @param resources the resources of the project
-     * @param mainManager the project's main manager
-     * @param collaborators the collaborators of the project
-     * @param vacancies the number of vacancies in the project
-     * @param tasks the tasks of the project
-     * @param maxMembers the maximum number of members in the project
-     */
-    public DetailedProject(int id, String name, String description, int labId, int state, LocalDateTime projectedStartDate, LocalDateTime deadline, Set<KeywordDto> keywords, Set<SkillToProject> skills, Set<CRPreview> resources, ProjectUser mainManager, Set<ProjectUser> collaborators, Set<ChartTask> tasks, int vacancies, int maxMembers) {
-        super(id, name, description, labId, state, projectedStartDate,deadline, keywords, skills, resources, mainManager, collaborators, vacancies);
-        this.tasks = tasks;
-        this.maxMembers = maxMembers;
     }
 
     // Getters and setters
@@ -86,5 +70,29 @@ public class DetailedProject extends PublicProject implements Serializable {
 
     public void setMaxMembers(int maxMembers) {
         this.maxMembers = maxMembers;
+    }
+
+    public List<InvitedOrCandidate> getInvited() {
+        return invited;
+    }
+
+    public void setInvited(List<InvitedOrCandidate> invited) {
+        this.invited = invited;
+    }
+
+    public List<InvitedOrCandidate> getCandidates() {
+        return candidates;
+    }
+
+    public void setCandidates(List<InvitedOrCandidate> candidates) {
+        this.candidates = candidates;
+    }
+
+    public List<RecordDto> getRecords() {
+        return records;
+    }
+
+    public void setRecords(List<RecordDto> records) {
+        this.records = records;
     }
 }
