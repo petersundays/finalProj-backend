@@ -1,6 +1,6 @@
 package domcast.finalprojbackend.enums.util;
 
-import domcast.finalprojbackend.dto.userDto.EnumDTO;
+import domcast.finalprojbackend.dto.EnumDTO;
 import domcast.finalprojbackend.enums.intefarce.ConvertibleToEnumDTO;
 
 import java.util.ArrayList;

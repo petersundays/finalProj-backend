@@ -6,6 +6,7 @@ import domcast.finalprojbackend.bean.SkillBean;
 import domcast.finalprojbackend.bean.AuthenticationAndAuthorization;
 import domcast.finalprojbackend.bean.user.PasswordBean;
 import domcast.finalprojbackend.bean.user.UserBean;
+import domcast.finalprojbackend.dto.EnumDTO;
 import domcast.finalprojbackend.dto.userDto.*;
 import domcast.finalprojbackend.enums.TypeOfUserEnum;
 import domcast.finalprojbackend.enums.util.EnumUtil;

@@ -1,9 +1,11 @@
 package domcast.finalprojbackend.bean;
 
+import domcast.finalprojbackend.bean.project.ProjectBean;
 import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.dao.ProjectDao;
 import domcast.finalprojbackend.dao.UserDao;
 import domcast.finalprojbackend.dto.RecordDto;
+import domcast.finalprojbackend.dto.projectDto.DetailedProject;
 import domcast.finalprojbackend.dto.userDto.RecordAuthor;
 import domcast.finalprojbackend.entity.ProjectEntity;
 import domcast.finalprojbackend.entity.RecordEntity;
@@ -29,6 +31,12 @@ public class RecordBean implements Serializable {
 
     @EJB
     private UserDao userDao;
+
+    @EJB
+    private DataValidator dataValidator;
+
+    @EJB
+    private ProjectBean projectBean;
 
     private static final Logger logger = LogManager.getLogger(RecordBean.class);
 
@@ -125,4 +133,77 @@ public class RecordBean implements Serializable {
 
         return recordDto;
     }
+
+    /**
+     * Adds an annotation to a project.
+     *
+     * @param projectId Id of the project.
+     * @param userId    Id of the user.
+     * @param content   Content of the annotation.
+     * @return DetailedProject with the annotation added.
+     */
+    public DetailedProject addAnnotation (int projectId, int userId, String content) {
+        logger.info("Adding annotation to project with id {}", projectId);
+
+        if (!dataValidator.isIdValid(projectId) || !dataValidator.isIdValid(userId)) {
+            logger.error("Invalid id");
+            return null;
+        }
+
+        if (content == null || content.isEmpty()) {
+            logger.error("Content is null or empty while adding annotation to project with id {}", projectId);
+            return null;
+        }
+
+        ProjectEntity project;
+
+        try {
+            project = projectDao.findProjectById(projectId);
+        } catch (Exception e) {
+            logger.error("Error finding project with id {} while adding annotation", projectId);
+            return null;
+        }
+
+        if (project == null) {
+            logger.error("Project with id {} not found", projectId);
+            return null;
+        }
+
+        UserEntity user;
+
+        try {
+            user = userDao.findUserById(userId);
+        } catch (Exception e) {
+            logger.error("Error finding user with id {}", userId);
+            return null;
+        }
+
+        if (user == null) {
+            logger.error("User with id {} not found", userId);
+            return null;
+        }
+
+        newRecord(user, project, LocalDateTime.now(), content, MessageAndLogEnum.ANNOTATION, null);
+
+        ProjectEntity updatedProject;
+
+        try {
+            updatedProject = projectDao.findProjectById(projectId);
+        } catch (Exception e) {
+            logger.error("Error finding project with id {}", projectId);
+            return null;
+        }
+
+        if (updatedProject == null) {
+            logger.error("Project with id {} not found", projectId);
+            return null;
+        }
+
+        DetailedProject detailedProject = projectBean.entityToDetailedProject(updatedProject);
+
+        logger.info("Annotation added successfully to project with id {}", projectId);
+
+        return detailedProject;
+    }
+
 }
