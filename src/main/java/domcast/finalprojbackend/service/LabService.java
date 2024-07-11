@@ -1,8 +1,9 @@
 package domcast.finalprojbackend.service;
 
 import domcast.finalprojbackend.bean.DataValidator;
-import domcast.finalprojbackend.bean.project.AuthenticationAndAuthorization;
-import domcast.finalprojbackend.dto.userDto.EnumDTO;
+import domcast.finalprojbackend.bean.AuthenticationAndAuthorization;
+import domcast.finalprojbackend.bean.user.TokenBean;
+import domcast.finalprojbackend.dto.EnumDTO;
 import domcast.finalprojbackend.enums.LabEnum;
 import domcast.finalprojbackend.enums.util.EnumUtil;
 import jakarta.inject.Inject;
@@ -29,6 +30,9 @@ public class LabService {
 
     @Inject
     private DataValidator dataValidator;
+
+    @Inject
+    private TokenBean tokenBean;
     
     @GET
     @Path("/enum")
@@ -48,6 +52,8 @@ public class LabService {
             logger.info("User with session token {} tried to get the lab enum but is not authorized", token);
             return Response.status(401).entity("Unauthorized").build();
         }
+
+        tokenBean.setLastAccessToNow(token);
 
         Response response;
 

@@ -1,6 +1,6 @@
-package domcast.finalprojbackend.bean.project;
+package domcast.finalprojbackend.bean;
 
-import domcast.finalprojbackend.bean.DataValidator;
+import domcast.finalprojbackend.bean.project.ProjectBean;
 import domcast.finalprojbackend.dao.*;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;

@@ -1,5 +1,7 @@
 package domcast.finalprojbackend.entity;
 
+import domcast.finalprojbackend.enums.MessageAndLogEnum;
+import domcast.finalprojbackend.enums.converters.MessageAndLogEnumConverter;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
@@ -20,9 +22,13 @@ import java.time.LocalDateTime;
  * @author José Castro
  * @author Pedro Domingos
  */
-
 @Entity
 @Table(name = "record")
+
+@NamedQuery(name = "Record.DoesRecordExist",
+            query = "SELECT r FROM RecordEntity r WHERE r.project.id = :projectId AND r.author.id = :authorId AND r.type = :type AND r.timestamp BETWEEN :startTimestamp AND :endTimestamp")
+@NamedQuery(name = "Record.getRecordsByProject",
+            query = "SELECT r FROM RecordEntity r WHERE r.project.id = :projectId")
 
 public class RecordEntity implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -33,27 +39,24 @@ public class RecordEntity implements Serializable {
     @Column(name = "id", nullable = false, unique = true, updatable = false)
     private int id;
 
-    // Id of the project to which the record belongs
-    @Column(name = "project_id", nullable = false)
-    private int projectId;
+    @ManyToOne
+    @JoinColumn(name = "project_id", nullable = false)
+    private ProjectEntity project;
 
-    // Id of the author of the record
-    @Column(name = "author_id", nullable = false)
-    private int authorId;
+    @ManyToOne
+    @JoinColumn(name = "author_id", nullable = false)
+    private UserEntity author;
 
-    // Timestamp of the record
     @Column(name = "timestamp", nullable = false)
     private LocalDateTime timestamp;
 
-    // Content of the record
     @Column(name = "content", nullable = false)
     private String content;
 
-    // Type of the record
+    @Convert(converter = MessageAndLogEnumConverter.class)
     @Column(name = "type", nullable = false)
-    private int type;
+    private MessageAndLogEnum type;
 
-    // Task to which the record belongs
     @ManyToOne
     @JoinColumn(name = "task_id", referencedColumnName = "id")
     private TaskEntity task;
@@ -64,6 +67,7 @@ public class RecordEntity implements Serializable {
 
     // Getters and setters
 
+
     public int getId() {
         return id;
     }
@@ -72,20 +76,20 @@ public class RecordEntity implements Serializable {
         this.id = id;
     }
 
-    public int getProjectId() {
-        return projectId;
+    public ProjectEntity getProject() {
+        return project;
     }
 
-    public void setProjectId(int projectId) {
-        this.projectId = projectId;
+    public void setProject(ProjectEntity project) {
+        this.project = project;
     }
 
-    public int getAuthorId() {
-        return authorId;
+    public UserEntity getAuthor() {
+        return author;
     }
 
-    public void setAuthorId(int authorId) {
-        this.authorId = authorId;
+    public void setAuthor(UserEntity author) {
+        this.author = author;
     }
 
     public LocalDateTime getTimestamp() {
@@ -104,11 +108,11 @@ public class RecordEntity implements Serializable {
         this.content = content;
     }
 
-    public int getType() {
+    public MessageAndLogEnum getType() {
         return type;
     }
 
-    public void setType(int type) {
+    public void setType(MessageAndLogEnum type) {
         this.type = type;
     }
 

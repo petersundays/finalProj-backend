@@ -3,9 +3,11 @@ package domcast.finalprojbackend.service;
 import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.InterestBean;
 import domcast.finalprojbackend.bean.SkillBean;
-import domcast.finalprojbackend.bean.project.AuthenticationAndAuthorization;
+import domcast.finalprojbackend.bean.AuthenticationAndAuthorization;
 import domcast.finalprojbackend.bean.user.PasswordBean;
+import domcast.finalprojbackend.bean.user.TokenBean;
 import domcast.finalprojbackend.bean.user.UserBean;
+import domcast.finalprojbackend.dto.EnumDTO;
 import domcast.finalprojbackend.dto.userDto.*;
 import domcast.finalprojbackend.enums.TypeOfUserEnum;
 import domcast.finalprojbackend.enums.util.EnumUtil;
@@ -49,6 +51,9 @@ public class UserService {
 
     @Inject
     private DataValidator dataValidator;
+
+    @Inject
+    private TokenBean tokenBean;
 
     /**
      * Registers a new user.
@@ -311,6 +316,8 @@ public class UserService {
             return response;
         }
 
+        tokenBean.setLastAccessToNow(sessionToken);
+
         try {
             UpdateUserDto user = null;
             // Extract UpdateUserDto from MultipartFormDataInput and create interests and skills
@@ -385,6 +392,8 @@ public class UserService {
             return response;
         }
 
+        tokenBean.setLastAccessToNow(sessionToken);
+
         try {
             users = userBean.getUsersByCriteria(firstName, lastName, nickname, workplace, orderBy, orderAsc, pageNumber, pageSize);
             response = Response.status(200).entity(users).build();
@@ -437,6 +446,8 @@ public class UserService {
             return response;
         }
 
+        tokenBean.setLastAccessToNow(sessionToken);
+
         String result = passwordBean.updatePassword(userId, oldPassword, newPassword);
         if ("Password updated successfully".equals(result)) {
             response = Response.status(200).entity(result).build();
@@ -485,6 +496,8 @@ public class UserService {
             return response;
         }
 
+        tokenBean.setLastAccessToNow(sessionToken);
+
         try {
             String result = userBean.updateUserType(loggedId, userId, type);
             response = Response.status(200).entity(result).build();
@@ -524,6 +537,8 @@ public class UserService {
             return response;
         }
 
+        tokenBean.setLastAccessToNow(sessionToken);
+
         try {
             publicProfileUser = userBean.returnPublicProfile(id);
             response = Response.status(200).entity(publicProfileUser).build();
@@ -554,6 +569,8 @@ public class UserService {
             logger.info("User with session token {} tried to get the type of user enum without authorization", token);
             return Response.status(401).entity("Unauthorized").build();
         }
+
+        tokenBean.setLastAccessToNow(token);
 
         Response response;
 

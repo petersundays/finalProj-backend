@@ -333,7 +333,7 @@ public class DataValidator {
             throw new IllegalArgumentException("Supplier is null or blank");
         }
 
-        if (detailedCR.getSupplierContact() <= 0) {
+        if (detailedCR.getSupplierContact() != null && !detailedCR.getSupplierContact().isEmpty()) {
             throw new IllegalArgumentException("SupplierContact is not greater than 0");
         }
 

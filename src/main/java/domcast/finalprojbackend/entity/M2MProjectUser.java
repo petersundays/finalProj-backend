@@ -48,6 +48,12 @@ import java.io.Serializable;
         query = "SELECT pu.project FROM M2MProjectUser pu WHERE pu.active = true GROUP BY pu.project HAVING COUNT(pu) > :number")
 @NamedQuery(name = "M2MProjectUser.getUsersInProject",
         query = "SELECT pu.user.id FROM M2MProjectUser pu WHERE pu.project.id = :projectId AND pu.active = true")
+@NamedQuery(name = "M2MProjectUser.findProjectManagers",
+        query = "SELECT pu FROM M2MProjectUser pu WHERE pu.project.id = :projectId AND (pu.role = 200 OR pu.role = 300) AND pu.active = true")
+@NamedQuery(name = "M2MProjectUser.findInvitedUsers",
+        query = "SELECT pu FROM M2MProjectUser pu WHERE pu.project.id = :projectId AND pu.invited = true")
+@NamedQuery(name = "M2MProjectUser.findCandidates",
+        query = "SELECT pu FROM M2MProjectUser pu WHERE pu.project.id = :projectId AND pu.role = 400")
 
 public class M2MProjectUser implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -80,6 +86,9 @@ public class M2MProjectUser implements Serializable {
     // Defines wether the user is a member of the project or not
     @Column(name = "active", nullable = false)
     private boolean active = true;
+
+    @Column(name = "invited", nullable = false)
+    private boolean invited = false;
 
     // Default constructor
     public M2MProjectUser() {
@@ -134,4 +143,13 @@ public class M2MProjectUser implements Serializable {
     public void setActive(boolean active) {
         this.active = active;
     }
+
+    public boolean isInvited() {
+        return invited;
+    }
+
+    public void setInvited(boolean invited) {
+        this.invited = invited;
+    }
+
 }

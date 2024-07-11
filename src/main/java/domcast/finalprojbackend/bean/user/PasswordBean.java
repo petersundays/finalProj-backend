@@ -1,7 +1,7 @@
 package domcast.finalprojbackend.bean.user;
 
 import domcast.finalprojbackend.bean.DataValidator;
-import domcast.finalprojbackend.bean.project.AuthenticationAndAuthorization;
+import domcast.finalprojbackend.bean.AuthenticationAndAuthorization;
 import domcast.finalprojbackend.dao.UserDao;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;

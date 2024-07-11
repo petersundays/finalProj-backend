@@ -1,7 +1,9 @@
 package domcast.finalprojbackend.bean.task;
 
 import domcast.finalprojbackend.bean.DataValidator;
+import domcast.finalprojbackend.bean.MessageBean;
 import domcast.finalprojbackend.bean.project.ProjectBean;
+import domcast.finalprojbackend.dao.M2MProjectUserDao;
 import domcast.finalprojbackend.dao.ProjectDao;
 import domcast.finalprojbackend.dao.TaskDao;
 import domcast.finalprojbackend.dao.UserDao;
@@ -9,13 +11,12 @@ import domcast.finalprojbackend.dto.taskDto.ChartTask;
 import domcast.finalprojbackend.dto.taskDto.DetailedTask;
 import domcast.finalprojbackend.dto.taskDto.EditTask;
 import domcast.finalprojbackend.dto.taskDto.NewTask;
-import domcast.finalprojbackend.entity.M2MTaskDependencies;
-import domcast.finalprojbackend.entity.ProjectEntity;
-import domcast.finalprojbackend.entity.TaskEntity;
-import domcast.finalprojbackend.entity.UserEntity;
+import domcast.finalprojbackend.entity.*;
+import domcast.finalprojbackend.enums.MessageAndLogEnum;
 import domcast.finalprojbackend.enums.TaskStateEnum;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
+import jakarta.persistence.NonUniqueResultException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -52,6 +53,12 @@ public class TaskBean implements Serializable {
 
     @EJB
     private ProjectBean projectBean;
+
+    @EJB
+    private MessageBean messageBean;
+
+    @EJB
+    private M2MProjectUserDao m2mProjectUserDao;
 
     // Default constructor
     public TaskBean() {
@@ -94,17 +101,65 @@ public class TaskBean implements Serializable {
             throw new RuntimeException("Error persisting new task: " + e.getMessage(), e);
         }
 
-        TaskEntity taskEntityFromDB = taskDao.findTaskByTitleResponsibleProject(newTask.getTitle(), newTask.getResponsibleId(), newTask.getProjectId());
+        TaskEntity taskEntityFromDB;
+        try {
+            taskEntityFromDB = taskDao.findTaskByTitleResponsibleProject(newTask.getTitle(), newTask.getResponsibleId(), newTask.getProjectId());
+        } catch (NonUniqueResultException e) {
+            logger.error("Task with title {}, responsible id {} and project id {} already exists", newTask.getTitle(), newTask.getResponsibleId(), newTask.getProjectId());
+            throw new RuntimeException("Task with title " + newTask.getTitle() + ", responsible id " + newTask.getResponsibleId() + " and project id " + newTask.getProjectId() + " already exists");
+        } catch (Exception e) {
+            logger.error("Error finding task by title, responsible id and project id", e);
+            throw new RuntimeException("Error finding task by title, responsible id and project id: " + e.getMessage(), e);
+        }
 
         if (taskEntityFromDB == null) {
             throw new RuntimeException("Error finding task by title, responsible id and project id");
         }
 
-        return new ChartTask(taskEntityFromDB.getId(),
+        ChartTask chartTask = new ChartTask(
+                taskEntityFromDB.getId(),
                 taskEntityFromDB.getTitle(),
                 taskEntityFromDB.getState().getId(),
                 taskEntityFromDB.getProjectedStartDate(),
-                taskEntityFromDB.getDeadline());
+                taskEntityFromDB.getDeadline()
+        );
+
+        ProjectEntity project = taskEntityFromDB.getProjectId();
+        Set<M2MProjectUser> projectManagers = projectBean.getProjectManagers(project);
+        int sender = taskEntityFromDB.getResponsible().getId();
+        boolean isTaskResponsible = false;
+
+        do {
+            for (M2MProjectUser user : projectManagers) {
+                if (user.getUser().getId() == taskEntityFromDB.getResponsible().getId()) {
+                    isTaskResponsible = true;
+                    break;
+                }
+            }
+            if (!isTaskResponsible) {
+                try {
+                    M2MProjectUser taskResponsible = m2mProjectUserDao.findProjectUser(taskEntityFromDB.getResponsible().getId(), project.getId());
+                    if (taskResponsible != null) {
+                        projectManagers.add(taskResponsible);
+                        isTaskResponsible = true;
+                    }
+                } catch (Exception e) {
+                    logger.error("Error finding task responsible user in project", e);
+                }
+            }
+        } while (!isTaskResponsible);
+
+        messageBean.sendMessageToProjectUsers(
+                projectManagers,
+                project,
+                MessageAndLogEnum.NEW_TASK.name(),
+                "",
+                sender,
+                MessageAndLogEnum.NEW_TASK,
+                taskEntityFromDB
+        );
+
+        return chartTask;
     }
 
     /**
@@ -441,7 +496,7 @@ public class TaskBean implements Serializable {
      * @param stateId the id of the state
      * @return the detailed task
      */
-    public DetailedTask updateTaskState(Integer taskId, Integer stateId) {
+    public DetailedTask updateTaskState(Integer taskId, Integer stateId, int userId) {
         logger.info("Updating task state");
 
         // Check if the task id and the state id are valid
@@ -475,6 +530,9 @@ public class TaskBean implements Serializable {
 
         // Merge the task entity
         taskDao.merge(taskEntity);
+
+
+        sendTaskNotification(taskEntity, MessageAndLogEnum.TASK_STATUS_CHANGED.name(), TaskStateEnum.fromId(stateId).name(), userId, MessageAndLogEnum.TASK_STATUS_CHANGED);
 
         return createDetailedTask(taskId);
     }
@@ -563,7 +621,7 @@ public class TaskBean implements Serializable {
      * @param taskId the id of the task to be updated
      * @return the detailed task with the updated information
      */
-    public DetailedTask editTask (EditTask editedTask, int taskId) {
+    public DetailedTask editTask (EditTask editedTask, int taskId, int userId) {
         logger.info("Editing task");
 
         if (!dataValidator.isIdValid(taskId)) {
@@ -608,18 +666,68 @@ public class TaskBean implements Serializable {
             throw new RuntimeException("Error merging task: " + e.getMessage(), e);
         }
 
-        return new DetailedTask(taskEntity.getTitle(),
-                taskEntity.getDescription(),
-                taskEntity.getProjectedStartDate(),
-                taskEntity.getDeadline(),
-                taskEntity.getResponsible().getId(),
-                taskEntity.getProjectId().getId(),
-                users,
-                createChartTaskFromRelationships(taskEntity.getDependencies()),
-                createChartTaskFromRelationships(taskEntity.getDependentTasks()),
-                taskEntity.getId(),
-                taskEntity.getState().getId(),
-                externalExecutors);
+        DetailedTask detailedTask= new DetailedTask(taskEntity.getTitle(),
+                    taskEntity.getDescription(),
+                    taskEntity.getProjectedStartDate(),
+                    taskEntity.getDeadline(),
+                    taskEntity.getResponsible().getId(),
+                    taskEntity.getProjectId().getId(),
+                    users,
+                    createChartTaskFromRelationships(taskEntity.getDependencies()),
+                    createChartTaskFromRelationships(taskEntity.getDependentTasks()),
+                    taskEntity.getId(),
+                    taskEntity.getState().getId(),
+                    externalExecutors);
+
+        sendTaskNotification(taskEntity, MessageAndLogEnum.TASK_EDITED.name(), "", userId, MessageAndLogEnum.TASK_EDITED);
+
+        return detailedTask;
+    }
+
+    /**
+     * Sends a personal message to the project users when a task is somehow changed
+     * @param taskEntity the task entity
+     * @param taskEdited the task edited
+     * @param state the state of the task
+     * @param userId the id of the user
+     */
+    private void sendTaskNotification(TaskEntity taskEntity, String taskEdited, String state, int userId, MessageAndLogEnum type) {
+
+        ProjectEntity project = taskEntity.getProjectId();
+        Set<M2MProjectUser> projectManagers;
+        M2MProjectUser taskResponsible;
+
+        try {
+            projectManagers = projectBean.getProjectManagers(project);
+        } catch (Exception e) {
+            logger.error("Error getting project managers", e);
+            throw new RuntimeException("Error getting project managers: " + e.getMessage(), e);
+        }
+
+        try {
+            taskResponsible = m2mProjectUserDao.findProjectUser(taskEntity.getResponsible().getId(), project.getId());
+        } catch (Exception e) {
+            logger.error("Error finding task responsible user in project", e);
+            throw new RuntimeException("Error finding task responsible user in project: " + e.getMessage(), e);
+        }
+
+        if (taskResponsible != null && !projectManagers.contains(taskResponsible)) {
+            projectManagers.add(taskResponsible);
+        }
+
+        if (type == null) {
+            type = MessageAndLogEnum.TASK_EDITED;
+        }
+
+        messageBean.sendMessageToProjectUsers(
+                projectManagers,
+                project,
+                taskEdited,
+                state,
+                userId,
+                type,
+                taskEntity
+        );
     }
 
     /**
@@ -691,7 +799,7 @@ public class TaskBean implements Serializable {
                     taskEntity.setDependentTasks(dependentRelationship);
                 }
             }
-
+            MessageAndLogEnum.ADDED.name();
             if (editedTask.getState() > 0) {
                 taskEntity.setState(TaskStateEnum.fromId(editedTask.getState()));
             }
@@ -783,7 +891,7 @@ public class TaskBean implements Serializable {
      * @param taskId the id of the task to be deleted
      * @return true if the task was deleted successfully
      */
-    public boolean deleteTask (int taskId) {
+    public boolean deleteTask (int taskId, int userId) {
         logger.info("Deleting task");
 
         if (!dataValidator.isIdValid(taskId)) {
@@ -833,6 +941,9 @@ public class TaskBean implements Serializable {
         }
 
         logger.info("Task with id {} deleted", taskId);
+
+        sendTaskNotification(taskEntity, MessageAndLogEnum.TASK_DELETED.name(), "", userId, MessageAndLogEnum.TASK_DELETED);
+
         return true;
     }
 }

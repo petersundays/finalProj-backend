@@ -7,23 +7,23 @@ import jakarta.xml.bind.annotation.XmlRootElement;
 import java.io.Serializable;
 
 /**
- * Data Transfer Object (DTO) class to send user information to the project in the frontend.
- * It includes the first name, last name, role and the id of the user.
+ * Data Transfer Object (DTO) class to send user information to the frontend.
+ * It includes the first name, last name and the id of the user.
  *
  * @see ProjectUserEnum
  * @author José Castro
  * @author Pedro Domingos
  */
 @XmlRootElement
-public class ProjectUser extends InvitedOrCandidate implements Serializable {
+public class InvitedOrCandidate extends RecordAuthor implements Serializable {
 
     @XmlElement
-    private int role;
+    private int id;
 
     /**
      * Empty constructor
      */
-    public ProjectUser() {
+    public InvitedOrCandidate() {
     }
 
     /**
@@ -31,20 +31,21 @@ public class ProjectUser extends InvitedOrCandidate implements Serializable {
      * @param id ID of the user.
      * @param firstName First name of the user.
      * @param lastName Last name of the user.
-     * @param role Role of the user.
      */
-    public ProjectUser(int id, String firstName, String lastName, int role) {
-        super(id, firstName, lastName);
-        this.role = role;
+    public InvitedOrCandidate(int id, String firstName, String lastName) {
+        super(firstName, lastName);
+        this.id = id;
     }
 
     // Getters and setters
 
-    public int getRole() {
-        return role;
+
+    public int getId() {
+        return id;
     }
 
-    public void setRole(int role) {
-        this.role = role;
+    public void setId(int id) {
+        this.id = id;
     }
+
 }

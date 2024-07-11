@@ -2,9 +2,10 @@ package domcast.finalprojbackend.service;
 
 import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.InterestBean;
-import domcast.finalprojbackend.bean.project.AuthenticationAndAuthorization;
+import domcast.finalprojbackend.bean.AuthenticationAndAuthorization;
+import domcast.finalprojbackend.bean.user.TokenBean;
 import domcast.finalprojbackend.dto.interestDto.InterestToList;
-import domcast.finalprojbackend.dto.userDto.EnumDTO;
+import domcast.finalprojbackend.dto.EnumDTO;
 import domcast.finalprojbackend.enums.InterestEnum;
 import domcast.finalprojbackend.enums.util.EnumUtil;
 import jakarta.inject.Inject;
@@ -34,6 +35,9 @@ public class InterestService {
 
     @Inject
     private InterestBean interestBean;
+
+    @Inject
+    private TokenBean tokenBean;
 
     @GET
     @Path("")
@@ -95,6 +99,8 @@ public class InterestService {
             logger.info("User with session token {} tried to get the interest enum but is not authorized", token);
             return Response.status(401).entity("Unauthorized").build();
         }
+
+        tokenBean.setLastAccessToNow(token);
 
         Response response;
 

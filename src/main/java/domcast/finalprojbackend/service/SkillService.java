@@ -2,9 +2,10 @@ package domcast.finalprojbackend.service;
 
 import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.SkillBean;
-import domcast.finalprojbackend.bean.project.AuthenticationAndAuthorization;
+import domcast.finalprojbackend.bean.AuthenticationAndAuthorization;
+import domcast.finalprojbackend.bean.user.TokenBean;
 import domcast.finalprojbackend.dto.skillDto.SkillToList;
-import domcast.finalprojbackend.dto.userDto.EnumDTO;
+import domcast.finalprojbackend.dto.EnumDTO;
 import domcast.finalprojbackend.enums.SkillTypeEnum;
 import domcast.finalprojbackend.enums.util.EnumUtil;
 import jakarta.inject.Inject;
@@ -34,6 +35,9 @@ public class SkillService {
 
     @Inject
     private SkillBean skillBean;
+
+    @Inject
+    private TokenBean tokenBean;
 
     @GET
     @Path("")
@@ -81,6 +85,8 @@ public class SkillService {
             return Response.status(401).entity("Unauthorized").build();
         }
 
+        tokenBean.setLastAccessToNow(token);
+
         Response response;
 
         try {
@@ -111,8 +117,6 @@ public class SkillService {
             logger.info("User with validation validationToken {} tried to get skills but is not authorized", validationToken);
             return response;
         }
-
-        
 
         try {
             logger.info("User with validationToken {} is getting the skill enum", validationToken);

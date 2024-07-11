@@ -166,7 +166,7 @@ public class PersonalMessageWS {
         PersonalMessage message;
 
         try {
-            message = messageBean.persistPersonalMessage(subject, content, userSender, userReceiver);
+            message = messageBean.persistPersonalMessage(subject, content, userSender, userReceiver, null);
         } catch (Exception e) {
             logger.error("Error persisting message");
             return;
@@ -194,4 +194,9 @@ public class PersonalMessageWS {
         // Send the message to all active sessions of the receiver
         messageBean.sendToUser(receiverId, jsonMessage, sessions);
     }
+
+    public HashMap<String, Session> getSessions() {
+        return sessions;
+    }
+
 }

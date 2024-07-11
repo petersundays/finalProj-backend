@@ -18,7 +18,7 @@ public class DetailedCR extends CRPreview implements Serializable {
     private int quantity;
 
     @XmlElement
-    private long supplierContact;
+    private String supplierContact;
 
     @XmlElement
     private String observations;
@@ -56,11 +56,11 @@ public class DetailedCR extends CRPreview implements Serializable {
         this.quantity = quantity;
     }
 
-    public long getSupplierContact() {
+    public String getSupplierContact() {
         return supplierContact;
     }
 
-    public void setSupplierContact(long supplierContact) {
+    public void setSupplierContact(String supplierContact) {
         this.supplierContact = supplierContact;
     }
 

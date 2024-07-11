@@ -526,6 +526,8 @@ public class TaskBeanTest {
         editedTask.setDeadline(LocalDateTime.now().plusDays(1));
         editedTask.setState(1);
 
+        int userId = 1;
+
         TaskEntity taskEntity = new TaskEntity();
         taskEntity.setId(taskId);
         UserEntity responsible = new UserEntity();
@@ -557,10 +559,10 @@ public class TaskBeanTest {
         expectedTask.setProjectId(editedTask.getProjectId());
         expectedTask.setState(editedTask.getState());
 
-        when(taskBean.editTask(editedTask, taskId)).thenReturn(expectedTask);
+        when(taskBean.editTask(editedTask, taskId, userId)).thenReturn(expectedTask);
 
         // Act
-        DetailedTask result = taskBean.editTask(editedTask, taskId);
+        DetailedTask result = taskBean.editTask(editedTask, taskId, userId);
 
         // Assert
         assertNotNull(result);
@@ -578,10 +580,11 @@ public class TaskBeanTest {
     void testEditTask_Failure() {
         EditTask editedTask = null;
         int taskId = -1;
+        int userId = -1;
 
         when(dataValidator.isIdValid(taskId)).thenReturn(false);
 
-        assertThrows(IllegalArgumentException.class, () -> taskBean.editTask(editedTask, taskId));
+        assertThrows(IllegalArgumentException.class, () -> taskBean.editTask(editedTask, taskId, userId));
     }
 
     @Test
