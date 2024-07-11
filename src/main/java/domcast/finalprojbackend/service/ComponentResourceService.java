@@ -1,11 +1,12 @@
 package domcast.finalprojbackend.service;
 
+import domcast.finalprojbackend.bean.AuthenticationAndAuthorization;
 import domcast.finalprojbackend.bean.ComponentResourceBean;
 import domcast.finalprojbackend.bean.DataValidator;
-import domcast.finalprojbackend.bean.AuthenticationAndAuthorization;
+import domcast.finalprojbackend.bean.user.TokenBean;
+import domcast.finalprojbackend.dto.EnumDTO;
 import domcast.finalprojbackend.dto.componentResourceDto.CRPreview;
 import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
-import domcast.finalprojbackend.dto.EnumDTO;
 import domcast.finalprojbackend.enums.ComponentResourceEnum;
 import domcast.finalprojbackend.enums.util.EnumUtil;
 import jakarta.inject.Inject;
@@ -34,6 +35,9 @@ public class ComponentResourceService {
 
     @Inject
     private AuthenticationAndAuthorization authenticationAndAuthorization;
+
+    @Inject
+    private TokenBean tokenBean;
 
 
     /**
@@ -64,6 +68,8 @@ public class ComponentResourceService {
             logger.info("User with session token {} tried tochange the state of a task unsuccessfully", token);
             return Response.status(401).entity("Unauthorized").build();
         }
+
+        tokenBean.setLastAccessToNow(token);
 
         Response response;
         CRPreview crPreview;
@@ -117,6 +123,8 @@ public class ComponentResourceService {
             return Response.status(401).entity("Unauthorized").build();
         }
 
+        tokenBean.setLastAccessToNow(token);
+
         Response response;
         CRPreview crPreview;
 
@@ -166,6 +174,8 @@ public class ComponentResourceService {
             return Response.status(401).entity("Unauthorized").build();
         }
 
+        tokenBean.setLastAccessToNow(token);
+
         Response response;
         DetailedCR editedCR;
 
@@ -208,6 +218,8 @@ public class ComponentResourceService {
             return Response.status(401).entity("Unauthorized").build();
         }
 
+        tokenBean.setLastAccessToNow(token);
+
         Response response;
         DetailedCR editedCR;
 
@@ -249,6 +261,8 @@ public class ComponentResourceService {
             logger.info("User with session token {} tried to get component-resources for project with id {} unsuccessfully", token, projectId);
             return Response.status(401).entity("Unauthorized").build();
         }
+
+        tokenBean.setLastAccessToNow(token);
 
         Response response;
         Set<CRPreview> crPreviews;
@@ -301,6 +315,8 @@ public class ComponentResourceService {
             return Response.status(401).entity("Unauthorized").build();
         }
 
+        tokenBean.setLastAccessToNow(token);
+
         Response response;
         List<CRPreview> crPreviews;
 
@@ -340,6 +356,8 @@ public class ComponentResourceService {
             logger.info("User with session token {} tried to get the component resource enum unsuccessfully", token);
             return Response.status(401).entity("Unauthorized").build();
         }
+
+        tokenBean.setLastAccessToNow(token);
 
         Response response;
 

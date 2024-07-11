@@ -3,6 +3,7 @@ package domcast.finalprojbackend.service;
 import domcast.finalprojbackend.bean.AuthenticationAndAuthorization;
 import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.RecordBean;
+import domcast.finalprojbackend.bean.user.TokenBean;
 import domcast.finalprojbackend.dto.projectDto.DetailedProject;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,6 +27,9 @@ public class RecordService {
 
     @Inject
     private RecordBean recordBean;
+
+    @Inject
+    private TokenBean tokenBean;
     
     @POST
     @Path("")
@@ -56,6 +60,8 @@ public class RecordService {
             return Response.status(401).entity("Unauthorized: Project is not in a state that can be edited").build();
         }
 
+        tokenBean.setLastAccessToNow(token);
+
         Response response;
 
         DetailedProject project;
@@ -78,8 +84,5 @@ public class RecordService {
         return response;
 
     }
-
-
-
 
 }
