@@ -220,7 +220,38 @@ public class StartupCreator implements Serializable {
         // Create a HashSet to store the already used componentResource names and brands
         Set<String> usedComponentResourceNamesAndBrands = new HashSet<>();
 
-        String[] projectNames = {"Climate Change Research", "AI Development", "Quantum Computing Study", "Cancer Treatment Research", "Space Exploration", "Renewable Energy Development", "Autonomous Vehicles", "Blockchain Technology", "Cybersecurity Enhancement", "Genetic Engineering"};
+        String[] projectNames = {
+                "Climate Change Research",
+                "AI Development",
+                "Quantum Computing Study",
+                "Cancer Treatment Research",
+                "Space Exploration",
+                "Renewable Energy Development",
+                "Autonomous Vehicles",
+                "Blockchain Technology",
+                "Cybersecurity Enhancement",
+                "Genetic Engineering",
+                "Urban Sustainability Initiatives",
+                "Deep Learning Applications",
+                "Smart City Infrastructure",
+                "Advanced Robotics Engineering",
+                "Virtual Reality Experiences",
+                "Augmented Reality in Education",
+                "Internet of Things (IoT) Security",
+                "Biometric Authentication Technologies",
+                "Nanotechnology in Medicine",
+                "Renewable Resource Optimization",
+                "Wearable Health Monitors",
+                "3D Printing Innovations",
+                "Agricultural Drones and Automation",
+                "Clean Water Technologies",
+                "Waste Management Solutions",
+                "Solar Power Efficiency",
+                "Wind Energy Harvesting",
+                "Machine Learning in Finance",
+                "Neural Networks for Natural Language Processing",
+                "Bioinformatics and Genomic Sequencing"
+        };
         String[] projectDescriptions = {"Researching the effects of climate change", "Developing artificial intelligence algorithms", "Studying the principles of quantum computing", "Researching new cancer treatments", "Exploring outer space", "Developing renewable energy sources", "Creating autonomous vehicles", "Implementing blockchain technology", "Enhancing cybersecurity measures", "Engineering genetic modifications"};
         ProjectStateEnum[] projectStates = {ProjectStateEnum.PLANNING, ProjectStateEnum.READY, ProjectStateEnum.APPROVED, ProjectStateEnum.IN_PROGRESS, ProjectStateEnum.CANCELED, ProjectStateEnum.FINISHED, ProjectStateEnum.PLANNING, ProjectStateEnum.READY, ProjectStateEnum.APPROVED, ProjectStateEnum.IN_PROGRESS};
         String[] componentResourceNames = { "Climate Data Analyzer", "AI Training Module", "Quantum Computer", "Cancer Cell Detector","Spacecraft", "Solar Panel", "Self-driving Car", "Blockchain Node", "Firewall", "DNA Sequencer"};
@@ -284,22 +315,22 @@ public class StartupCreator implements Serializable {
 
         boolean isUser2MainManager = false;
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 20; i++) {
             ProjectEntity project = new ProjectEntity();
             project.setName(projectNames[i]);
-            project.setDescription(projectDescriptions[i]);
+            project.setDescription(projectDescriptions[i % projectDescriptions.length]);
             project.setLab(labs.get(i % labs.size())); // Select a lab from the shuffled list
-            project.setState(projectStates[i]);
+            project.setState(projectStates[i % projectStates.length]);
             project.setCreationDate(LocalDateTime.now());
             project.setProjectedStartDate(LocalDateTime.now().plusDays(1));
             project.setDeadline(LocalDateTime.now().plusDays(30));
 
             // Set readyDate, realStartDate and realEndDate based on the project's state
-            if (projectStates[i] == ProjectStateEnum.IN_PROGRESS) {
+            if (projectStates[i % projectStates.length] == ProjectStateEnum.IN_PROGRESS) {
                 project.setRealStartDate(LocalDateTime.now());
-            } else if (projectStates[i] == ProjectStateEnum.FINISHED) {
+            } else if (projectStates[i % projectStates.length] == ProjectStateEnum.FINISHED) {
                 project.setRealEndDate(LocalDateTime.now());
-            } else if (projectStates[i] != ProjectStateEnum.PLANNING) {
+            } else if (projectStates[i % projectStates.length] != ProjectStateEnum.PLANNING) {
                 // Generate a random date within the past year
                 long minDay = LocalDate.of(2020, 1, 1).toEpochDay();
                 long maxDay = LocalDate.now().toEpochDay();
@@ -484,9 +515,9 @@ public class StartupCreator implements Serializable {
 
 
                 // Set the state of the task based on the project's state
-                if (projectStates[i] == ProjectStateEnum.FINISHED) {
+                if (projectStates[i % projectStates.length] == ProjectStateEnum.FINISHED) {
                     task.setState(TaskStateEnum.FINISHED);
-                } else if (projectStates[i] == ProjectStateEnum.IN_PROGRESS || projectStates[i] == ProjectStateEnum.CANCELED) {
+                } else if (projectStates[i % projectStates.length] == ProjectStateEnum.IN_PROGRESS || projectStates[i % projectStates.length] == ProjectStateEnum.CANCELED) {
                     // The task's state can be PLANNED, IN_PROGRESS, or FINISHED
                     int taskStateIndex = random.nextInt(3);
                     if (taskStateIndex == 0) {
@@ -510,7 +541,7 @@ public class StartupCreator implements Serializable {
                 // If it's the last task, it's the presentation of the project
                 if (j == numTasks - 1) {
                     task.setTitle("Presentation");
-                    task.setDescription("Presentation of the project " + projectNames[i]);
+                    task.setDescription("Presentation of the project " + projectNames[i % projectStates.length]);
                     task.setRealStartDate(project.getDeadline());
                 }
 
@@ -541,7 +572,7 @@ public class StartupCreator implements Serializable {
             if (existingPresentationTasks.isEmpty()) {
                 TaskEntity presentationTask = new TaskEntity();
                 presentationTask.setTitle("Presentation");
-                presentationTask.setDescription("Presentation of the project " + projectNames[i]);
+                presentationTask.setDescription("Presentation of the project " + projectNames[i % projectStates.length]);
 
                 // Set the projectedStartDate and deadline of the presentation task to the deadline of the project
                 presentationTask.setProjectedStartDate(project.getDeadline());
