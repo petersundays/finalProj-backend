@@ -171,4 +171,38 @@ public class AdminService {
         return response;
     }
 
+    @GET
+    @Path("/statistics")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getStatistics(@HeaderParam("token") String token, @HeaderParam("id") int id, @Context HttpServletRequest request) {
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with IP address {} is trying to get statistics", ipAddress);
+
+        Response response;
+
+        if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, id)) {
+            response = Response.status(401).entity("Unauthorized").build();
+            logger.info("Unauthorized user tried to get statistics");
+            return response;
+        }
+
+        if (!authenticationAndAuthorization.isUserAdminById(id)) {
+            response = Response.status(401).entity("Unauthorized").build();
+            logger.info("User is not an admin and tried to get statistics");
+            return response;
+        }
+
+        tokenBean.setLastAccessToNow(token);
+
+        try {
+            response = Response.status(200).entity(systemBean.projectStatistics()).build();
+            logger.info("Statistics retrieved successfully");
+        } catch (Exception e) {
+            response = Response.status(500).entity("Internal server error").build();
+            logger.error("Error getting statistics", e);
+        }
+
+        return response;
+    }
+
 }

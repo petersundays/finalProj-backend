@@ -284,4 +284,18 @@ public class M2MProjectUserDao extends AbstractDao<M2MProjectUser> {
             return new ArrayList<>();
         }
     }
+
+    /**
+     * Gets the average number of users in projects.
+     *
+     * @return the average number of users in projects
+     */
+    public double averageUsersInProjects() {
+        logger.info("Getting average number of users in projects");
+        try {
+            return (double) em.createNamedQuery("M2MProjectUser.averageActiveUsersAcrossAllProjects").getSingleResult();
+        } catch (NoResultException e) {
+            return 0;
+        }
+    }
 }

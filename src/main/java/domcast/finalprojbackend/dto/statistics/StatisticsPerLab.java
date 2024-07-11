@@ -6,22 +6,16 @@ import jakarta.xml.bind.annotation.XmlRootElement;
 import java.io.Serializable;
 
 @XmlRootElement
-public class ProjectStatisticsDTO implements Serializable {
+public class StatisticsPerLab implements Serializable {
 
     @XmlElement
-    private int locationId;
+    private int city;
 
     @XmlElement
     private long totalProjects;
 
     @XmlElement
     private double percentage;
-
-    @XmlElement
-    private double averageMembers;
-
-    @XmlElement
-    private double averageExecutionTime;
 
     @XmlElement
     private long approvedProjects;
@@ -42,16 +36,14 @@ public class ProjectStatisticsDTO implements Serializable {
     private double canceledPercentage;
 
 
-    public ProjectStatisticsDTO() {
+    public StatisticsPerLab() {
         super();
     }
 
-    public ProjectStatisticsDTO(int locationId, long totalProjects, double percentage, double averageMembers, double averageExecutionTime, long approvedProjects, double approvedPercentage, long finishedProjects, double finishedPercentage, long canceledProjects, double canceledPercentage) {
-        this.locationId = locationId;
+    public StatisticsPerLab(int city, long totalProjects, double percentage, long approvedProjects, double approvedPercentage, long finishedProjects, double finishedPercentage, long canceledProjects, double canceledPercentage) {
+        this.city = city;
         this.totalProjects = totalProjects;
         this.percentage = percentage;
-        this.averageMembers = averageMembers;
-        this.averageExecutionTime = averageExecutionTime;
         this.approvedProjects = approvedProjects;
         this.approvedPercentage = approvedPercentage;
         this.finishedProjects = finishedProjects;
@@ -63,12 +55,12 @@ public class ProjectStatisticsDTO implements Serializable {
     // Getters and Setters
 
 
-    public int getLocationId() {
-        return locationId;
+    public int getCity() {
+        return city;
     }
 
-    public void setLocationId(int locationId) {
-        this.locationId = locationId;
+    public void setCity(int city) {
+        this.city = city;
     }
 
     public long getTotalProjects() {
@@ -85,22 +77,6 @@ public class ProjectStatisticsDTO implements Serializable {
 
     public void setPercentage(double percentage) {
         this.percentage = percentage;
-    }
-
-    public double getAverageMembers() {
-        return averageMembers;
-    }
-
-    public void setAverageMembers(double averageMembers) {
-        this.averageMembers = averageMembers;
-    }
-
-    public double getAverageExecutionTime() {
-        return averageExecutionTime;
-    }
-
-    public void setAverageExecutionTime(double averageExecutionTime) {
-        this.averageExecutionTime = averageExecutionTime;
     }
 
     public long getApprovedProjects() {

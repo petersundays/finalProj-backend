@@ -301,4 +301,86 @@ public class ProjectDao extends AbstractDao<ProjectEntity> {
             return false;
         }
     }
+
+    /**
+     * Gets the number of projects per lab.
+     *
+     * @param labId the id of the lab
+     * @return the number of projects per lab
+     */
+    public int numberOfProjectsPerLab(int labId) {
+        logger.info("Getting number of projects per lab with id {}", labId);
+        try {
+            return ((Number) em.createNamedQuery("Project.numberOfProjectsPerLab")
+                    .setParameter("labId", labId)
+                    .getSingleResult()).intValue();
+        } catch (NoResultException e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Gets the number of approved projects by lab.
+     *
+     * @param labId the id of the lab
+     * @return the number of approved projects by lab
+     */
+    public int numberOfApprovedProjectsByLab(int labId) {
+        logger.info("Getting number of approved projects by lab with id {}", labId);
+        try {
+            return ((Number) em.createNamedQuery("Project.getNumberOfApprovedProjectsByLab")
+                    .setParameter("labId", labId)
+                    .getSingleResult()).intValue();
+        } catch (NoResultException e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Gets the number of finished projects by lab.
+     *
+     * @param labId the id of the lab
+     * @return the number of finished projects by lab
+     */
+    public int numberOfFinishedProjectsByLab(int labId) {
+        logger.info("Getting number of finished projects by lab with id {}", labId);
+        try {
+            return ((Number) em.createNamedQuery("Project.getNumberOfFinishedProjectsByLab")
+                    .setParameter("labId", labId)
+                    .getSingleResult()).intValue();
+        } catch (NoResultException e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Gets the number of canceled projects by lab.
+     *
+     * @param labId the id of the lab
+     * @return the number of canceled projects by lab
+     */
+    public int numberOfCanceledProjectsByLab(int labId) {
+        logger.info("Getting number of canceled projects by lab with id {}", labId);
+        try {
+            return ((Number) em.createNamedQuery("Project.getNumberOfCanceledProjectsByLab")
+                    .setParameter("labId", labId)
+                    .getSingleResult()).intValue();
+        } catch (NoResultException e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Gets the average execution time of projects.
+     * @return the average execution time of projects
+     */
+    public double getAverageExecutionTime() {
+        logger.info("Getting average execution time of projects");
+        try {
+            return (double) em.createNamedQuery("Project.averageExecutionTime").getSingleResult();
+        } catch (NoResultException e) {
+            return 0;
+        }
+    }
+
 }
