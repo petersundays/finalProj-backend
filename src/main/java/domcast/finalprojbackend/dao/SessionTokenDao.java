@@ -176,5 +176,23 @@ public class SessionTokenDao extends ValidationTokenDao {
             return new ArrayList<>();
         }
     }
+
+    /**
+     * Sets the last access of a session token to now
+     * @param token the token to be updated
+     * @return boolean value indicating if the operation was successful
+     */
+    public boolean setLastAccessToNow(String token) {
+        logger.info("Setting last access of session token {} to now", token);
+        try {
+            int updatedEntities = em.createNamedQuery("SessionToken.setLastAccessToNow")
+                    .setParameter("token", token)
+                    .executeUpdate();
+            return updatedEntities > 0;
+        } catch (Exception e) {
+            logger.error("Error setting last access of session token {} to now", token, e);
+            return false;
+        }
+    }
 }
 

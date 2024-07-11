@@ -3,6 +3,7 @@ package domcast.finalprojbackend.service;
 import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.MessageBean;
 import domcast.finalprojbackend.bean.AuthenticationAndAuthorization;
+import domcast.finalprojbackend.bean.user.TokenBean;
 import domcast.finalprojbackend.dto.messageDto.PersonalMessage;
 import domcast.finalprojbackend.dto.messageDto.ProjectMessage;
 import jakarta.inject.Inject;
@@ -30,6 +31,9 @@ public class MessageService {
     @Inject
     private MessageBean messageBean;
 
+    @Inject
+    private TokenBean tokenBean;
+
     @GET
     @Path("personal-received")
     @Produces(MediaType.APPLICATION_JSON)
@@ -53,6 +57,8 @@ public class MessageService {
             logger.info("User with session token {} tried to get received messages but is unauthorized", token);
             return response;
         }
+
+        tokenBean.setLastAccessToNow(token);
 
         List<PersonalMessage> messages;
 
@@ -91,6 +97,8 @@ public class MessageService {
             logger.info("User with session token {} tried to get sent messages but is unauthorized", token);
             return response;
         }
+
+        tokenBean.setLastAccessToNow(token);
 
         List<PersonalMessage> messages;
 
@@ -138,6 +146,8 @@ public class MessageService {
             return response;
         }
 
+        tokenBean.setLastAccessToNow(token);
+
         List<ProjectMessage> messages;
 
         try {
@@ -175,6 +185,8 @@ public class MessageService {
             logger.info("User with session token {} tried to get unread messages but is unauthorized", token);
             return response;
         }
+
+        tokenBean.setLastAccessToNow(token);
 
         boolean hasUnreadMessages;
 
@@ -222,6 +234,8 @@ public class MessageService {
             return response;
         }
 
+        tokenBean.setLastAccessToNow(token);
+
         boolean hasUnreadMessages;
 
         try {
@@ -267,6 +281,8 @@ public class MessageService {
             logger.info("User with session token {} tried to mark a personal message as read but is not the receiver of the message", token);
             return response;
         }
+
+        tokenBean.setLastAccessToNow(token);
 
         boolean markedAsRead;
 

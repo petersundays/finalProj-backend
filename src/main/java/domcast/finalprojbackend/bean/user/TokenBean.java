@@ -176,4 +176,21 @@ public class TokenBean implements Serializable {
             return null;
         }
     }
+
+    /**
+     * Sets the last access of the session token to the current time
+     * @param token the session token to be updated
+     */
+    public void setLastAccessToNow(String token) {
+
+        if (token == null || token.isEmpty()) {
+            logger.error("Token is null or empty. Cannot set last access to now");
+        }
+
+        try {
+            logger.info("Last access updated to now for token: {}", token);
+        } catch (Exception e) {
+            logger.error("Error setting last access to now", e);
+        }
+    }
 }

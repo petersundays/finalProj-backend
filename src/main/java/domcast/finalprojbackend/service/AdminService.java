@@ -44,8 +44,12 @@ public class AdminService {
 
         Response response;
 
+
         try {
             if (tokenBean.isSessionTokenFromAdminTypeUser(token)) {
+
+                tokenBean.setLastAccessToNow(token);
+
                 if (systemBean.setSessionTimeout(timeout)) {
                     response = Response.status(200).entity("Session timeout set successfully").build();
                     logger.info("Admin set session timeout successfully");
@@ -77,6 +81,9 @@ public class AdminService {
 
         try {
             if (tokenBean.isSessionTokenFromAdminTypeUser(token)) {
+
+                tokenBean.setLastAccessToNow(token);
+
                 if (systemBean.setProjectMaxMembers(maxMembers)) {
                     response = Response.status(200).entity("Project max members set successfully").build();
                     logger.info("Admin set project max members successfully");
@@ -117,6 +124,8 @@ public class AdminService {
             return response;
         }
 
+        tokenBean.setLastAccessToNow(token);
+
         int timeout;
 
         try {
@@ -145,6 +154,8 @@ public class AdminService {
             logger.info("Unauthorized user tried to get project max members");
             return response;
         }
+
+        tokenBean.setLastAccessToNow(token);
 
         int maxMembers;
 

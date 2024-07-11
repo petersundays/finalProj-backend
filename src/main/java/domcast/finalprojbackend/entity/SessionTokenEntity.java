@@ -31,6 +31,8 @@ import java.time.LocalDateTime;
         query = "SELECT COUNT(s) FROM SessionTokenEntity s WHERE s.active = true AND s.token = :token")
 @NamedQuery(name = "SessionToken.findActiveSessionTokensByUserId",
         query = "SELECT s.token FROM SessionTokenEntity s WHERE s.active = true AND s.user.id = :userId")
+@NamedQuery(name = "SessionToken.setLastAccessToNow",
+        query = "UPDATE SessionTokenEntity s SET s.lastAccess = CURRENT_TIMESTAMP WHERE s.token = :token")
 
 public class SessionTokenEntity extends ValidationTokenEntity implements Serializable {
     private static final long serialVersionUID = 1L;

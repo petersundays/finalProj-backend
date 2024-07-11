@@ -5,6 +5,7 @@ import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.SkillBean;
 import domcast.finalprojbackend.bean.project.ProjectBean;
 import domcast.finalprojbackend.bean.AuthenticationAndAuthorization;
+import domcast.finalprojbackend.bean.user.TokenBean;
 import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.dto.componentResourceDto.DetailedCR;
 import domcast.finalprojbackend.dto.projectDto.*;
@@ -54,6 +55,9 @@ public class ProjectService {
     @Inject
     private SkillBean skillBean;
 
+    @Inject
+    private TokenBean tokenBean;
+
     /**
      * Method to create a new project.
      *
@@ -86,6 +90,8 @@ public class ProjectService {
             logger.info("User with session token {} tried to create a new project but is not authorized", token);
             return response;
         }
+
+        tokenBean.setLastAccessToNow(token);
 
         if (!input.getFormDataMap().containsKey("project")) {
             response = Response.status(400).entity("Missing project data").build();
@@ -173,6 +179,8 @@ public class ProjectService {
             logger.info("User with session token {} tried to edit a project but is not a member of the project", token);
             return response;
         }
+
+        tokenBean.setLastAccessToNow(token);
 
         if (!input.getFormDataMap().containsKey("project") && !input.getFormDataMap().containsKey("components") && !input.getFormDataMap().containsKey("skills")) {
             response = Response.status(400).entity("Missing project data").build();
@@ -270,6 +278,8 @@ public class ProjectService {
             return Response.status(401).entity("Unauthorized").build();
         }
 
+        tokenBean.setLastAccessToNow(token);
+
         Response response;
 
         try {
@@ -311,6 +321,8 @@ public class ProjectService {
             logger.info("User with session token {} tried to get the record topic enum but is not authorized", token);
             return Response.status(401).entity("Unauthorized").build();
         }
+
+        tokenBean.setLastAccessToNow(token);
 
         Response response;
 
@@ -365,6 +377,8 @@ public class ProjectService {
             logger.info("User with session token {} tried to update the state of the project but is not authorized", token);
             return Response.status(401).entity("Unauthorized").build();
         }
+
+        tokenBean.setLastAccessToNow(token);
 
         if (!ProjectStateEnum.isValidId(state)) {
             logger.info("User with session token {} tried to update the state of the project with invalid state", token);
@@ -430,6 +444,8 @@ public class ProjectService {
             logger.info("User with session token {} tried to approve the project but is not authorized", token);
             return Response.status(401).entity("Unauthorized").build();
         }
+
+        tokenBean.setLastAccessToNow(token);
 
         Response response;
 
@@ -542,6 +558,8 @@ public class ProjectService {
             return Response.status(401).entity("Unauthorized").build();
         }
 
+        tokenBean.setLastAccessToNow(token);
+
         Response response;
 
         DetailedProject detailedProject;
@@ -613,6 +631,8 @@ public class ProjectService {
             return Response.status(401).entity("Unauthorized").build();
         }
 
+        tokenBean.setLastAccessToNow(token);
+
         Response response;
         boolean invited;
 
@@ -666,6 +686,8 @@ public class ProjectService {
             return Response.status(401).entity("Unauthorized: Project is not in a state that can be edited").build();
         }
 
+        tokenBean.setLastAccessToNow(token);
+
         Response response;
         boolean success;
 
@@ -709,6 +731,8 @@ public class ProjectService {
             logger.info("User with session token {} tried to apply to the project but the project is not in a state that can be edited", token);
             return Response.status(401).entity("Unauthorized: Project is not in a state that can be edited").build();
         }
+
+        tokenBean.setLastAccessToNow(token);
 
         Response response;
         boolean applied;
@@ -760,6 +784,8 @@ public class ProjectService {
             logger.info("User with session token {} tried to answer the application to the project but is not authorized", token);
             return Response.status(401).entity("Unauthorized").build();
         }
+
+        tokenBean.setLastAccessToNow(token);
 
         Response response;
         boolean success;
@@ -815,6 +841,8 @@ public class ProjectService {
             return response;
         }
 
+        tokenBean.setLastAccessToNow(token);
+
         DetailedProject detailedProject;
 
         try {
@@ -855,6 +883,8 @@ public class ProjectService {
             logger.info("User with session token {} tried to get the public project but is not authorized", token);
             return response;
         }
+
+        tokenBean.setLastAccessToNow(token);
 
         PublicProject publicProject;
 
@@ -900,6 +930,8 @@ public class ProjectService {
             logger.info("User with session token {} tried to change role of the user with id {} in the project but is not authorized", token, userToPromoteId);
             return Response.status(401).entity("Unauthorized").build();
         }
+
+        tokenBean.setLastAccessToNow(token);
 
         Response response;
         DetailedProject detailedProject;
@@ -996,6 +1028,8 @@ public class ProjectService {
             logger.info("User with session token {} tried to change the max members of the project but is not authorized", token);
             return Response.status(401).entity("Unauthorized").build();
         }
+
+        tokenBean.setLastAccessToNow(token);
 
         Response response;
         boolean success;

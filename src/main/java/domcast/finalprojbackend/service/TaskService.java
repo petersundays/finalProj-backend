@@ -3,6 +3,7 @@ package domcast.finalprojbackend.service;
 import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.task.TaskBean;
 import domcast.finalprojbackend.bean.AuthenticationAndAuthorization;
+import domcast.finalprojbackend.bean.user.TokenBean;
 import domcast.finalprojbackend.dto.taskDto.ChartTask;
 import domcast.finalprojbackend.dto.taskDto.DetailedTask;
 import domcast.finalprojbackend.dto.taskDto.EditTask;
@@ -34,6 +35,9 @@ public class TaskService  {
 
     @Inject
     private AuthenticationAndAuthorization authenticationAndAuthorization;
+
+    @Inject
+    private TokenBean tokenBean;
 
     /**
      * Creates a new task based on the new task passed as parameter.
@@ -68,6 +72,8 @@ public class TaskService  {
             logger.info("User with session token {} tried to create a task unsuccessfully", token);
             return Response.status(401).entity("Unauthorized").build();
         }
+
+        tokenBean.setLastAccessToNow(token);
 
         Response response;
         ChartTask chartTask;
@@ -116,6 +122,8 @@ public class TaskService  {
             logger.info("User with session token {} tried to get the detailed information of a task unsuccessfully", token);
             return Response.status(401).entity("Unauthorized").build();
         }
+
+        tokenBean.setLastAccessToNow(token);
 
         Response response;
         DetailedTask detailedTask;
@@ -172,6 +180,8 @@ public class TaskService  {
             return Response.status(401).entity("Unauthorized").build();
         }
 
+        tokenBean.setLastAccessToNow(token);
+
         Response response;
         DetailedTask detailedTask;
 
@@ -210,6 +220,8 @@ public class TaskService  {
             logger.info("User with session token {} tried to get the tasks unsuccessfully", token);
             return Response.status(401).entity("Unauthorized").build();
         }
+
+        tokenBean.setLastAccessToNow(token);
 
         Response response;
         List<ChartTask> chartTasks;
@@ -256,6 +268,8 @@ public class TaskService  {
             return Response.status(401).entity("Unauthorized").build();
         }
 
+        tokenBean.setLastAccessToNow(token);
+
         Response response;
         DetailedTask detailedTask;
 
@@ -293,6 +307,8 @@ public class TaskService  {
             logger.info("User with session token {} tried to get the task state enum but is not authorized", token);
             return Response.status(401).entity("Unauthorized").build();
         }
+
+        tokenBean.setLastAccessToNow(token);
 
         Response response;
 
@@ -334,11 +350,13 @@ public class TaskService  {
             return Response.status(401).entity("Unauthorized").build();
         }
 
+        tokenBean.setLastAccessToNow(token);
+
         Response response;
         boolean deleted;
 
         // Delete the task
-try {
+        try {
             deleted = taskBean.deleteTask(taskId, userId);
             logger.info("User with session token {} deleted the task with id {} from IP address {}", token, taskId, ipAddress);
             response = Response.status(200).entity(deleted).build();
