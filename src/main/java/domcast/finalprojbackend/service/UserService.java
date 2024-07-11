@@ -571,7 +571,7 @@ public class UserService {
         }
 
         tokenBean.setLastAccessToNow(token);
-
+        System.out.println("User with session token {} and id {} is getting the type of user enum" + token + id);
         Response response;
 
         try {
