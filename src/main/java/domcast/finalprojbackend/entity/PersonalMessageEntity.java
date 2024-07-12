@@ -25,13 +25,15 @@ import java.io.Serializable;
 @NamedQuery(name="Message.countUnreadPersonalMessagesForUser",
         query="SELECT COUNT(m) FROM PersonalMessageEntity m WHERE m.receiver.id = :userId AND m.read = false")
 @NamedQuery(name="Message.getAllPersonalMessagesWhereReceiverIs",
-        query="SELECT m FROM PersonalMessageEntity m WHERE m.receiver.id = :userId")
+        query="SELECT m FROM PersonalMessageEntity m WHERE m.receiver.id = :userId ORDER BY m.timestamp DESC")
 @NamedQuery(name="Message.getAllPersonalMessagesSentByUser",
-        query="SELECT m FROM PersonalMessageEntity m WHERE m.sender.id = :userId")
+        query="SELECT m FROM PersonalMessageEntity m WHERE m.sender.id = :userId ORDER BY m.timestamp DESC")
 @NamedQuery(name="Message.markPersonalMessageAsRead",
         query="UPDATE PersonalMessageEntity m SET m.read = true WHERE m.id = :messageId")
 @NamedQuery(name="Message.isUserReceiverOfPersonalMessage",
         query="SELECT COUNT(m) FROM PersonalMessageEntity m WHERE m.id = :messageId AND m.receiver.id = :userId")
+@NamedQuery(name="Message.setInvitedToNullMessageWhereReceiverIsAndInvitedToIs",
+        query="UPDATE PersonalMessageEntity m SET m.invitedTo = null WHERE m.receiver.id = :userId AND m.invitedTo = :projectId")
 
 public class PersonalMessageEntity extends MessageEntity implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -47,6 +49,9 @@ public class PersonalMessageEntity extends MessageEntity implements Serializable
     @Convert(converter = MessageAndLogEnumConverter.class)
     @Column(name = "type", nullable = false)
     private MessageAndLogEnum type;
+
+    @Column(name = "invited_to")
+    private Integer invitedTo;
 
     // Default constructor
     public PersonalMessageEntity() {
@@ -76,5 +81,13 @@ public class PersonalMessageEntity extends MessageEntity implements Serializable
 
     public void setType(MessageAndLogEnum type) {
         this.type = type;
+    }
+
+    public Integer getInvitedTo() {
+        return invitedTo;
+    }
+
+    public void setInvitedTo(Integer invitedTo) {
+        this.invitedTo = invitedTo;
     }
 }

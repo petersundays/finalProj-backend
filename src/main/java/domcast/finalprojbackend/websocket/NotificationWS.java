@@ -44,6 +44,8 @@ public class NotificationWS {
 
     private final HashMap<String, Session> sessions = new HashMap<String, Session>();
     public static final String NOTIFICATION = "notification";
+    public static final String LOGOUT = "logout";
+
 
     /**
      * Sends notifications to the user
@@ -65,7 +67,7 @@ public class NotificationWS {
         }
     }
     @OnOpen
-    public void toDoOnOpen(Session session, @PathParam("token") String token, @PathParam("projectId") int projectId) {
+    public void toDoOnOpen(Session session, @PathParam("token") String token) {
 
         logger.info("Opening websocket session for notifications with token {}: ", token);
 
@@ -77,7 +79,7 @@ public class NotificationWS {
             logger.error("Error validating token for notifications");
 
             try {
-                session.close(new CloseReason(CloseReason.CloseCodes.VIOLATED_POLICY, "Invalid token"));
+                session.close(new CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE, "Invalid token"));
             } catch (IOException ioException) {
                 logger.error("Error closing session due to invalid token", ioException);
             }
@@ -87,7 +89,7 @@ public class NotificationWS {
         if (!authenticated) {
             logger.error("User not authenticated for notifications");
             try {
-                session.close(new CloseReason(CloseReason.CloseCodes.VIOLATED_POLICY, "Not authenticated"));
+                session.close(new CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE, "Not authenticated"));
             } catch (IOException e) {
                 logger.error("Error closing session due to authentication failure", e);
             }
@@ -130,5 +132,9 @@ public class NotificationWS {
         int userId = userToNotify.getId();
         
         messageBean.sendNotification(userId, sessions);
+    }
+
+    public HashMap<String, Session> getSessions() {
+        return sessions;
     }
 }

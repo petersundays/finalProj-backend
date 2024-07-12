@@ -57,7 +57,6 @@ public class Message implements Serializable {
         this.content = content;
         this.sender = sender;
         this.timestamp = timestamp;
-        this.read = false;
     }
 
 

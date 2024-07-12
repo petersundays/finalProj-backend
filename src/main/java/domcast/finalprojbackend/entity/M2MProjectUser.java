@@ -54,6 +54,8 @@ import java.io.Serializable;
         query = "SELECT pu FROM M2MProjectUser pu WHERE pu.project.id = :projectId AND pu.invited = true")
 @NamedQuery(name = "M2MProjectUser.findCandidates",
         query = "SELECT pu FROM M2MProjectUser pu WHERE pu.project.id = :projectId AND pu.role = 400")
+@NamedQuery(name = "M2MProjectUser.averageActiveUsersAcrossAllProjects",
+        query = "SELECT CAST(COUNT(pu) AS double) / COUNT(DISTINCT pu.project) FROM M2MProjectUser pu WHERE pu.active = true")
 
 public class M2MProjectUser implements Serializable {
     private static final long serialVersionUID = 1L;

@@ -92,6 +92,9 @@ public class ProjectBean implements Serializable {
     @EJB
     private RecordDao recordDao;
 
+    @EJB
+    private PersonalMessageDao personalMessageDao;
+
     /**
      * Default constructor for ProjectBean.
      */
@@ -1423,6 +1426,7 @@ public class ProjectBean implements Serializable {
         Set<M2MProjectUser> projectUsers = new HashSet<>();
         M2MProjectUser userInvited;
         String action;
+        MessageAndLogEnum type;
 
         if (inviterId < 0) {
             inviterId = 0;
@@ -1433,10 +1437,12 @@ public class ProjectBean implements Serializable {
             userInvited = m2MProjectUser;
             projectUsers.add(userInvited);
             action = MessageAndLogEnum.INVITED.name();
+            type = MessageAndLogEnum.INVITED;
         } else {
             sender = userId;
             projectUsers = getProjectManagers(projectEntity);
             action = MessageAndLogEnum.APPLIED.name();
+            type = MessageAndLogEnum.APPLIED;
         }
 
         messageBean.sendMessageToProjectUsers(
@@ -1445,11 +1451,11 @@ public class ProjectBean implements Serializable {
                 action,
                 "",
                 sender,
-                MessageAndLogEnum.APPLIED,
+                type,
                 null
         );
 
-        logger.info("Successfully invited user with ID {} to project with ID {}", userId, projectId);
+        logger.info("Successfully " + action + " user with ID {} to project with ID {}", userId, projectId);
 
         return invited;
     }
@@ -1551,6 +1557,13 @@ public class ProjectBean implements Serializable {
             }
         } catch (PersistenceException e) {
             logger.error("Error answering {} to project with ID {}: {}", invitationType, projectId, e.getMessage());
+            throw new RuntimeException(e);
+        }
+
+        try {
+            personalMessageDao.setInvitedToNullMessageWhereReceiverIsAndInvitedToIs(userId, projectId);
+        } catch (PersistenceException e) {
+            logger.error("Error setting invited to null while answering {} to project with ID {}: {}", invitationType, projectId, e.getMessage());
             throw new RuntimeException(e);
         }
 

@@ -571,7 +571,6 @@ public class UserService {
         }
 
         tokenBean.setLastAccessToNow(token);
-
         Response response;
 
         try {

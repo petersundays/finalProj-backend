@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import domcast.finalprojbackend.bean.task.TaskBean;
 import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.dao.*;
+import domcast.finalprojbackend.dto.messageDto.NewMessage;
 import domcast.finalprojbackend.dto.messageDto.PersonalMessage;
 import domcast.finalprojbackend.dto.messageDto.ProjectMessage;
 import domcast.finalprojbackend.dto.messageDto.ProjectNotification;
@@ -20,12 +21,15 @@ import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceException;
+import jakarta.websocket.CloseReason;
 import jakarta.websocket.Session;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -87,7 +91,7 @@ public class MessageBean implements Serializable {
      * @return the persisted message
      * @throws PersistenceException if an error occurs during the persist operation
      */
-    public PersonalMessage persistPersonalMessage(String subject, String content, UserEntity sender, UserEntity receiver, MessageAndLogEnum type) {
+    public PersonalMessage persistPersonalMessage(String subject, String content, UserEntity sender, UserEntity receiver, MessageAndLogEnum type, int invitedTo) {
 
         if (sender == null || receiver == null) {
             logger.error("Personal message not sent");
@@ -105,7 +109,6 @@ public class MessageBean implements Serializable {
         }
 
         if (type == null) {
-            System.out.println(" ****** olha lá , oh burro! ******");
             logger.error("Invalid message type");
             type = MessageAndLogEnum.EMAIL;
         }
@@ -118,6 +121,10 @@ public class MessageBean implements Serializable {
         messageEntity.setSender(sender);
         messageEntity.setReceiver(receiver);
         messageEntity.setType(type);
+
+        if (invitedTo != 0) {
+            messageEntity.setInvitedTo(invitedTo);
+        }
 
         PersonalMessageEntity persistedMessage;
 
@@ -207,14 +214,25 @@ public class MessageBean implements Serializable {
         MessageUser sender = userBean.entityToMessageUser(messageEntity.getSender());
         MessageUser receiver = userBean.entityToMessageUser(messageEntity.getReceiver());
 
-        return new PersonalMessage(
+        // Create a formatter with the desired pattern
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+        // Format the LocalDateTime instance
+        String formattedTimestamp = messageEntity.getTimestamp().format(formatter);
+
+        PersonalMessage message = new PersonalMessage(
                 messageEntity.getId(),
                 messageEntity.getSubject(),
                 messageEntity.getContent(),
                 sender,
                 receiver,
-                messageEntity.getTimestamp()
+                LocalDateTime.parse(formattedTimestamp, formatter),
+                messageEntity.getInvitedTo()
         );
+
+        message.setRead(messageEntity.isRead());
+
+        return message;
     }
 
     /**
@@ -251,6 +269,8 @@ public class MessageBean implements Serializable {
      */
     public void sendToUser(int userId, String jsonMessage, HashMap<String, Session> sessions) {
 
+        logger.info("Entering sendToUser method");
+
         if (!dataValidator.isIdValid(userId)) {
             logger.error("Invalid user id");
             throw new IllegalArgumentException("Invalid user id");
@@ -265,7 +285,6 @@ public class MessageBean implements Serializable {
             logger.error("No active sessions");
             throw new IllegalArgumentException("No active sessions");
         }
-
         List<String> activeSessionTokens;
         try {
             activeSessionTokens = tokenDao.findActiveSessionTokensByUserId(userId);
@@ -464,7 +483,7 @@ public class MessageBean implements Serializable {
         try {
             personalMessages = personalMessageDao.getAllPersonalMessagesWhereReceiverIs(userId);
         } catch (Exception e) {
-            logger.error("Error getting personal messages for user with id: {}", userId, e);
+            logger.error("Error getting personal messages, in bean, for user with id: {}", userId, e);
         }
 
         if (personalMessages == null) {
@@ -556,7 +575,7 @@ public class MessageBean implements Serializable {
 
         if (!dataValidator.isIdValid(messageId)) {
             logger.error("Invalid message id while marking personal message as read");
-            throw new IllegalArgumentException("Invalid message id");
+            return false;
         }
 
         logger.info("Marking personal message with id: {} as read", messageId);
@@ -567,7 +586,7 @@ public class MessageBean implements Serializable {
             return true;
         } catch (Exception e) {
             logger.error("Error marking personal message with id: {} as read", messageId, e);
-            throw new IllegalArgumentException("Error marking personal message as read");
+            return false;
         }
     }
 
@@ -624,6 +643,7 @@ public class MessageBean implements Serializable {
         String subject = "";
         String content = "";
         String taskName = task != null ? (": " + task.getTitle() + ";") : "";
+        int invitedTo = 0;
 
         MessageAndLogEnum messageAndLogEnum;
         try {
@@ -639,6 +659,8 @@ public class MessageBean implements Serializable {
                 content = sender.getFirstName() + " " + sender.getLastName() + " has " + messageAndLogEnum.getValue() + " project: " + project.getName();
                 if (messageAndLogEnum == MessageAndLogEnum.ADDED && !role.isEmpty()) {
                     content += " as " + role;
+                } else {
+                    invitedTo = project.getId();
                 }
             }
             case STATUS_CHANGED -> {
@@ -716,7 +738,7 @@ public class MessageBean implements Serializable {
         PersonalMessage personalMessage;
 
         try {
-            personalMessage = persistPersonalMessage(subject, content, sender, receiver, type);
+            personalMessage = persistPersonalMessage(subject, content, sender, receiver, type, invitedTo);
             logger.info("Notification created for project: {} from: {} to: {}", project.getName(), sender.getFirstName() + sender.getLastName(), receiver.getFirstName() + receiver.getLastName());
         } catch (Exception e) {
             logger.error("Error creating notification for project: {} from: {} to: {}", project.getName(), sender.getFirstName() + sender.getLastName(), receiver.getFirstName() + receiver.getLastName(), e);
@@ -885,5 +907,119 @@ public class MessageBean implements Serializable {
                 }
             }
         }
+    }
+
+    /**
+     * Sends a notification to a user which session token has already expired
+     * This forces the logout
+     * @param token the token of the user
+     * @param sessions the active sessions
+     */
+    public void sendLogoutNotification(String token, HashMap<String, Session> sessions) {
+
+        logger.info("Entering sendLogoutNotification method");
+
+        if (token == null || token.isEmpty()) {
+            logger.error("Invalid token while sending logout notification");
+            throw new IllegalArgumentException("Invalid token");
+        }
+
+        if (sessions == null ) {
+            logger.error("No active sessions while sending logout notification");
+        }
+
+        try {
+            assert sessions != null;
+            for (Map.Entry<String, Session> entry : sessions.entrySet()) {
+                if (entry.getKey().equals(token)) {
+                    notificationWS.send(token, NotificationWS.LOGOUT);
+                    try {
+                        entry.getValue().close(new CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE, "Session expired"));
+                    } catch (
+                            IOException ioException) {
+                        logger.error("Error closing session due to expired token", ioException);
+                    }
+                }
+            }
+        } catch (NoResultException e) {
+            logger.info("No session tokens found for user with token: {} while sending logout notification.", token);
+        } catch (Exception e) {
+            logger.error("Error finding session tokens by user with token: {} while sending logout notification.", token, e);
+        }
+    }
+
+    public boolean sendMessage (NewMessage newMessage, int senderId, int receiverId) {
+        logger.info("Entering sendMessage method");
+
+        if (newMessage == null) {
+            logger.error("Invalid message");
+            throw new IllegalArgumentException("Invalid message");
+        }
+
+        if (!dataValidator.isIdValid(senderId) || !dataValidator.isIdValid(receiverId)) {
+            logger.error("Invalid sender or receiver ID");
+            throw new IllegalArgumentException("Invalid sender or receiver ID");
+        }
+
+
+        UserEntity sender;
+
+        try {
+            sender = userDao.findUserById(senderId);
+        } catch (PersistenceException e) {
+            logger.error("Error finding user with ID: {}", senderId, e);
+            throw new RuntimeException(e);
+        }
+
+        if (sender == null) {
+            logger.error("Sender not found");
+            throw new IllegalArgumentException("Sender not found");
+        }
+
+        UserEntity receiver;
+
+        try {
+            receiver = userDao.findUserById(receiverId);
+        } catch (PersistenceException e) {
+            logger.error("Error finding user with ID: {}", receiverId, e);
+            throw new RuntimeException(e);
+        }
+
+        if (receiver == null) {
+            logger.error("Receiver not found");
+            throw new IllegalArgumentException("Receiver not found");
+        }
+
+        PersonalMessage personalMessage;
+
+        try {
+            personalMessage = persistPersonalMessage(newMessage.getSubject(), newMessage.getContent(), sender, receiver, null, 0);
+        } catch (Exception e) {
+            logger.error("Error persisting personal message: {}", e.getMessage());
+            throw new RuntimeException(e);
+        }
+
+        ObjectMapperContextResolver contextResolver = new ObjectMapperContextResolver();
+        ObjectMapper objectMapper = contextResolver.getContext(null);
+
+        String jsonMessage;
+        try {
+            jsonMessage = objectMapper.writeValueAsString(personalMessage);
+        } catch (JsonProcessingException e) {
+            logger.error("Error serializing message", e);
+            return false;
+        }
+
+        HashMap<String, Session> sessions = personalMessageWS.getSessions();
+
+        if (sessions == null || sessions.isEmpty()) {
+            logger.error("No active sessions while sending message");
+            return false;
+        }
+
+        sendToUser(receiverId, jsonMessage, sessions);
+
+        return true;
+
     }
 }
