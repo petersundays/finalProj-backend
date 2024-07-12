@@ -332,9 +332,8 @@ public class DataValidator {
         if (detailedCR.getSupplier() == null || detailedCR.getSupplier().isBlank()) {
             throw new IllegalArgumentException("Supplier is null or blank");
         }
-
-        if (detailedCR.getSupplierContact() != null && !detailedCR.getSupplierContact().isEmpty()) {
-            throw new IllegalArgumentException("SupplierContact is not greater than 0");
+        if (detailedCR.getSupplierContact() == null && detailedCR.getSupplierContact().isEmpty()) {
+            throw new IllegalArgumentException("SupplierContact is null or blank");
         }
 
         if (projectId != null && projectId <= 0) {
@@ -423,7 +422,7 @@ public class DataValidator {
             throw new IllegalArgumentException("Project is already in state " + newStateEnum);
         }
 
-        if (currentStateEnum == ProjectStateEnum.CANCELED) {
+        if (currentStateEnum == ProjectStateEnum.CANCELLED) {
             logger.error("Project is already canceled");
             throw new IllegalArgumentException("Project is already canceled");
         }
@@ -433,24 +432,24 @@ public class DataValidator {
             throw new IllegalArgumentException("Project is already finished");
         }
 
-        if (currentStateEnum == ProjectStateEnum.PLANNING && (newStateEnum != ProjectStateEnum.READY && newStateEnum != ProjectStateEnum.CANCELED)) {
+        if (currentStateEnum == ProjectStateEnum.PLANNING && (newStateEnum != ProjectStateEnum.READY && newStateEnum != ProjectStateEnum.CANCELLED)) {
             logger.error("Project is in planning state and can only be set to ready or canceled");
             throw new IllegalArgumentException("Project is in planning state and can only be set to ready or canceled");
         }
 
-        if (currentStateEnum == ProjectStateEnum.READY && newStateEnum != ProjectStateEnum.CANCELED) {
+        if (currentStateEnum == ProjectStateEnum.READY && newStateEnum != ProjectStateEnum.CANCELLED) {
             logger.error("Project is in ready state and can only be set to canceled or approved by an admin");
             throw new IllegalArgumentException("Project is in ready state and can only be set to canceled");
         }
 
         if (currentStateEnum == ProjectStateEnum.APPROVED &&
-                (newStateEnum != ProjectStateEnum.CANCELED && newStateEnum != ProjectStateEnum.IN_PROGRESS)) {
+                (newStateEnum != ProjectStateEnum.CANCELLED && newStateEnum != ProjectStateEnum.IN_PROGRESS)) {
             logger.error("Project is in approved state and can only be set to canceled or in progress");
             throw new IllegalArgumentException("Project is in approved state and can only be set to canceled or in progress");
         }
 
         if (currentStateEnum == ProjectStateEnum.IN_PROGRESS &&
-                (newStateEnum != ProjectStateEnum.CANCELED && newStateEnum != ProjectStateEnum.FINISHED)) {
+                (newStateEnum != ProjectStateEnum.CANCELLED && newStateEnum != ProjectStateEnum.FINISHED)) {
             logger.error("Project is in in progress state and can only be set to canceled or finished");
             throw new IllegalArgumentException("Project is in in progress state and can only be set to canceled or finished");
         }

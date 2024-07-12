@@ -279,7 +279,7 @@ public class ProjectDao extends AbstractDao<ProjectEntity> {
             ProjectStateEnum state = em.createNamedQuery("Project.isProjectCanceledOrFinished", ProjectStateEnum.class)
                     .setParameter("projectId", projectId)
                     .getSingleResult();
-            return state == ProjectStateEnum.CANCELED;
+            return state == ProjectStateEnum.CANCELLED;
         } catch (NoResultException e) {
             return false;
         }

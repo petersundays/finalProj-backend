@@ -656,7 +656,7 @@ public class MessageBean implements Serializable {
                 if (!state.isEmpty()) {
                     if (state.equalsIgnoreCase(MessageAndLogEnum.APPROVED.getValue())) {
                         state = "approved";
-                    } else if (state.equalsIgnoreCase(MessageAndLogEnum.CANCELED.getValue())) {
+                    } else if (state.equalsIgnoreCase(MessageAndLogEnum.CANCELLED.getValue())) {
                         state = "canceled";
                     }
                     subject = "Project: " + state + ".";
