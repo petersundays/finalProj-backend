@@ -1,19 +1,11 @@
 package domcast.finalprojbackend.websocket;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSyntaxException;
 import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.MessageBean;
 import domcast.finalprojbackend.bean.user.TokenBean;
 import domcast.finalprojbackend.bean.user.UserBean;
 import domcast.finalprojbackend.dao.SessionTokenDao;
 import domcast.finalprojbackend.dao.UserDao;
-import domcast.finalprojbackend.dto.messageDto.PersonalMessage;
-import domcast.finalprojbackend.entity.UserEntity;
-import domcast.finalprojbackend.service.ObjectMapperContextResolver;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Singleton;
 import jakarta.websocket.*;
@@ -26,7 +18,7 @@ import java.io.IOException;
 import java.util.HashMap;
 
 @Singleton
-@ServerEndpoint("/websocket/messages/{token}/{receiver}")
+@ServerEndpoint("/websocket/messages/{token}")
 public class PersonalMessageWS {
     @EJB
     private MessageBean messageBean;
@@ -73,7 +65,7 @@ public class PersonalMessageWS {
     @OnOpen
     public void toDoOnOpen(Session session, @PathParam("token") String token){
 
-        logger.info("Opening websocket session with token: {}", token);
+        logger.info("Opening websocket session for personal messages with token: {}", token);
 
         boolean authenticated;
 
@@ -83,7 +75,7 @@ public class PersonalMessageWS {
             logger.error("Error validating token");
 
             try {
-                session.close(new CloseReason(CloseReason.CloseCodes.VIOLATED_POLICY, "Invalid token"));
+                session.close(new CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE, "Invalid token"));
             } catch (IOException ioException) {
                 logger.error("Error closing session due to invalid token", ioException);
             }
@@ -93,7 +85,7 @@ public class PersonalMessageWS {
         if (!authenticated) {
             logger.error("User not authenticated");
             try {
-                session.close(new CloseReason(CloseReason.CloseCodes.VIOLATED_POLICY, "Not authenticated"));
+                session.close(new CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE, "Not authenticated"));
             } catch (IOException e) {
                 logger.error("Error closing session due to authentication failure", e);
             }
@@ -107,17 +99,18 @@ public class PersonalMessageWS {
 
     @OnClose
     public void toDoOnClose(Session session, CloseReason reason) {
-        logger.info("Websocket session is closed with CloseCode: {}: {}", reason.getCloseCode(), reason.getReasonPhrase());
+        logger.info("Websocket session for personal messages is closed with CloseCode: {}: {}", reason.getCloseCode(), reason.getReasonPhrase());
 
         sessions.entrySet().removeIf(entry -> entry.getValue().equals(session));
 
-        logger.info("Session removed, there still are {} sessions open", sessions.size());
+        logger.info("Session removed from personal messages, there still are {} sessions open", sessions.size());
     }
 
     @OnMessage
     public void toDoOnMessage(Session session, String msg) {
 
-        String token = session.getPathParameters().get("token");
+        logger.info("Message received: {}", msg);
+        /*String token = session.getPathParameters().get("token");
 
         UserEntity userSender;
 
@@ -192,7 +185,7 @@ public class PersonalMessageWS {
         messageBean.sendToUser(senderId, jsonMessage, sessions);
 
         // Send the message to all active sessions of the receiver
-        messageBean.sendToUser(receiverId, jsonMessage, sessions);
+        messageBean.sendToUser(receiverId, jsonMessage, sessions);*/
     }
 
     public HashMap<String, Session> getSessions() {
