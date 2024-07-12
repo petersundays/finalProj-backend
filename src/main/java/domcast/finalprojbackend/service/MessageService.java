@@ -277,7 +277,7 @@ public class MessageService {
             return response;
         }
 
-        if (!authenticationAndAuthorization.isUserReceiverOfPersonalMessage(id, messageId)) {
+        if (!authenticationAndAuthorization.isUserReceiverOfPersonalMessage(messageId, id)) {
             response = Response.status(401).entity("Unauthorized").build();
             logger.info("User with session token {} tried to mark a personal message as read but is not the receiver of the message", token);
             return response;
@@ -285,12 +285,17 @@ public class MessageService {
 
         tokenBean.setLastAccessToNow(token);
 
-        boolean markedAsRead;
+        boolean markedAsRead = false;
 
         try {
             markedAsRead = messageBean.markPersonalMessageAsRead(messageId);
-            logger.info("User with ip address {} marked a personal message as read", ipAddress);
-            response = Response.status(200).entity(markedAsRead).build();
+            if (markedAsRead) {
+                logger.info("User with ip address {} marked a personal message as read", ipAddress);
+                response = Response.status(200).entity(markedAsRead).build();
+            } else {
+                logger.info("User with ip address {} tried to mark a personal message as read but the message was already read", ipAddress);
+                response = Response.status(400).entity(markedAsRead).build();
+            }
         } catch (Exception e) {
             logger.error("Error while marking a personal message as read: {}", e.getMessage());
             response = Response.status(500).entity("Error while marking a personal message as read").build();

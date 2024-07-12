@@ -229,7 +229,9 @@ public class MessageBean implements Serializable {
                 LocalDateTime.parse(formattedTimestamp, formatter),
                 messageEntity.getInvitedTo()
         );
-        System.out.println("#*#*#*#*#*#* " + messageEntity.getInvitedTo());
+
+        message.setRead(messageEntity.isRead());
+
         return message;
     }
 
@@ -573,7 +575,7 @@ public class MessageBean implements Serializable {
 
         if (!dataValidator.isIdValid(messageId)) {
             logger.error("Invalid message id while marking personal message as read");
-            throw new IllegalArgumentException("Invalid message id");
+            return false;
         }
 
         logger.info("Marking personal message with id: {} as read", messageId);
@@ -584,7 +586,7 @@ public class MessageBean implements Serializable {
             return true;
         } catch (Exception e) {
             logger.error("Error marking personal message with id: {} as read", messageId, e);
-            throw new IllegalArgumentException("Error marking personal message as read");
+            return false;
         }
     }
 
