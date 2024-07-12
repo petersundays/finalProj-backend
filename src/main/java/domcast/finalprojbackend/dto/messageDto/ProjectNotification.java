@@ -42,8 +42,8 @@ public class ProjectNotification extends PersonalMessage implements Serializable
      * @param timestamp the timestamp of the message
      * @param projectId the ID of the project
      */
-    public ProjectNotification(int id, String subject, String content, MessageUser sender, MessageUser receiver, LocalDateTime timestamp, int projectId) {
-        super(id, subject, content, sender, receiver, timestamp);
+    public ProjectNotification(int id, String subject, String content, MessageUser sender, MessageUser receiver, LocalDateTime timestamp, int projectId, int invitedTo) {
+        super(id, subject, content, sender, receiver, timestamp, invitedTo);
         this.projectId = projectId;
     }
 

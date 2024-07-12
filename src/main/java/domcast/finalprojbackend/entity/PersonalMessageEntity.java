@@ -48,6 +48,9 @@ public class PersonalMessageEntity extends MessageEntity implements Serializable
     @Column(name = "type", nullable = false)
     private MessageAndLogEnum type;
 
+    @Column(name = "invited_to")
+    private Integer invitedTo;
+
     // Default constructor
     public PersonalMessageEntity() {
     }
@@ -76,5 +79,13 @@ public class PersonalMessageEntity extends MessageEntity implements Serializable
 
     public void setType(MessageAndLogEnum type) {
         this.type = type;
+    }
+
+    public Integer getInvitedTo() {
+        return invitedTo;
+    }
+
+    public void setInvitedTo(Integer invitedTo) {
+        this.invitedTo = invitedTo;
     }
 }

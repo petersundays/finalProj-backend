@@ -940,7 +940,7 @@ public class ProjectService {
             logger.info("User with session token {} and id {} is changing role of the user with id {} in the project with id {}", token, userId, userToPromoteId, projectId);
             detailedProject = projectBean.changeRole(projectId, userToPromoteId, role);
             if (detailedProject != null) {
-                response = Response.status(200).entity("User with id " + userToPromoteId + " successfully changed role in the project with id " + projectId).build();
+                response = Response.status(200).entity(detailedProject).build();
                 logger.info("User with session token {} and id {} successfully changed role of the user with id {} in the project with id {}", token, userId, userToPromoteId, projectId);
             } else {
                 response = Response.status(400).entity("User with id " + userToPromoteId + " could not change role in the project with id " + projectId).build();

@@ -91,7 +91,7 @@ public class MessageBean implements Serializable {
      * @return the persisted message
      * @throws PersistenceException if an error occurs during the persist operation
      */
-    public PersonalMessage persistPersonalMessage(String subject, String content, UserEntity sender, UserEntity receiver, MessageAndLogEnum type) {
+    public PersonalMessage persistPersonalMessage(String subject, String content, UserEntity sender, UserEntity receiver, MessageAndLogEnum type, int invitedTo) {
 
         if (sender == null || receiver == null) {
             logger.error("Personal message not sent");
@@ -121,6 +121,10 @@ public class MessageBean implements Serializable {
         messageEntity.setSender(sender);
         messageEntity.setReceiver(receiver);
         messageEntity.setType(type);
+
+        if (invitedTo != 0) {
+            messageEntity.setInvitedTo(invitedTo);
+        }
 
         PersonalMessageEntity persistedMessage;
 
@@ -216,16 +220,16 @@ public class MessageBean implements Serializable {
         // Format the LocalDateTime instance
         String formattedTimestamp = messageEntity.getTimestamp().format(formatter);
 
-        System.out.println("Formatted timestamp: " + formattedTimestamp);
         PersonalMessage message = new PersonalMessage(
                 messageEntity.getId(),
                 messageEntity.getSubject(),
                 messageEntity.getContent(),
                 sender,
                 receiver,
-                LocalDateTime.parse(formattedTimestamp, formatter)
+                LocalDateTime.parse(formattedTimestamp, formatter),
+                messageEntity.getInvitedTo()
         );
-        System.out.println("Message: " + message.getTimestamp());
+        System.out.println("#*#*#*#*#*#* " + messageEntity.getInvitedTo());
         return message;
     }
 
@@ -477,7 +481,7 @@ public class MessageBean implements Serializable {
         try {
             personalMessages = personalMessageDao.getAllPersonalMessagesWhereReceiverIs(userId);
         } catch (Exception e) {
-            logger.error("Error getting personal messages for user with id: {}", userId, e);
+            logger.error("Error getting personal messages, in bean, for user with id: {}", userId, e);
         }
 
         if (personalMessages == null) {
@@ -637,6 +641,7 @@ public class MessageBean implements Serializable {
         String subject = "";
         String content = "";
         String taskName = task != null ? (": " + task.getTitle() + ";") : "";
+        int invitedTo = 0;
 
         MessageAndLogEnum messageAndLogEnum;
         try {
@@ -652,6 +657,8 @@ public class MessageBean implements Serializable {
                 content = sender.getFirstName() + " " + sender.getLastName() + " has " + messageAndLogEnum.getValue() + " project: " + project.getName();
                 if (messageAndLogEnum == MessageAndLogEnum.ADDED && !role.isEmpty()) {
                     content += " as " + role;
+                } else {
+                    invitedTo = project.getId();
                 }
             }
             case STATUS_CHANGED -> {
@@ -729,7 +736,7 @@ public class MessageBean implements Serializable {
         PersonalMessage personalMessage;
 
         try {
-            personalMessage = persistPersonalMessage(subject, content, sender, receiver, type);
+            personalMessage = persistPersonalMessage(subject, content, sender, receiver, type, invitedTo);
             logger.info("Notification created for project: {} from: {} to: {}", project.getName(), sender.getFirstName() + sender.getLastName(), receiver.getFirstName() + receiver.getLastName());
         } catch (Exception e) {
             logger.error("Error creating notification for project: {} from: {} to: {}", project.getName(), sender.getFirstName() + sender.getLastName(), receiver.getFirstName() + receiver.getLastName(), e);
@@ -984,7 +991,7 @@ public class MessageBean implements Serializable {
         PersonalMessage personalMessage;
 
         try {
-            personalMessage = persistPersonalMessage(newMessage.getSubject(), newMessage.getContent(), sender, receiver, null);
+            personalMessage = persistPersonalMessage(newMessage.getSubject(), newMessage.getContent(), sender, receiver, null, 0);
         } catch (Exception e) {
             logger.error("Error persisting personal message: {}", e.getMessage());
             throw new RuntimeException(e);

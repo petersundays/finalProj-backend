@@ -29,6 +29,9 @@ public class PersonalMessage extends Message implements Serializable {
     @XmlElement
     private MessageUser receiver;
 
+    @XmlElement
+    private Integer invitedTo;
+
     /**
      * Default constructor
      */
@@ -42,11 +45,14 @@ public class PersonalMessage extends Message implements Serializable {
      * @param content the content of the message
      * @param sender the sender of the message
      * @param receiver the receiver of the message
+     * @param timestamp the timestamp of the message
+     * @param invitedTo the ID of the project the message is related to
      */
-    public PersonalMessage(int id, String subject, String content, MessageUser sender, MessageUser receiver, LocalDateTime timestamp) {
+    public PersonalMessage(int id, String subject, String content, MessageUser sender, MessageUser receiver, LocalDateTime timestamp, Integer invitedTo) {
         super(id, content, sender, timestamp);
         this.subject = subject;
         this.receiver = receiver;
+        this.invitedTo = invitedTo;
     }
 
     // Getters and setters
@@ -65,6 +71,14 @@ public class PersonalMessage extends Message implements Serializable {
 
     public void setReceiver(MessageUser receiver) {
         this.receiver = receiver;
+    }
+
+    public Integer getInvitedTo() {
+        return invitedTo;
+    }
+
+    public void setInvitedTo(Integer invitedTo) {
+        this.invitedTo = invitedTo;
     }
 
 }
