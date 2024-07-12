@@ -729,11 +729,11 @@ public class UserBean implements Serializable {
 
         // Checks if the lab is null
         if (labEntity == null) {
-            logger.error("Lab not found with city: {}", user.getWorkplace());
-            throw new IllegalArgumentException("Lab not found with city: " + user.getWorkplace());
+            logger.error("Lab not found with city: {}", userInfo.getWorkplace());
+            throw new IllegalArgumentException("Lab not found with city: " + userInfo.getWorkplace());
         }
 
-        logger.info("Lab found with city: {}", user.getWorkplace().getCity());
+        logger.info("Lab found with city: {}", userInfo.getWorkplace());
 
         // Sets the user's attributes
         user.setFirstName(userInfo.getFirstName());

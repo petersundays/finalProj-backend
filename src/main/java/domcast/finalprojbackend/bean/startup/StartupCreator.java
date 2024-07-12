@@ -517,7 +517,9 @@ public class StartupCreator implements Serializable {
                 // Set the state of the task based on the project's state
                 if (projectStates[i % projectStates.length] == ProjectStateEnum.FINISHED) {
                     task.setState(TaskStateEnum.FINISHED);
+
                 } else if (projectStates[i % projectStates.length] == ProjectStateEnum.IN_PROGRESS || projectStates[i % projectStates.length] == ProjectStateEnum.CANCELLED) {
+
                     // The task's state can be PLANNED, IN_PROGRESS, or FINISHED
                     int taskStateIndex = random.nextInt(3);
                     if (taskStateIndex == 0) {

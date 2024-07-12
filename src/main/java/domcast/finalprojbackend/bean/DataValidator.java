@@ -59,6 +59,7 @@ public class DataValidator {
 
     /**
      * Checks if the email is valid
+     *
      * @param email the email to be checked
      * @return boolean value indicating if the email is valid
      */
@@ -80,6 +81,7 @@ public class DataValidator {
 
     /**
      * Checks if the input is valid
+     *
      * @param firstRegistration the input to be checked
      * @return boolean value indicating if the input is valid
      */
@@ -105,10 +107,11 @@ public class DataValidator {
 
     /**
      * Checks if the login is valid
+     *
      * @param login the login to be checked
      * @return boolean value indicating if the login is valid
      */
-    public boolean isLoginValid (Login login) {
+    public boolean isLoginValid(Login login) {
         logger.info("Checking if login is valid");
 
         return login != null && login.getEmail() != null && !login.getEmail().isBlank() &&
@@ -117,6 +120,7 @@ public class DataValidator {
 
     /**
      * Checks if the image is valid
+     *
      * @param bytes the image to be checked
      * @return boolean value indicating if the image is valid
      */
@@ -131,6 +135,7 @@ public class DataValidator {
 
     /**
      * Validates and extracts the interest names
+     *
      * @param interestsList the list of interests to be validated
      * @return the list of interest names
      */
@@ -158,6 +163,7 @@ public class DataValidator {
 
     /**
      * Validates and extracts the skill names
+     *
      * @param skillsList the list of skills to be validated
      * @return the list of skill names
      */
@@ -185,6 +191,7 @@ public class DataValidator {
 
     /**
      * Checks if the id is valid
+     *
      * @param id the id to be checked
      *           throws IllegalArgumentException if the id is not valid
      * @return boolean value indicating if the id is valid
@@ -203,6 +210,7 @@ public class DataValidator {
 
     /**
      * Checks if the mandatory data is valid for a new task
+     *
      * @param newTask the new task to be checked
      * @return boolean value indicating if the mandatory data is valid
      */
@@ -230,8 +238,9 @@ public class DataValidator {
 
     /**
      * Checks if the start date of the new task is not before the deadline of its dependencies
+     *
      * @param projectedStartDate the start date of the new task
-     * @param dependencies the dependencies of the new task
+     * @param dependencies       the dependencies of the new task
      * @return true if the start date of the new task is valid, false otherwise
      */
     public boolean isStartDateValid(LocalDateTime projectedStartDate, Set<TaskEntity> dependencies) {
@@ -270,12 +279,13 @@ public class DataValidator {
     /**
      * Checks if the deadline of the new task is valid
      * The deadline of the new task must be after the projected start date and before the deadline of the project
-     * @param taskDeadline the deadline of the new task
-     * @param taskProjectedStartDate the projected start date of the new task
+     *
+     * @param taskDeadline              the deadline of the new task
+     * @param taskProjectedStartDate    the projected start date of the new task
      * @param presentationTaskStartDate the projected start date the project's presentation task
      * @return boolean value indicating if the deadline of the new task is valid
      */
-    public boolean isDeadlineValid (LocalDateTime taskDeadline, LocalDateTime taskProjectedStartDate, LocalDateTime presentationTaskStartDate) {
+    public boolean isDeadlineValid(LocalDateTime taskDeadline, LocalDateTime taskProjectedStartDate, LocalDateTime presentationTaskStartDate) {
         logger.info("Checking if the deadline of the new task is valid");
 
         if (taskDeadline == null || taskProjectedStartDate == null || presentationTaskStartDate == null) {
@@ -293,8 +303,9 @@ public class DataValidator {
 
     /**
      * Checks if the mandatory data is valid for detailed CR
+     *
      * @param detailedCR the detailed CR to be checked
-     * @param projectId the id of the project where the CR will be created. It can be null if the CR is not being created in a project.
+     * @param projectId  the id of the project where the CR will be created. It can be null if the CR is not being created in a project.
      * @return boolean value indicating if the mandatory data is valid
      */
     public boolean isCRMandatoryDataValid(DetailedCR detailedCR, Integer projectId) {
@@ -321,9 +332,8 @@ public class DataValidator {
         if (detailedCR.getSupplier() == null || detailedCR.getSupplier().isBlank()) {
             throw new IllegalArgumentException("Supplier is null or blank");
         }
-
-        if (detailedCR.getSupplierContact() != null && !detailedCR.getSupplierContact().isEmpty()) {
-            throw new IllegalArgumentException("SupplierContact is not greater than 0");
+        if (detailedCR.getSupplierContact() == null && detailedCR.getSupplierContact().isEmpty()) {
+            throw new IllegalArgumentException("SupplierContact is null or blank");
         }
 
         if (projectId != null && projectId <= 0) {
@@ -339,6 +349,7 @@ public class DataValidator {
 
     /**
      * Checks if the page number is valid
+     *
      * @param pageNumber the page number to be checked
      * @return boolean value indicating if the page number is valid
      */
@@ -355,6 +366,7 @@ public class DataValidator {
 
     /**
      * Checks if the page size is valid
+     *
      * @param pageSize the page size to be checked
      * @return boolean value indicating if the page size is valid
      */
@@ -371,10 +383,11 @@ public class DataValidator {
 
     /**
      * Checks if the task entity is valid
+     *
      * @param taskEntity the task entity to be checked
      * @return boolean value indicating if the task entity is valid
      */
-    public boolean isChartTaskInfoValid (TaskEntity taskEntity) {
+    public boolean isChartTaskInfoValid(TaskEntity taskEntity) {
         logger.info("Checking if chart task info is valid");
 
         return taskEntity != null && taskEntity.getTitle() != null && !taskEntity.getTitle().isBlank() &&
@@ -391,8 +404,9 @@ public class DataValidator {
 
     /**
      * Validates the state change of a project
+     *
      * @param currentStateEnum the current state of the project
-     * @param newStateEnum the new state of the project
+     * @param newStateEnum     the new state of the project
      */
     public void validateStateChange(ProjectStateEnum currentStateEnum, ProjectStateEnum newStateEnum) {
 
@@ -445,8 +459,9 @@ public class DataValidator {
 
     /**
      * Validates the project approval
+     *
      * @param currentStateEnum the current state of the project
-     * @param newStateEnum the new state of the project
+     * @param newStateEnum     the new state of the project
      */
     public void validateProjectApproval(ProjectStateEnum currentStateEnum, ProjectStateEnum newStateEnum) {
         if (currentStateEnum == null || newStateEnum == null) {
@@ -471,6 +486,7 @@ public class DataValidator {
 
     /**
      * Sanitizes a string by removing special characters
+     *
      * @param str the string to be sanitized
      * @return the sanitized string
      */
@@ -486,7 +502,7 @@ public class DataValidator {
         // Remove all leading spaces
         str = str.replaceFirst("^\\s+", "");
 
-        if (str.isEmpty() || str.length() > MAX_STRING_LENGTH){
+        if (str.isEmpty() || str.length() > MAX_STRING_LENGTH) {
             return null;
         }
 
@@ -503,6 +519,7 @@ public class DataValidator {
 
     /**
      * Validates the project name
+     *
      * @param name the name to be checked
      * @return boolean value indicating if the project name is valid
      */
@@ -513,6 +530,7 @@ public class DataValidator {
 
     /**
      * Validates the orderBy field for getting users by criteria
+     *
      * @param orderBy the orderBy field to be checked
      * @return boolean value indicating if the orderBy field is valid
      */
@@ -536,6 +554,7 @@ public class DataValidator {
 
     /**
      * Validates the orderBy field for getting projects by criteria
+     *
      * @param orderBy the orderBy field to be checked
      * @return boolean value indicating if the orderBy field is valid
      */
@@ -559,10 +578,11 @@ public class DataValidator {
 
     /**
      * Validates the user search criteria
-     * @param lab the lab to be checked
-     * @param orderBy the order by to be checked
+     *
+     * @param lab        the lab to be checked
+     * @param orderBy    the order by to be checked
      * @param pageNumber the page number to be checked
-     * @param pageSize the page size to be checked
+     * @param pageSize   the page size to be checked
      * @return boolean value indicating if the user search criteria is valid
      */
     public boolean validateSearchCriteria(int lab, String orderBy, int pageNumber, int pageSize) {
@@ -579,9 +599,11 @@ public class DataValidator {
             throw new IllegalArgumentException("Invalid page number");
         }
 
-        if (lab != 0 && !LabEnum.isValidLabId(lab)) {
-            logger.error("Invalid lab while getting users by criteria");
-            throw new IllegalArgumentException("Invalid lab");
+        if (lab != 0) {
+            if (!LabEnum.isValidLabId(lab)) {
+                logger.error("Invalid lab while getting users by criteria");
+                throw new IllegalArgumentException("Invalid lab");
+            }
         }
 
         logger.info("Search criteria is valid");
@@ -591,6 +613,7 @@ public class DataValidator {
 
     /**
      * Checks if there are available places in the project
+     *
      * @param projectId the id of the project to be checked
      * @return boolean value indicating if there are available places in the project
      */
@@ -630,7 +653,8 @@ public class DataValidator {
 
     /**
      * Checks if the token is valid for websocket
-     * @param token the token to be checked
+     *
+     * @param token    the token to be checked
      * @param sessions the sessions to be checked
      * @return boolean value indicating if the token is valid for websocket
      */
