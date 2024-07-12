@@ -4,6 +4,7 @@ import domcast.finalprojbackend.bean.DataValidator;
 import domcast.finalprojbackend.bean.MessageBean;
 import domcast.finalprojbackend.bean.AuthenticationAndAuthorization;
 import domcast.finalprojbackend.bean.user.TokenBean;
+import domcast.finalprojbackend.dto.messageDto.NewMessage;
 import domcast.finalprojbackend.dto.messageDto.PersonalMessage;
 import domcast.finalprojbackend.dto.messageDto.ProjectMessage;
 import jakarta.inject.Inject;
@@ -296,5 +297,50 @@ public class MessageService {
         }
 
         return response;
+    }
+
+    @POST
+    @Path("/")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response sendPersonalMessage(@HeaderParam("token") String token,
+                                        @HeaderParam("id") int id,
+                                        @QueryParam("receiver") int receiverId,
+                                        NewMessage newMessage,
+                                        @Context HttpServletRequest request) {
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with ip address {} is trying to send a personal message", ipAddress);
+
+        Response response;
+
+        // Check if the user's id valid
+        if (!dataValidator.isIdValid(id)) {
+            response = Response.status(400).entity("Invalid id").build();
+            logger.info("User with session token {} tried to send a personal message but has an invalid id", token);
+            return response;
+        }
+
+        // Check if the user is correctly authenticated and authorized
+        if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, id)) {
+            response = Response.status(401).entity("Unauthorized").build();
+            logger.info("User with session token {} tried to send a personal message but is unauthorized", token);
+            return response;
+        }
+
+        tokenBean.setLastAccessToNow(token);
+
+        boolean sent;
+
+        try {
+            sent = messageBean.sendMessage(newMessage, id, receiverId);
+            logger.info("User with ip address {} sent a personal message", ipAddress);
+            response = Response.status(200).entity(sent).build();
+        } catch (Exception e) {
+            logger.error("Error while sending a personal message: {}", e.getMessage());
+            response = Response.status(500).entity("Error while sending a personal message").build();
+        }
+
+        return response;
+
     }
 }

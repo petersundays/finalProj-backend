@@ -25,9 +25,9 @@ import java.io.Serializable;
 @NamedQuery(name="Message.countUnreadPersonalMessagesForUser",
         query="SELECT COUNT(m) FROM PersonalMessageEntity m WHERE m.receiver.id = :userId AND m.read = false")
 @NamedQuery(name="Message.getAllPersonalMessagesWhereReceiverIs",
-        query="SELECT m FROM PersonalMessageEntity m WHERE m.receiver.id = :userId")
+        query="SELECT m FROM PersonalMessageEntity m WHERE m.receiver.id = :userId ORDER BY m.timestamp DESC")
 @NamedQuery(name="Message.getAllPersonalMessagesSentByUser",
-        query="SELECT m FROM PersonalMessageEntity m WHERE m.sender.id = :userId")
+        query="SELECT m FROM PersonalMessageEntity m WHERE m.sender.id = :userId ORDER BY m.timestamp DESC")
 @NamedQuery(name="Message.markPersonalMessageAsRead",
         query="UPDATE PersonalMessageEntity m SET m.read = true WHERE m.id = :messageId")
 @NamedQuery(name="Message.isUserReceiverOfPersonalMessage",

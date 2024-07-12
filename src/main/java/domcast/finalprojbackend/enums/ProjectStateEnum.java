@@ -24,7 +24,7 @@ public enum ProjectStateEnum implements ConvertibleToEnumDTO {
     APPROVED (3, 300),
     IN_PROGRESS (4, 400),
     FINISHED (5, 500),
-    CANCELED(6, 600);
+    CANCELLED(6, 600);
 
     // The id of the project's state.
     private final int id;

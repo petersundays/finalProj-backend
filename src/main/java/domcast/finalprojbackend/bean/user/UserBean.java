@@ -645,7 +645,7 @@ public class UserBean implements Serializable {
 
         // Checks if the user returned from the database is null
         if (userEntity == null) {
-            throw new NoSuchElementException("User not found with id: " + user.getId());
+            throw new NoSuchElementException("User not found with id: " + userId);
         }
 
         // Checks if the user and photo path are null

@@ -84,7 +84,7 @@ public class ProjectMessageWS {
             logger.error("Error validating token");
 
             try {
-                session.close(new CloseReason(CloseReason.CloseCodes.VIOLATED_POLICY, "Invalid token"));
+                session.close(new CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE, "Invalid token"));
             } catch (IOException ioException) {
                 logger.error("Error closing session due to invalid token", ioException);
             }
@@ -94,7 +94,7 @@ public class ProjectMessageWS {
         if (!authenticated) {
             logger.error("User not authenticated");
             try {
-                session.close(new CloseReason(CloseReason.CloseCodes.VIOLATED_POLICY, "Not authenticated"));
+                session.close(new CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE, "Not authenticated"));
             } catch (IOException e) {
                 logger.error("Error closing session due to authentication failure", e);
             }

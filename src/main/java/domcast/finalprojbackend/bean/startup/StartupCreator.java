@@ -253,7 +253,7 @@ public class StartupCreator implements Serializable {
                 "Bioinformatics and Genomic Sequencing"
         };
         String[] projectDescriptions = {"Researching the effects of climate change", "Developing artificial intelligence algorithms", "Studying the principles of quantum computing", "Researching new cancer treatments", "Exploring outer space", "Developing renewable energy sources", "Creating autonomous vehicles", "Implementing blockchain technology", "Enhancing cybersecurity measures", "Engineering genetic modifications"};
-        ProjectStateEnum[] projectStates = {ProjectStateEnum.PLANNING, ProjectStateEnum.READY, ProjectStateEnum.APPROVED, ProjectStateEnum.IN_PROGRESS, ProjectStateEnum.CANCELED, ProjectStateEnum.FINISHED, ProjectStateEnum.PLANNING, ProjectStateEnum.READY, ProjectStateEnum.APPROVED, ProjectStateEnum.IN_PROGRESS};
+        ProjectStateEnum[] projectStates = {ProjectStateEnum.PLANNING, ProjectStateEnum.READY, ProjectStateEnum.APPROVED, ProjectStateEnum.IN_PROGRESS, ProjectStateEnum.CANCELLED, ProjectStateEnum.FINISHED, ProjectStateEnum.PLANNING, ProjectStateEnum.READY, ProjectStateEnum.APPROVED, ProjectStateEnum.IN_PROGRESS};
         String[] componentResourceNames = { "Climate Data Analyzer", "AI Training Module", "Quantum Computer", "Cancer Cell Detector","Spacecraft", "Solar Panel", "Self-driving Car", "Blockchain Node", "Firewall", "DNA Sequencer"};
         String[] componentResourceBrands = { "ThinkPad", "Surface", "MacBook", "Galaxy", "Xperia", "Pavilion", "Inspiron", "Predator", "Omen", "Alienware" };
         String[] componentResourceSuppliers = { "Intel", "AMD", "Nvidia", "Microsoft", "Apple", "Samsung", "Sony", "LG", "Canon", "Dell" };
@@ -517,7 +517,7 @@ public class StartupCreator implements Serializable {
                 // Set the state of the task based on the project's state
                 if (projectStates[i % projectStates.length] == ProjectStateEnum.FINISHED) {
                     task.setState(TaskStateEnum.FINISHED);
-                } else if (projectStates[i % projectStates.length] == ProjectStateEnum.IN_PROGRESS || projectStates[i % projectStates.length] == ProjectStateEnum.CANCELED) {
+                } else if (projectStates[i % projectStates.length] == ProjectStateEnum.IN_PROGRESS || projectStates[i % projectStates.length] == ProjectStateEnum.CANCELLED) {
                     // The task's state can be PLANNED, IN_PROGRESS, or FINISHED
                     int taskStateIndex = random.nextInt(3);
                     if (taskStateIndex == 0) {

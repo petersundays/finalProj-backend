@@ -904,7 +904,7 @@ public class ProjectBean implements Serializable {
      * Method to approve or cancel a project.
      * @param projectId The ID of the project to approve or cancel.
      *                  If the project is approved, the state will be set to APPROVED.
-     *                  If the project is canceled, the state will be set to CANCELED.
+     *                  If the project is canceled, the state will be set to CANCELLED.
      *
      * @param newState The new state of the project.
      * @return The detailed project object of the project that was approved or canceled.

@@ -25,7 +25,7 @@ public enum MessageAndLogEnum implements ConvertibleToEnumDTO {
     STATUS_CHANGED (4, "status changed"),
     PROJECT_APPROVAL (5, "project approval"),
     APPROVED (6, "approved"),
-    CANCELED (7, "canceled"),
+    CANCELLED (7, "canceled"),
     LEFT_PROJECT (8, "left the project"),
     APPLIED (9, "applied to"),
     APPLICATION_REJECTED (10, "rejected"),

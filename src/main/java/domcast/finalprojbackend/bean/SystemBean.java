@@ -13,17 +13,16 @@ import domcast.finalprojbackend.entity.ProjectEntity;
 import domcast.finalprojbackend.entity.SessionTokenEntity;
 import domcast.finalprojbackend.enums.LabEnum;
 import domcast.finalprojbackend.enums.util.EnumUtil;
+import domcast.finalprojbackend.websocket.NotificationWS;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Schedule;
 import jakarta.ejb.Stateless;
+import jakarta.websocket.Session;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * SystemBean is a stateless EJB that provides an interface for interacting with system settings.
@@ -53,6 +52,12 @@ public class SystemBean implements Serializable {
 
     @EJB
     private ProjectBean projectBean;
+
+    @EJB
+    private MessageBean messageBean;
+
+    @EJB
+    private NotificationWS notificationWS;
 
     /**
      * Default constructor for SystemBean.
@@ -165,6 +170,8 @@ public class SystemBean implements Serializable {
     public void sessionTimer() throws Exception {
         logger.info("Session timer started");
 
+        HashMap<String, Session> allSessions = notificationWS.getSessions();
+
         try {
             // Find active sessions that have exceeded the timeout
             List<SessionTokenEntity> activeSessions = tokenBean.findActiveSessionsExceededTimeout(getSessionTimeout());
@@ -175,6 +182,7 @@ public class SystemBean implements Serializable {
 
                 try {
                     userBean.logout(session.getToken());
+                    messageBean.sendLogoutNotification(session.getToken(), allSessions);
                     logger.info("Session token {} has been logged out", session.getToken());
                 } catch (Exception e) {
                     logger.error("Error setting session token {} logout time to now", session.getToken(), e);
