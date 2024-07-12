@@ -92,6 +92,9 @@ public class ProjectBean implements Serializable {
     @EJB
     private RecordDao recordDao;
 
+    @EJB
+    private PersonalMessageDao personalMessageDao;
+
     /**
      * Default constructor for ProjectBean.
      */
@@ -1554,6 +1557,13 @@ public class ProjectBean implements Serializable {
             }
         } catch (PersistenceException e) {
             logger.error("Error answering {} to project with ID {}: {}", invitationType, projectId, e.getMessage());
+            throw new RuntimeException(e);
+        }
+
+        try {
+            personalMessageDao.setInvitedToNullMessageWhereReceiverIsAndInvitedToIs(userId, projectId);
+        } catch (PersistenceException e) {
+            logger.error("Error setting invited to null while answering {} to project with ID {}: {}", invitationType, projectId, e.getMessage());
             throw new RuntimeException(e);
         }
 

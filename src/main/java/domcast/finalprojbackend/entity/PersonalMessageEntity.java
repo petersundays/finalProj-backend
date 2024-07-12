@@ -32,6 +32,8 @@ import java.io.Serializable;
         query="UPDATE PersonalMessageEntity m SET m.read = true WHERE m.id = :messageId")
 @NamedQuery(name="Message.isUserReceiverOfPersonalMessage",
         query="SELECT COUNT(m) FROM PersonalMessageEntity m WHERE m.id = :messageId AND m.receiver.id = :userId")
+@NamedQuery(name="Message.setInvitedToNullMessageWhereReceiverIsAndInvitedToIs",
+        query="UPDATE PersonalMessageEntity m SET m.invitedTo = null WHERE m.receiver.id = :userId AND m.invitedTo = :projectId")
 
 public class PersonalMessageEntity extends MessageEntity implements Serializable {
     private static final long serialVersionUID = 1L;

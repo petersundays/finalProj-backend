@@ -136,4 +136,22 @@ public class PersonalMessageDao extends AbstractDao<PersonalMessageEntity> {
             return false;
         }
     }
+
+    /**
+     * Sets the invitedTo field to null for all personal messages where the receiver is the user with the given id and the invitedTo field is the given project id
+     * @param userId the id of the user
+     * @param projectId the id of the project
+     */
+    public void setInvitedToNullMessageWhereReceiverIsAndInvitedToIs(int userId, int projectId) {
+        logger.info("Setting the invitedTo field to null for all personal messages where the receiver is the user with id {} and the invitedTo field is {}", userId, projectId);
+
+        try {
+            em.createNamedQuery("Message.setInvitedToNullMessageWhereReceiverIsAndInvitedToIs")
+                    .setParameter("userId", userId)
+                    .setParameter("projectId", projectId)
+                    .executeUpdate();
+        } catch (Exception e) {
+            logger.error("Error while setting the invitedTo field to null for personal messages: {}", e.getMessage());
+        }
+    }
 }
