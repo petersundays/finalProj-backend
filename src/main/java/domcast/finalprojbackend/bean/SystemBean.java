@@ -350,6 +350,15 @@ public class SystemBean implements Serializable {
 
         List<EnumDTO> enumDTOs = EnumUtil.getAllEnumDTOs(LabEnum.class);
 
+        int totalProjects = 0;
+
+        try {
+            totalProjects = projectDao.getNumberOfProjects();
+        } catch (Exception e) {
+            logger.error("Error getting the total number of projects", e);
+            throw new RuntimeException("Error getting the total number of projects", e);
+        }
+
         for (EnumDTO enumDto : enumDTOs) {
             try {
                 StatisticsPerLab statisticsPerLab = projectsStatsByLab(enumDto.getId());
@@ -362,6 +371,7 @@ public class SystemBean implements Serializable {
         projectStatistics.setLabStatistics(labStatistics);
         projectStatistics.setAverageMembers(averageMembers);
         projectStatistics.setAverageExecutionTime(averageExecutionTime);
+        projectStatistics.setTotalProjects(totalProjects);
 
         logger.info("Statistics of projects retrieved successfully");
         return projectStatistics;
