@@ -1251,7 +1251,7 @@ public class UserBean implements Serializable {
      * @param projectUserEnum The ProjectUserEnum object to set in the M2MProjectUser object, representing the role.
      * @return The created M2MProjectUser object.
      */
-    public M2MProjectUser createProjectUser(M2MProjectUser m2MProjectUser, UserEntity userEntity, ProjectEntity projectEntity, ProjectUserEnum projectUserEnum) {
+    public M2MProjectUser createProjectUser(M2MProjectUser m2MProjectUser, UserEntity userEntity, ProjectEntity projectEntity, ProjectUserEnum projectUserEnum, int inviterId) {
 
         if (m2MProjectUser == null) {
             throw new IllegalArgumentException("M2MProjectUser cannot be null");
@@ -1281,7 +1281,10 @@ public class UserBean implements Serializable {
         m2MProjectUser.setRole(projectUserEnum);
         m2MProjectUser.setActive(false);
         m2MProjectUser.setApproved(false);
-        m2MProjectUser.setInvited(true);
+
+        if (inviterId > 0) {
+            m2MProjectUser.setInvited(true);
+        }
 
         return m2MProjectUser;
 
