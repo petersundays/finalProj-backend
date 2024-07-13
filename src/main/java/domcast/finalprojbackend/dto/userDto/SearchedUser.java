@@ -35,6 +35,9 @@ public class SearchedUser implements Serializable {
     @XmlElement
     private boolean visible;  // The user's visibility
 
+    @XmlElement
+    private int role;  // The user's role
+
     /**
      * Default constructor for SearchedUser.
      */
@@ -98,5 +101,13 @@ public class SearchedUser implements Serializable {
 
     public void setVisible(boolean visible) {
         this.visible = visible;
+    }
+
+    public int getRole() {
+        return role;
+    }
+
+    public void setRole(int role) {
+        this.role = role;
     }
 }

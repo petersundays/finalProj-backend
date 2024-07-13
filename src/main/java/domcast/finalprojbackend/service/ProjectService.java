@@ -1051,4 +1051,51 @@ public class ProjectService {
         return response;
     }
 
+    @GET
+    @Path("/applications")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getApplications(@HeaderParam("token") String token,
+                                    @HeaderParam("id") int userId,
+                                    @Context HttpServletRequest request) {
+
+        String ipAddress = request.getRemoteAddr();
+        logger.info("User with session token {} and id {} is trying to get the applications from IP address {}", token, userId, ipAddress);
+
+        Response response;
+
+        if (!dataValidator.isIdValid(userId)) {
+            response = Response.status(400).entity("Invalid id").build();
+            logger.info("User with session token {} tried to get the applications with invalid id", token);
+            return response;
+        }
+
+        if (!authenticationAndAuthorization.isTokenActiveAndFromUserId(token, userId)) {
+            response = Response.status(401).entity("Unauthorized").build();
+            logger.info("User with session token {} tried to get the applications but is not authorized", token);
+            return response;
+        }
+
+        if (!authenticationAndAuthorization.isUserAdminById(userId)) {
+            response = Response.status(401).entity("Unauthorized").build();
+            logger.info("User with session token {} tried to get the project applications but is not authorized", token);
+            return response;
+        }
+
+        tokenBean.setLastAccessToNow(token);
+
+        List<ProjectPreview> applications;
+
+        try {
+            logger.info("User with session token {} and id {} is getting the project applications", token, userId);
+            applications = projectBean.findAllReadyProjects();
+            response = Response.status(200).entity(applications).build();
+            logger.info("User with session token {} and id {} successfully got the project applications", token, userId);
+        } catch (Exception e) {
+            logger.error("Error getting the project applications: {}", e.getMessage());
+            response = Response.status(500).entity("Error getting the project applications").build();
+        }
+
+        return response;
+    }
+
 }

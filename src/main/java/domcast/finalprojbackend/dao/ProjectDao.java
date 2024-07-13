@@ -385,4 +385,16 @@ public class ProjectDao extends AbstractDao<ProjectEntity> {
         }
     }
 
+    /**
+     * Gets all projects that are ready.
+     * @return the list of projects that are ready
+     */
+    public List<ProjectEntity> getReadyProjects() {
+        logger.info("Getting all projects that are ready");
+        try {
+            return em.createNamedQuery("Project.findAllReadyProjects", ProjectEntity.class).getResultList();
+        } catch (NoResultException e) {
+            return new ArrayList<>();
+        }
+    }
 }

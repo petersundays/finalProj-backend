@@ -41,13 +41,13 @@ import java.util.Set;
 @NamedQuery(name= "Project.getNumberOfProjects", query = "SELECT COUNT(p) FROM ProjectEntity p")
 @NamedQuery(name= "Project.getProjectsNames", query = "SELECT p.name FROM ProjectEntity p")
 @NamedQuery(name= "Project.isProjectCanceledOrFinished", query = "SELECT p.state FROM ProjectEntity p WHERE p.id = :projectId AND p.state = 600 OR p.state = 500")
-@NamedQuery(name= "Project.isProjectReady", query = "SELECT p.state FROM ProjectEntity p WHERE p.id = :projectId AND p.state = 500")
+@NamedQuery(name= "Project.isProjectReady", query = "SELECT p.state FROM ProjectEntity p WHERE p.id = :projectId AND p.state = 200")
 @NamedQuery(name= "Project.numberOfProjectsPerLab", query = "SELECT COUNT(p) FROM ProjectEntity p WHERE p.lab.id = :labId")
 @NamedQuery(name= "Project.getNumberOfApprovedProjectsByLab", query = "SELECT COUNT(p) FROM ProjectEntity p WHERE p.lab.id = :labId AND p.state = 300")
 @NamedQuery(name= "Project.getNumberOfFinishedProjectsByLab", query = "SELECT COUNT(p) FROM ProjectEntity p WHERE p.lab.id = :labId AND p.state = 500")
 @NamedQuery(name= "Project.getNumberOfCanceledProjectsByLab", query = "SELECT COUNT(p) FROM ProjectEntity p WHERE p.lab.id = :labId AND p.state = 600")
 @NamedQuery(name = "Project.averageExecutionTime", query = "SELECT AVG(FUNCTION('DATEDIFF', p.realEndDate, p.creationDate)) FROM ProjectEntity p WHERE p.realEndDate IS NOT NULL")
-
+@NamedQuery(name = "Project.findAllReadyProjects", query = "SELECT p FROM ProjectEntity p WHERE p.state = 200")
 public class ProjectEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;

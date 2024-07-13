@@ -475,7 +475,7 @@ public class UserService {
     public Response updateUserType(@HeaderParam("token") String sessionToken,
                                    @HeaderParam("loggedId") int loggedId,
                                    @QueryParam("id") int userId,
-                                   @HeaderParam("type") int type,
+                                   @QueryParam("type") int type,
                                    @Context HttpServletRequest request) {
         String ipAddress = request.getRemoteAddr();
         logger.info("User with IP address {} is trying to update user type of user with id {}", ipAddress, userId);

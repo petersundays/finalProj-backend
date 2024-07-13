@@ -995,6 +995,7 @@ public class UserBean implements Serializable {
         searchedUser.setWorkplace(user.getWorkplace().getCity().getValue());
         searchedUser.setPhoto(user.getPhoto());
         searchedUser.setVisible(user.isVisible());
+        searchedUser.setRole(user.getType().getValue());
         return searchedUser;
     }
 
@@ -1034,6 +1035,8 @@ public class UserBean implements Serializable {
             return message;
         }
 
+        System.out.println("****** Type: " + type);
+
         if (!TypeOfUserEnum.isValidId(type)) {
             message = "Invalid user type: " + type;
             logger.error(message);
@@ -1048,14 +1051,14 @@ public class UserBean implements Serializable {
 
         try {
             if (userDao.setUserType(id, type)) {
-                message = "User type updated for user with id: " + id;
+                message = "User type updated successfully";
                 logger.info(message);
             } else {
-                message = "Error while updating user type for user with id: " + id;
+                message = "Error while updating user type for user";
                 logger.error(message);
             }
         } catch (Exception e) {
-            message = "Something went wrong while updating user type for user with id: " + id;
+            message = "Something went wrong while updating user";
             logger.error(message);
         }
         return message;
