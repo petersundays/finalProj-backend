@@ -153,7 +153,9 @@ public class ProjectDao extends AbstractDao<ProjectEntity> {
 
         if (userId != 0) {
             Join<ProjectEntity, M2MProjectUser> joinProjectUser = root.join("projectUsers");
-            predicates.add(cb.equal(joinProjectUser.get("user").get("id"), userId));
+            Predicate userIdPredicate = cb.equal(joinProjectUser.get("user").get("id"), userId);
+            Predicate activePredicate = cb.isTrue(joinProjectUser.get("active"));
+            predicates.add(cb.and(userIdPredicate, activePredicate));
         }
 
         if (name != null && !name.isEmpty()) {

@@ -1407,7 +1407,7 @@ public class ProjectBean implements Serializable {
             }
         } else {
             m2MProjectUser = new M2MProjectUser();
-            m2MProjectUser = userBean.createProjectUser(m2MProjectUser, userEntity, projectEntity, projectUserEnum);
+            m2MProjectUser = userBean.createProjectUser(m2MProjectUser, userEntity, projectEntity, projectUserEnum, inviterId);
 
             try {
                 if (!m2MProjectUserDao.persist(m2MProjectUser)) {
