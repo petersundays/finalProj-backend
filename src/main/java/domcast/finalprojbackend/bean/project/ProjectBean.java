@@ -2065,4 +2065,37 @@ public class ProjectBean implements Serializable {
         logger.info("Successfully got project managers for project with ID {}", projectEntity.getId());
         return projectManagersSet;
     }
+
+    public List<ProjectPreview> findAllReadyProjects() {
+        logger.info("Finding all ready projects");
+
+        List<ProjectEntity> projects;
+
+        try {
+            projects = projectDao.getReadyProjects();
+        } catch (PersistenceException e) {
+            logger.error("Error finding all ready projects: {}", e.getMessage());
+            throw new RuntimeException(e);
+        }
+
+        if (projects == null || projects.isEmpty()) {
+            logger.warn("No ready projects found");
+            return new ArrayList<>();
+        }
+
+        List<ProjectPreview> projectPreviews = new ArrayList<>();
+
+        for (ProjectEntity project : projects) {
+            try {
+                ProjectPreview projectPreview = projectEntityToProjectPreview(project);
+                projectPreviews.add(projectPreview);
+            } catch (RuntimeException e) {
+                logger.error("Error converting project entity to project preview while finding all ready projects: {}", e.getMessage());
+            }
+        }
+
+        logger.info("Successfully found all ready projects");
+
+        return projectPreviews;
+    }
 }
