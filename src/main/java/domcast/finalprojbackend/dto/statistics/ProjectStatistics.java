@@ -24,15 +24,19 @@ public class ProjectStatistics implements Serializable {
     @XmlElement
     private double averageExecutionTime;
 
+    @XmlElement
+    private int totalProjects;
+
 
     public ProjectStatistics() {
         super();
     }
 
-    public ProjectStatistics(List<StatisticsPerLab> labStatistics, double averageMembers, double averageExecutionTime) {
+    public ProjectStatistics(List<StatisticsPerLab> labStatistics, double averageMembers, double averageExecutionTime, int totalProjects) {
         this.labStatistics = labStatistics;
         this.averageMembers = averageMembers;
         this.averageExecutionTime = averageExecutionTime;
+        this.totalProjects = totalProjects;
     }
 
     // Getters and Setters
@@ -60,5 +64,13 @@ public class ProjectStatistics implements Serializable {
 
     public void setAverageExecutionTime(double averageExecutionTime) {
         this.averageExecutionTime = averageExecutionTime;
+    }
+
+    public int getTotalProjects() {
+        return totalProjects;
+    }
+
+    public void setTotalProjects(int totalProjects) {
+        this.totalProjects = totalProjects;
     }
 }
